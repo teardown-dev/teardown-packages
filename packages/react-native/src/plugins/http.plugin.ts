@@ -10,14 +10,14 @@ interface ExtendedXMLHttpRequest extends XMLHttpRequest {
 }
 
 export type HTTPPluginOptions = {
-  ignoreURLs?: string[];
+  ignoreURLs?: RegExp[];
 };
 
 export class HTTPPlugin implements Plugin {
   private logger = new Logger('HTTPPlugin');
   private client: TeardownClient<any> | null = null;
   private requests: Map<number, HTTPRequestInfo> = new Map();
-  private ignoreURLs: string[];
+  private ignoreURLs: RegExp[];
 
   constructor(options: HTTPPluginOptions = {}) {
     this.ignoreURLs = options.ignoreURLs || [];
@@ -31,9 +31,8 @@ export class HTTPPlugin implements Plugin {
   private setupXHRInterceptor(): void {
     if (XHRInterceptor.isInterceptorEnabled()) {
       this.logger.warn(
-        'XHRInterceptor is already enabled by another library, disable it or run this first when your app loads',
+          'XHRInterceptor is already enabled by another library. Disable it or run this plugin first when your app loads.',
       );
-      this.disableInterception();
     }
 
     XHRInterceptor.setOpenCallback(this.xhrOpenCallback);
@@ -45,13 +44,13 @@ export class HTTPPlugin implements Plugin {
   }
 
   private shouldIgnoreURL(url: string): boolean {
-    return this.ignoreURLs.some(ignoreUrl => url.includes(ignoreUrl));
+    return this.ignoreURLs.some(ignoreRegex => ignoreRegex.test(url));
   }
 
   private xhrOpenCallback = (
-    method: string,
-    url: string,
-    xhr: ExtendedXMLHttpRequest,
+      method: string,
+      url: string,
+      xhr: ExtendedXMLHttpRequest,
   ): void => {
     if (this.shouldIgnoreURL(url)) {
       return;
@@ -71,9 +70,9 @@ export class HTTPPlugin implements Plugin {
   };
 
   private xhrRequestHeaderCallback = (
-    header: string,
-    value: string,
-    xhr: ExtendedXMLHttpRequest,
+      header: string,
+      value: string,
+      xhr: ExtendedXMLHttpRequest,
   ): void => {
     const request = this.requests.get(xhr._id);
     if (request) {
@@ -87,18 +86,30 @@ export class HTTPPlugin implements Plugin {
       // Set our custom header here, just before the request is sent
       xhr.setRequestHeader('TD-Request-ID', request.id);
 
-      request.body = typeof data === 'string' ? data : JSON.stringify(data);
+      request.body = this.serializeRequestBody(data);
       this.sendRequestEvent(request);
     }
   };
 
+  private serializeRequestBody(data: any): string {
+    if (typeof data === 'string') {
+      return data;
+    }
+    try {
+      return JSON.stringify(data);
+    } catch (error) {
+      this.logger.warn('Failed to stringify request body', error);
+      return '[Unable to serialize request body]';
+    }
+  }
+
   private xhrResponseCallback = (
-    status: number,
-    timeout: number,
-    response: string,
-    responseURL: string,
-    responseType: XMLHttpRequestResponseType,
-    xhr: ExtendedXMLHttpRequest,
+      status: number,
+      timeout: number,
+      response: string,
+      responseURL: string,
+      responseType: XMLHttpRequestResponseType,
+      xhr: ExtendedXMLHttpRequest,
   ): void => {
     const request = this.requests.get(xhr._id);
     if (request) {
@@ -106,7 +117,7 @@ export class HTTPPlugin implements Plugin {
         id: request.id,
         status,
         headers: this.parseResponseHeaders(xhr.getAllResponseHeaders()),
-        body: response,
+        body: this.parseResponseBody(response, responseType),
         timestamp: Date.now(),
       };
       this.sendResponseEvent(responseInfo);
@@ -117,28 +128,34 @@ export class HTTPPlugin implements Plugin {
   private parseResponseHeaders(headersString: string): Record<string, string> {
     const headersObject: Record<string, string> = {};
     if (headersString) {
-      const headerPairs = headersString.split('\u000d\u000a');
-      for (let i = 0; i < headerPairs.length; i++) {
-        const headerPair = headerPairs[i];
-        const index = headerPair.indexOf('\u003a\u0020');
-        if (index > 0) {
-          const key = headerPair.substring(0, index);
-          const val = headerPair.substring(index + 2);
-          headersObject[key] = val;
-        }
-      }
+      const headerPairs = headersString.trim().split(/[\r\n]+/);
+      headerPairs.forEach(headerPair => {
+        const [key, value] = headerPair.split(': ');
+        headersObject[key] = value;
+      });
     }
     return headersObject;
   }
 
+  private parseResponseBody(response: string, responseType: XMLHttpRequestResponseType): string {
+    if (responseType === 'json') {
+      try {
+        return JSON.stringify(JSON.parse(response), null, 2);
+      } catch (error) {
+        this.logger.warn('Failed to parse JSON response', error);
+      }
+    }
+    return response;
+  }
+
   private sendRequestEvent(request: HTTPRequestInfo): void {
-    if (this.client && this.client.debugger) {
+    if (this.client?.debugger) {
       this.client.debugger.send('NETWORK_HTTP_REQUEST', request);
     }
   }
 
   private sendResponseEvent(response: HTTPResponseInfo): void {
-    if (this.client && this.client.debugger) {
+    if (this.client?.debugger) {
       this.client.debugger.send('NETWORK_HTTP_RESPONSE', response);
     }
   }
