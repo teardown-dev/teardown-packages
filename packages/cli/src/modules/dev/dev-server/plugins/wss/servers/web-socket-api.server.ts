@@ -28,13 +28,35 @@ export class WebSocketApiServer extends WebSocketServer {
 	 * @param event Event string or object to send.
 	 */
 	send(event: any) {
+		this.fastify.log.debug({
+			msg: "Sending message to API clients",
+			data: event,
+			clients: this.clients.size,
+		});
+
+		if (this.clients.size === 0) {
+			this.fastify.log.debug({
+				msg: "No API clients connected, skipping message",
+			});
+			return;
+		}
+
 		const data = typeof event === "string" ? event : JSON.stringify(event);
+
+		this.fastify.log.info({
+			msg: "Sending message to API clients",
+			data,
+			clients: this.clients.size,
+		});
 
 		for (const [, socket] of this.clients.entries()) {
 			try {
 				socket.send(data);
-			} catch {
-				// NOOP
+			} catch (error) {
+				this.fastify.log.error({
+					msg: "Error sending message to API client",
+					error,
+				});
 			}
 		}
 	}

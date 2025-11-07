@@ -4,7 +4,7 @@ import type { ConfigT } from "metro-config";
 // @ts-ignore
 import type MetroServer from "metro/src/Server";
 import type { WebSocketServer } from "ws";
-import { WebSocketApiServer } from "./servers/web-socket-api.server";
+import type { WebSocketApiServer } from "./servers/web-socket-api.server";
 import { WebSocketDebuggerServer } from "./servers/web-socket-debugger.server";
 import { WebSocketDevClientServer } from "./servers/web-socket-dev-client.server";
 import type { WebSocketEventsServer } from "./servers/web-socket-events.server";
@@ -43,6 +43,7 @@ export const wssPlugin = fastifyPlugin<{
 	onClientConnected: (platform: string, clientId: string) => void;
 	messageServer: WebSocketMessageServer;
 	eventsServer: WebSocketEventsServer;
+	apiServer: WebSocketApiServer;
 	endpoints: {
 		[WS_DEVICE_URL]: WebSocketServer;
 		[WS_DEBUGGER_URL]: WebSocketServer;
@@ -58,13 +59,13 @@ export const wssPlugin = fastifyPlugin<{
 			endpoints,
 			messageServer,
 			eventsServer,
+			apiServer,
 		},
 	) => {
 		const router = new WebSocketRouter(instance);
 
 		const debuggerServer = new WebSocketDebuggerServer(instance);
 		const devClientServer = new WebSocketDevClientServer(instance);
-		const apiServer = new WebSocketApiServer(instance);
 		const hmrServer = new WebSocketHMRServer(instance, {
 			metroConfig,
 			metroServer,

@@ -1,25 +1,23 @@
-import type { FastifyBaseLogger } from 'fastify';
-import type { WebSocketServer } from 'ws';
-import type { SymbolicatorDelegate } from './plugins/symbolicate';
+import type { FastifyBaseLogger } from "fastify";
+import type { WebSocketServer } from "ws";
+import type { SymbolicatorDelegate } from "./plugins/symbolicate";
 
 export type {
-  SymbolicatorDelegate,
-  ReactNativeStackFrame,
-  InputStackFrame,
-  StackFrame,
-  CodeFrame,
-  SymbolicatorResults,
-} from './plugins/symbolicate';
-
-
+	SymbolicatorDelegate,
+	ReactNativeStackFrame,
+	InputStackFrame,
+	StackFrame,
+	CodeFrame,
+	SymbolicatorResults,
+} from "./plugins/symbolicate";
 
 /** Representation of the compilation progress. */
 export interface ProgressData {
-  /** Number of modules built. */
-  completed: number;
+	/** Number of modules built. */
+	completed: number;
 
-  /** Total number of modules detect as part of compilation. */
-  total: number;
+	/** Total number of modules detect as part of compilation. */
+	total: number;
 }
 
 /**
@@ -36,9 +34,9 @@ export type SendProgress = (data: ProgressData) => void;
  * @internal
  */
 export namespace Internal {
-  export enum EventTypes {
-    BuildStart = 'BuildStart',
-    BuildEnd = 'BuildEnd',
-    HmrEvent = 'HmrEvent',
-  }
+	export enum EventTypes {
+		BuildStart = "BuildStart",
+		BuildEnd = "BuildEnd",
+		HmrEvent = "HmrEvent",
+	}
 }

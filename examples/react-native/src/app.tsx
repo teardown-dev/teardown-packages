@@ -1,16 +1,23 @@
 import type React from "react";
 import { useEffect } from "react";
 import { Text, View } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {
+	GestureHandlerRootView,
+	Pressable,
+} from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function App(): React.JSX.Element {
 	console.log("App mounted");
 
 	useEffect(() => {
-		setInterval(() => {
+		const intervalId = setInterval(() => {
 			console.log("App interval");
 		}, 2500);
+
+		return () => {
+			clearInterval(intervalId);
+		};
 	}, []);
 
 	return (
@@ -25,6 +32,15 @@ function App(): React.JSX.Element {
 					}}
 				>
 					<Text>Hello</Text>
+
+					<Pressable
+						onPress={() => {
+							throw new Error("Test error");
+						}}
+						style={{ backgroundColor: "red", padding: 8 }}
+					>
+						<Text>Press me</Text>
+					</Pressable>
 				</View>
 			</GestureHandlerRootView>
 		</SafeAreaProvider>

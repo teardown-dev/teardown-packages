@@ -20,6 +20,7 @@
   "dependencies": {
     "@babel/code-frame": "^7.26.2",
     "@fastify/compress": "^8.0.1",
+    "@fastify/cors": "^10.0.1",
     "@fastify/middie": "^9.0.2",
     "@fastify/sensible": "^6.0.1",
     "@react-native-community/cli-server-api": "^15.0.1",

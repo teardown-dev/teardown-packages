@@ -372,7 +372,7 @@ export class WebSocketMessageServer extends WebSocketServer {
 
 		const onClose = (close: WebSocket.CloseEvent) => {
 			this.fastify.log.debug({
-				msg: ["Message client closed"],
+				msg: "Message client closed",
 				clientId,
 				close,
 			});

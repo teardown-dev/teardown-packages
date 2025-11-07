@@ -137,17 +137,26 @@ export class WebSocketEventsServer extends WebSocketServer {
 	 */
 	broadcastEvent(event: EventMessage) {
 		if (!this.clients.size) {
+			console.log("No clients connected");
 			return;
 		}
 
 		const serialized = this.serializeMessage(event);
 		if (!serialized) {
+			console.log("Failed to serialize event");
 			return;
 		}
 
 		for (const [clientId, socket] of this.clients.entries()) {
 			try {
-				socket.send(serialized);
+				socket.send(
+					JSON.stringify({
+						version: WebSocketEventsServer.PROTOCOL_VERSION,
+						type: "event",
+						data: serialized,
+						clientId,
+					}),
+				);
 			} catch (error) {
 				this.fastify.log.error({
 					msg: "Failed to send broadcast to client",
