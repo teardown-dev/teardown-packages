@@ -34,7 +34,7 @@
     "compression": "^1.7.5",
     "connect": "^3.7.0",
     "debug": "^4.3.7",
-    "devtools-protocol": "^0.0.1376744",
+    "devtools-protocol": "^0.0.1380148",
     "fastify": "^5.1.0",
     "fastify-favicon": "^5.0.0",
     "fastify-plugin": "^5.0.1",

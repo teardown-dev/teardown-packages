@@ -5,4 +5,6 @@ import App from "./src/app";
 
 // teardownClient.start();
 
+window.__REACT_DEVTOOLS_PORT__ = 9090;
+
 AppRegistry.registerComponent(appName, () => App);

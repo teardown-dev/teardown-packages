@@ -126,11 +126,6 @@ export class WebSocketHMRServer extends WebSocketServer {
 	}
 
 	async registerHMRClient(socket: WebSocket, requestUrl: string) {
-		this.fastify.log.debug({
-			msg: "HMR client connected",
-			requestUrl,
-		});
-
 		type Client = {
 			optedIntoHMR: boolean;
 			revisionIds: Array<string>;
@@ -138,10 +133,6 @@ export class WebSocketHMRServer extends WebSocketServer {
 		};
 
 		const sendFn = (...args: any[]) => {
-			this.fastify.log.debug({
-				msg: "HMR client message",
-				args,
-			});
 			// @ts-ignore
 			socket.send(...args);
 		};
@@ -168,10 +159,6 @@ export class WebSocketHMRServer extends WebSocketServer {
 		});
 
 		socket.on("message", (data) => {
-			this.fastify.log.debug({
-				msg: "HMR client message",
-				data,
-			});
 			this.hmrServer.onClientMessage(hmrClient, data, sendFn);
 		});
 	}

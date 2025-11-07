@@ -76,13 +76,16 @@ export class TeardownTerminalReporter extends BaseTerminalReporter {
 	}
 
 	update(event: TerminalReportableEvent): void {
-		super.update(event);
-
 		this.devServer?.reportMetroEvent(event);
 
 		switch (event.type as string) {
 			case "initialize_done":
 				this.devServer.onInitializeDone?.();
+				break;
+			case "client_log":
+				break;
+			default:
+				super.update(event);
 				break;
 		}
 	}

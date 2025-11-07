@@ -29,26 +29,15 @@ export class WebSocketApiServer extends WebSocketServer {
 	 */
 	send(event: unknown) {
 		if (this.clients.size === 0) {
-			this.fastify.log.debug({
-				msg: "No API clients connected, skipping message",
-			});
 			return;
 		}
 
 		const data = typeof event === "string" ? event : JSON.stringify(event);
-
-		this.fastify.log.info({
-			msg: "Sending message to API clients",
-			data,
-			clients: this.clients.size,
-		});
-
 		for (const [, socket] of this.clients.entries()) {
 			try {
 				socket.send(data);
 			} catch (error) {
-				this.fastify.log.error({
-					msg: "Error sending message to API client",
+				this.fastify.log.error("Error sending message to API client", {
 					error,
 				});
 			}
@@ -64,12 +53,13 @@ export class WebSocketApiServer extends WebSocketServer {
 		const clientId = `client#${this.nextClientId++}`;
 		this.clients.set(clientId, socket);
 
-		this.fastify.log.debug({ msg: "API client connected", clientId });
+		this.fastify.log.info("API client connected", {
+			clientId,
+		});
 		this.clients.set(clientId, socket);
 
 		const onClose = () => {
-			this.fastify.log.debug({
-				msg: "API client disconnected",
+			this.fastify.log.info("API client disconnected", {
 				clientId,
 			});
 			this.clients.delete(clientId);

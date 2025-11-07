@@ -25,12 +25,16 @@ import {
 	symbolicatePlugin,
 	type SymbolicateReply,
 	type SymbolicateRequest,
-} from "./plugins/sybmolicate.plugin";
+} from "./sybmolicate/sybmolicate.plugin";
 import { systracePlugin } from "./plugins/systrace.plugin";
 import { wssPlugin } from "./plugins/wss";
 import { WebSocketApiServer } from "./plugins/wss/servers/web-socket-api.server";
 import { WebSocketEventsServer } from "./plugins/wss/servers/web-socket-events.server";
 import { WebSocketMessageServer } from "./plugins/wss/servers/web-socket-message.server";
+import {
+	ReactNativeStackFrame,
+	type SymbolicatorResults,
+} from "./sybmolicate/types";
 
 export type DevServerOptions = {
 	projectRoot: string;
@@ -115,8 +119,8 @@ export class DevServer {
 	}
 
 	private onMessage(log: Log): void {
-		// this.apiServer.send(log);
-		// console.log("onMessage", log);
+		this.apiServer.send(log);
+		// console.log(log.msg, log.level);
 		// this.terminalReporter.update({
 		// 	type: "client_log",
 		// 	level: "info",
@@ -165,7 +169,6 @@ export class DevServer {
 			onBundleBuilt: this.onBundleBuilt.bind(this),
 		});
 
-		// console.log("Registering plugins");
 		const devMiddleware = createDevMiddleware({
 			projectRoot: this.config.projectRoot,
 			serverBaseUrl: `http://${this.config.host}:${this.config.port}`,
@@ -173,7 +176,7 @@ export class DevServer {
 			unstable_customInspectorMessageHandler:
 				this.customInspectorMessageHandler.bind(this),
 			unstable_experiments: {
-				// enableNewDebugger: this.config.experiments?.experimentalDebugger,
+				enableNetworkInspector: true,
 			},
 		});
 		await this.instance.register(cors, {
@@ -226,59 +229,55 @@ export class DevServer {
 
 		this.instance.use(serverInstance.metroServer.processRequest);
 		this.instance.use(devMiddleware.middleware);
-
-		const DEFAULT_ALLOWED_CORS_HOSTNAMES = [
-			"localhost",
-			"chrome-devtools-frontend.appspot.com", // Support remote Chrome DevTools frontend
-			"devtools", // Support local Chrome DevTools `devtools://devtools`
-		];
-		// this.instance.use((request, reply, done) => {
-		// 	console.log("onRequest", request.url);
-		// 	const origin = request.headers.origin;
-		// 	if (origin && DEFAULT_ALLOWED_CORS_HOSTNAMES.includes(origin)) {
-		// 		reply.setHeader("Access-Control-Allow-Origin", origin);
-		// 	}
-
-		// 	reply.setHeader("Access-Control-Allow-Origin", "*");
-
-		// 	done();
-		// });
-
-		// this.instance.addHook("onSend", async (request, reply, payload) => {
-		// 	console.log("onSend", request.url);
-		// 	reply.header("X-Content-Type-Options", "nosniff");
-		// 	reply.header("X-React-Native-Project-Root", this.config.projectRoot);
-
-		// 	const [pathname] = request.url.split("?");
-		// 	if (pathname.endsWith(".map")) {
-		// 		reply.header("Access-Control-Allow-Origin", "*");
-		// 	}
-
-		// 	return payload;
-		// });
-		// console.log("Plugins registered");
 	}
 
 	private onSymbolicate(request: SymbolicateRequest, reply: SymbolicateReply) {
-		console.log("onSymbolicate", request.rawBody);
+		const result = JSON.parse(request.rawBody) as SymbolicatorResults;
+		const { codeFrame, stack } = result;
+
+		this.instance.log.info("onSymbolicate", { codeFrame, stack });
 	}
 
 	private customInspectorMessageHandler(
 		connection: CustomMessageHandlerConnection,
 	): CustomMessageHandler {
-		console.log("customInspectorMessageHandler", connection);
+		this.instance.log.info("Creating custom inspector message handler", {
+			connection,
+		});
+
 		return {
-			handleDeviceMessage: (message: JSONSerializable) => {
-				console.log("handleDeviceMessage", connection, message);
-			},
-			handleDebuggerMessage: (message: JSONSerializable) => {
-				console.log("handleDebuggerMessage", connection, message);
-			},
+			handleDeviceMessage: (message) =>
+				this.onDeviceMessage(connection, message),
+			handleDebuggerMessage: (message) =>
+				this.onDebuggerMessage(connection, message),
 		};
 	}
 
+	private onDeviceMessage(
+		connection: CustomMessageHandlerConnection,
+		message: JSONSerializable,
+	) {
+		console.log("onDeviceMessage", message);
+		this.instance.log.info("Device -> Debugger", {
+			message,
+		});
+		connection.debugger.sendMessage(message);
+	}
+
+	private onDebuggerMessage(
+		connection: CustomMessageHandlerConnection,
+		message: JSONSerializable,
+	) {
+		console.log("onDebuggerMessage", message);
+		this.instance.log.info("Debugger -> Device", {
+			message,
+		});
+		connection.device.sendMessage(message);
+	}
+
 	private registerHooks(): void {
-		// console.log("Registering hooks");
+		this.instance.log.info("Registering hooks");
+
 		this.instance = this.instance.addHook(
 			"onSend",
 			async (request, reply, payload) => {
@@ -294,20 +293,22 @@ export class DevServer {
 			},
 		);
 
-		// console.log("Hooks registered");
+		this.instance.log.info("Hooks registered");
 	}
 
 	private registerRoutes(): void {
-		// console.log("Registering routes");
+		this.instance.log.info("Registering routes");
 		this.instance.get("/", async () => "React Native packager is running");
 		this.instance.get("/status", async () => "packager-status:running");
+		this.instance.log.info("Routes registered");
 	}
 
 	public async initialize(): Promise<void> {
-		// console.log("Initializing dev server");
+		this.instance.log.info("Initializing dev server");
 		await this.registerPlugins();
 		this.registerHooks();
 		this.registerRoutes();
+		this.instance.log.info("Dev server initialized");
 	}
 
 	public async start(): Promise<void> {
@@ -325,6 +326,7 @@ export class DevServer {
 	public async stop(): Promise<void> {
 		this.instance.log.info("Stopping dev server");
 		await this.instance.close();
+		this.instance.log.info("Dev server stopped");
 	}
 
 	public getInstance(): FastifyInstance {
