@@ -3,7 +3,7 @@ import XHRInterceptor from 'react-native/Libraries/Network/XHRInterceptor';
 import type {Plugin, TeardownClient} from '../teardown.client';
 import {Logger} from '@teardown/logger';
 import {Util} from '@teardown/util';
-import type {HTTPRequestInfo, HTTPResponseInfo} from '@teardown/websocket';
+import type {HTTPRequestInfo, RequestMethod} from '@teardown/websocket';
 
 interface ExtendedXMLHttpRequest extends XMLHttpRequest {
   _id: number;
@@ -58,15 +58,17 @@ export class HTTPPlugin implements Plugin {
 
     const requestId = Util.generateUUID();
 
-    const requestInfo: HTTPRequestInfo = {
+    const HTTPRequestInfo: HTTPRequestInfo = {
       id: requestId,
+      type: 'XMLHttpRequest',
       url,
-      method,
-      headers: {'TD-Request-ID': requestId},
-      timestamp: Date.now(),
+      method: method as RequestMethod,
+      requestHeaders: {'TD-Request-ID': requestId},
+      startTime: Date.now(),
+      updatedAt: Date.now(),
     };
 
-    this.requests.set(xhr._id, requestInfo);
+    this.requests.set(xhr._id, HTTPRequestInfo);
   };
 
   private xhrRequestHeaderCallback = (
@@ -76,18 +78,19 @@ export class HTTPPlugin implements Plugin {
   ): void => {
     const request = this.requests.get(xhr._id);
     if (request) {
-      request.headers[header] = value;
+      request.requestHeaders[header] = value;
+      request.updatedAt = Date.now();
     }
   };
 
   private xhrSendCallback = (data: any, xhr: ExtendedXMLHttpRequest): void => {
     const request = this.requests.get(xhr._id);
     if (request) {
-      // Set our custom header here, just before the request is sent
       xhr.setRequestHeader('TD-Request-ID', request.id);
 
-      request.body = this.serializeRequestBody(data);
-      this.sendRequestEvent(request);
+      request.dataSent = this.serializeRequestBody(data);
+      request.updatedAt = Date.now();
+      this.sendHTTPEvent(request);
     }
   };
 
@@ -113,14 +116,18 @@ export class HTTPPlugin implements Plugin {
   ): void => {
     const request = this.requests.get(xhr._id);
     if (request) {
-      const responseInfo: HTTPResponseInfo = {
-        id: request.id,
-        status,
-        headers: this.parseResponseHeaders(xhr.getAllResponseHeaders()),
-        body: this.parseResponseBody(response, responseType),
-        timestamp: Date.now(),
-      };
-      this.sendResponseEvent(responseInfo);
+      request.status = status;
+      request.responseHeaders = this.parseResponseHeaders(
+          xhr.getAllResponseHeaders(),
+      );
+      request.response = this.parseResponseBody(response, responseType);
+      request.responseURL = responseURL;
+      request.responseType = responseType;
+      request.timeout = timeout;
+      request.endTime = Date.now();
+      request.updatedAt = Date.now();
+
+      this.sendHTTPEvent(request);
       this.requests.delete(xhr._id);
     }
   };
@@ -137,7 +144,10 @@ export class HTTPPlugin implements Plugin {
     return headersObject;
   }
 
-  private parseResponseBody(response: string, responseType: XMLHttpRequestResponseType): string {
+  private parseResponseBody(
+      response: string,
+      responseType: XMLHttpRequestResponseType,
+  ): string {
     if (responseType === 'json') {
       try {
         return JSON.stringify(JSON.parse(response), null, 2);
@@ -148,15 +158,9 @@ export class HTTPPlugin implements Plugin {
     return response;
   }
 
-  private sendRequestEvent(request: HTTPRequestInfo): void {
+  private sendHTTPEvent(httpRequestInfo: HTTPRequestInfo): void {
     if (this.client?.debugger) {
-      this.client.debugger.send('NETWORK_HTTP_REQUEST', request);
-    }
-  }
-
-  private sendResponseEvent(response: HTTPResponseInfo): void {
-    if (this.client?.debugger) {
-      this.client.debugger.send('NETWORK_HTTP_RESPONSE', response);
+      this.client.debugger.send('NETWORK_HTTP_REQUEST', httpRequestInfo);
     }
   }
 
