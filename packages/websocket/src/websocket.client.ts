@@ -1,4 +1,3 @@
-
 import {
     BaseEventEmitterEvent,
     EventEmitter,
@@ -36,6 +35,8 @@ export type WebsocketClientOptions = {
     wss?: boolean;
     host?: string;
     port?: number;
+    reconnectInterval?: number;
+    maxReconnectAttempts?: number;
 };
 
 interface WebSocketMessageEvent extends Event {
@@ -56,35 +57,48 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
     readonly instanceId = Util.generateUUID();
     public logger = new Logger('Websocket');
 
-    private ws: WebSocket;
+    private ws: WebSocket | null = null;
     private _status: WebsocketConnectionStatus = 'CONNECTING';
     emitter: EventEmitter<WebsocketLocalEvents> = new EventEmitter<WebsocketLocalEvents>();
 
     host = 'localhost';
     port = 20024;
+    private reconnectInterval: number;
+    private maxReconnectAttempts: number;
+    private reconnectAttempts = 0;
+    private eventQueue: Array<BaseWebsocketEvent<keyof Events, Events[keyof Events]['payload']>> = [];
 
-    client_id: string | null = null;
+    private _client_id: string | null = null;
 
-    // @ts-ignore
     constructor(options?: WebsocketClientOptions) {
-        const {wss = false, port = 20024} = options ?? {};
+        const {
+            wss = false,
+            port = 20024,
+            reconnectInterval = 5000,
+            maxReconnectAttempts = 5
+        } = options ?? {};
 
-        const host = options?.host ?? this.getHost();
+        this.host = options?.host ?? this.getHost();
+        this.port = port;
+        this.reconnectInterval = reconnectInterval;
+        this.maxReconnectAttempts = maxReconnectAttempts;
 
+        this.connect(wss);
+    }
+
+    private connect(wss: boolean) {
         const protocol = wss ? 'wss' : 'ws';
-        const url = `${protocol}://${host}:${port}`;
+        const url = `${protocol}://${this.host}:${this.port}`;
 
         this.logger.log('Connecting to websocket', {
-            host,
-            port,
+            host: this.host,
+            port: this.port,
             url,
         });
 
         this.ws = new WebSocket(url);
         this.ws.onopen = this.onWebsocketConnect.bind(this);
         this.ws.onclose = this.onWebsocketDisconnect.bind(this);
-
-        // @ts-ignore
         this.ws.onerror = this.onWebsocketConnectFailed.bind(this);
         this.ws.onmessage = this.onMessage.bind(this);
     }
@@ -108,16 +122,33 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
     private onWebsocketConnect() {
         this.logger.log('Debugger connection opened');
         this.setStatus('CONNECTED');
+        this.reconnectAttempts = 0;
     }
 
     private onWebsocketDisconnect(event: WebSocketCloseEvent) {
         this.logger.log('Debugger disconnected', event);
         this.setStatus('DISCONNECTED');
+        this._client_id = null;
+        this.attemptReconnect();
     }
 
     private onWebsocketConnectFailed(error: WebSocketErrorEvent) {
         this.logger.error('Debugger connection failed', error);
         this.setStatus('FAILED');
+        this._client_id = null;
+        this.attemptReconnect();
+    }
+
+    private attemptReconnect() {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.reconnectAttempts++;
+            this.setStatus('RECONNECTING');
+            this.logger.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+            setTimeout(() => this.connect(this.port === 443), this.reconnectInterval);
+        } else {
+            this.setStatus('FAILED');
+            this.logger.error('Max reconnection attempts reached');
+        }
     }
 
     private async parseMessage(
@@ -173,10 +204,10 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 
         switch (websocketEvent.type) {
             case 'CONNECTION_ESTABLISHED':
-                this.onConnectionEstablished(websocketEvent);
+                this.onConnectionEstablished(websocketEvent as ConnectionEstablishedWebsocketEvent);
                 break;
             default:
-                this.onEvent(websocketEvent);
+                this.onEvent(websocketEvent as ClientWebsocketEvents[keyof ClientWebsocketEvents]);
         }
     }
 
@@ -186,25 +217,59 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 
     public onConnectionEstablished(event: ConnectionEstablishedWebsocketEvent) {
         this.logger.log('Connection established', event);
+        this._client_id = event.client_id;
+        this.processEventQueue();
     }
 
     public send<
         Type extends keyof Events,
         Payload extends Events[Type]['payload'],
     >(type: Type, payload: Payload) {
-        if (this.client_id == null) {
-            return;
-        }
-
         const event: BaseWebsocketEvent<Type, Payload> = {
             instance_id: this.instanceId,
             event_id: Util.generateUUID(),
-            client_id: this.client_id,
+            client_id: this._client_id ?? '',  // Use empty string if client_id is null
             timestamp: Date.now(),
             type,
             payload,
         };
 
+        if (this._client_id === null || this.getStatus() !== 'CONNECTED') {
+            this.logger.log('Not ready to send, queueing event', event);
+            this.eventQueue.push(event);
+            return;
+        }
+
+        this.sendEvent(event);
+    }
+
+    private sendEvent<
+        Type extends keyof Events,
+        Payload extends Events[Type]['payload'],
+    >(event: BaseWebsocketEvent<Type, Payload>) {
+        if (this.ws == null) {
+            return;
+        }
+
         this.ws.send(JSON.stringify(event));
+    }
+
+    private processEventQueue() {
+        this.logger.log(`Processing event queue (${this.eventQueue.length} events)`);
+        while (this.eventQueue.length > 0) {
+            const queuedEvent = this.eventQueue.shift();
+            if (queuedEvent) {
+                if (this._client_id === null) {
+                    this.logger.error('Client ID is null while processing event queue');
+                    break;
+                }
+                const event: BaseWebsocketEvent<typeof queuedEvent.type, typeof queuedEvent.payload> = {
+                    ...queuedEvent,
+                    client_id: this._client_id,
+                    // Preserve the original timestamp
+                };
+                this.sendEvent(event);
+            }
+        }
     }
 }

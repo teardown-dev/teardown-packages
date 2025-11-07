@@ -1,14 +1,22 @@
-import {Platform} from 'react-native';
+import {NativeModules, Platform} from 'react-native';
 import {
   ClientWebsocketEvents,
   ConnectionEstablishedWebsocketEvent,
   WebsocketClient,
+  WebsocketClientOptions,
   WebsocketConnectionStatus,
 } from '@teardown/websocket';
 
 export type DebuggerStatus = WebsocketConnectionStatus;
 
+export type DebuggerOptions = WebsocketClientOptions;
+
 export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
+
+  constructor(options?: DebuggerOptions) {
+    super(options);
+  }
+
   public onEvent(event: ClientWebsocketEvents[keyof ClientWebsocketEvents]) {
     this.logger.log('onEvent', event);
     return event;
@@ -38,6 +46,21 @@ export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
       throw new Error('Invalid URL - host not found');
     }
     return host;
+  }
+
+  getHost() {
+    try {
+      // https://github.com/facebook/react-native/blob/2a7f969500cef73b621269299619ee1f0ee9521a/packages/react-native/src/private/specs/modules/NativeSourceCode.js#L16
+      const scriptURL = NativeModules?.SourceCode?.getConstants().scriptURL
+      if (typeof scriptURL !== "string") throw new Error("Invalid non-string URL")
+      console.log('scriptURL', scriptURL);
+
+      return this.getHostFromUrl(scriptURL)
+    } catch (error) {
+      const superHost = super.getHost();
+      this.logger.warn(`Failed to get host: "${error.message}" - Falling back to ${superHost}`);
+      return superHost;
+    }
   }
 
   public send<

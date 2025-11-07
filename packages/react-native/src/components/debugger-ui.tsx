@@ -116,7 +116,7 @@ const DebuggerStatusHandleComponent: FunctionComponent<
   );
 
     useEffect(() => {
-        const listener = client.debugger.emitter.on("CONNECTION_STATUS_CHANGED", (event) => {
+        const listener = client.debugger?.emitter.on("CONNECTION_STATUS_CHANGED", (event) => {
           const { payload } = event;
             setDebuggerStatus(event.payload.status);
         })

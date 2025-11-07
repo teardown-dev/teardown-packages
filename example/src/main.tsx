@@ -1,8 +1,6 @@
-// import {TeardownContainer} from '@teardown/react-native';
 import React, {FunctionComponent, PropsWithChildren} from 'react';
 import {View} from 'react-native';
 import './teardown.client';
-// import {teardownClient} from './teardown.client';
 
 export type MainProps = PropsWithChildren<{}>;
 

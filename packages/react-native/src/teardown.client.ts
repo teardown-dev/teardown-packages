@@ -1,5 +1,5 @@
 import {Logger} from '@teardown/logger';
-import {Debugger} from './debugger';
+import {Debugger, DebuggerOptions} from './debugger';
 
 export interface Plugin {
   install?(client: TeardownClient<any>): void;
@@ -24,6 +24,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
 export type TeardownClientOptions<T extends readonly PluginTuple[]> = {
   plugins: T;
   debug?: boolean;
+  debugger?: DebuggerOptions;
 };
 
 export class TeardownClient<T extends readonly PluginTuple[]> {
@@ -31,12 +32,12 @@ export class TeardownClient<T extends readonly PluginTuple[]> {
 
   private readonly plugins: Map<string, Plugin> = new Map();
 
-  public debugger: Debugger;
+  public debugger: Debugger | null;
 
   public api: InferPluginsFromArray<T> = {} as InferPluginsFromArray<T>;
 
   constructor(options: TeardownClientOptions<T>) {
-    this.debugger = new Debugger();
+    this.debugger = __DEV__ ? new Debugger(options.debugger) : null;
 
     options.plugins.forEach(([key, plugin]) => {
       this.plugins.set(key, plugin);
