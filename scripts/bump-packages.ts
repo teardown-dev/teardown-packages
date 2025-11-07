@@ -24,6 +24,8 @@ async function bumpPackages(versionType: VersionType) {
 	git.push();
 
 	logSuccess("🎊 Version bump process completed successfully!");
+
+	process.exit(0);
 }
 
 if (require.main === module) {
