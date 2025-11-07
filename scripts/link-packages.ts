@@ -1,5 +1,5 @@
-import { execSync } from "node:child_process";
 import {
+	execCommand,
 	getPackageDirs,
 	logError,
 	logStep,
@@ -18,9 +18,7 @@ async function linkPackages() {
 				logStep(`Linking ${pkg.name}...`);
 
 				// Run bun link in the package directory
-				execSync(`cd ${packageDir} && bun link`, {
-					stdio: "inherit",
-				});
+				execCommand(`cd ${packageDir} && bun link`);
 
 				logSuccess(`Linked ${pkg.name}`);
 			} catch (error) {

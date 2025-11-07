@@ -236,6 +236,9 @@ export function getPublishOrder(): string[] {
 
 // Git utilities
 export const git = {
+	addAll: () => {
+		execSync("git add .");
+	},
 	commit: (message: string) => {
 		execSync("git add .");
 		execSync(`git commit -m "${message}"`, {
@@ -258,6 +261,38 @@ export const git = {
 	},
 	reset: () => {
 		execSync("git reset --hard", { stdio: "inherit" });
+	},
+	createBranch: (branchName: string, force = false) => {
+		try {
+			if (force) {
+				// Try to delete remote branch first
+				try {
+					execSync(`git push origin --delete ${branchName}`, {
+						stdio: "inherit",
+					});
+				} catch {
+					// Ignore error if branch doesn't exist remotely
+				}
+				// Try to delete local branch
+				try {
+					execSync(`git branch -D ${branchName}`, { stdio: "inherit" });
+				} catch {
+					// Ignore error if branch doesn't exist locally
+				}
+			}
+
+			// Create and checkout new branch
+			execSync(`git checkout -b ${branchName}`, { stdio: "inherit" });
+			// Push to remote with force if needed
+			execSync(`git push ${force ? "-f" : ""} origin ${branchName}`, {
+				stdio: "inherit",
+			});
+
+			logSuccess(`Branch ${branchName} ${force ? "re" : ""}created and pushed`);
+		} catch (error) {
+			logError(`Failed to create branch ${branchName}`, error);
+			throw error;
+		}
 	},
 };
 
@@ -360,13 +395,11 @@ export function replaceLinkedDependencies() {
 }
 
 export async function synchronizePackageVersions(
-	releaseType?: VersionType,
+	newVersion: string,
 	dryRun = false,
 ): Promise<string> {
-	const NEW_VERSION = await getNewVersion(releaseType ?? "patch");
-
-	if (!version.valid(NEW_VERSION)) {
-		throw new Error(`Invalid version format: ${NEW_VERSION}`);
+	if (!version.valid(newVersion)) {
+		throw new Error(`Invalid version format: ${newVersion}`);
 	}
 
 	// Update root package.json
@@ -376,13 +409,13 @@ export async function synchronizePackageVersions(
 
 		if (dryRun) {
 			logStep(
-				`[DRY RUN] Would update root package.json from ${oldRootVersion} to ${NEW_VERSION}`,
+				`[DRY RUN] Would update root package.json from ${oldRootVersion} to ${newVersion}`,
 			);
 		} else {
-			rootPkg.version = NEW_VERSION;
+			rootPkg.version = newVersion;
 			writePackageJson(".", rootPkg);
 			logSuccess(
-				`Updated root package.json from ${oldRootVersion} to ${NEW_VERSION}`,
+				`Updated root package.json from ${oldRootVersion} to ${newVersion}`,
 			);
 		}
 	} catch (error) {
@@ -398,12 +431,12 @@ export async function synchronizePackageVersions(
 
 			if (dryRun) {
 				logStep(
-					`[DRY RUN] Would update ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`,
+					`[DRY RUN] Would update ${pkg.name} from ${oldVersion} to ${newVersion}`,
 				);
 			} else {
-				pkg.version = NEW_VERSION;
+				pkg.version = newVersion;
 				writePackageJson(packagePath, pkg);
-				logSuccess(`Updated ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`);
+				logSuccess(`Updated ${pkg.name} from ${oldVersion} to ${newVersion}`);
 			}
 		} catch (error) {
 			logError(
@@ -419,7 +452,7 @@ export async function synchronizePackageVersions(
 		logSuccess("Version update complete!");
 	}
 
-	return NEW_VERSION;
+	return newVersion;
 }
 
 type PackageInfo = {

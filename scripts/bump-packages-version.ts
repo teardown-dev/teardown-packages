@@ -1,12 +1,13 @@
 import {
 	getNewVersion,
+	git,
 	gitCommands as gitCommand,
 	logError,
 	logStep,
 	logSuccess,
 	synchronizePackageVersions,
-} from "./package-utils";
-import type { VersionType } from "./package-utils";
+} from "./utils/package-utils";
+import type { VersionType } from "./utils/package-utils";
 
 const versionType = (process.argv[2] || "patch") as VersionType;
 const getVersionOnly = process.argv.includes("--get-version");
@@ -25,35 +26,11 @@ async function createPackageRelease() {
 	logStep("📝 Updating package versions...");
 	await synchronizePackageVersions(versionType);
 	logSuccess("✨ Package versions updated successfully");
-
 	// Commit changes and push to main
 	logStep("💫 Committing changes and pushing to main...");
-	gitCommand([
-		"add .",
-		`commit -m "chore: bump version to ${newVersion}"`,
-		"push origin main",
-	]);
-	logSuccess("🎉 Changes committed and pushed to main");
-
-	// Create or recreate the release branch
-	const branchName = `release/packages/v${newVersion}`;
-	logStep(`🌿 Creating release branch: ${branchName}`);
-
-	// Force delete the branch if it exists (both locally and remotely)
-	try {
-		gitCommand([
-			`push origin --delete ${branchName}`,
-			`branch -D ${branchName}`,
-			`checkout -b ${branchName}`,
-			`push -f origin ${branchName}`,
-		]);
-		logSuccess(`🔄 Release branch ${branchName} recreated and pushed`);
-	} catch (error) {
-		// If branch doesn't exist, just create it
-		logStep("🌱 Branch doesn't exist, creating new branch...");
-		gitCommand([`checkout -b ${branchName}`, `push -f origin ${branchName}`]);
-		logSuccess(`✅ Release branch ${branchName} created and pushed`);
-	}
+	git.addAll();
+	git.commit(`chore: bump version to ${newVersion}`);
+	// git.push();
 
 	logSuccess("🎊 Version bump process completed successfully!");
 }
