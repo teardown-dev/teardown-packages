@@ -10,10 +10,12 @@
   "files": [
     "bin/**/*",
     "README.md",
-    "dist/**/*"
+    "dist/**/*",
+    "assets/**/*"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-assets",
+    "copy-assets": "copyfiles -u 1 \"src/**/*.{png,jpg,jpeg,gif,svg,html,css,ico}\" dist/",
     "dev": "tsc --watch",
     "start": "bun run ./bin/teardown.js"
   },
@@ -52,6 +54,7 @@
     "@types/metro": "^0.76.3",
     "@types/metro-config": "^0.76.3",
     "@types/prompts": "^2.4.9",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "copyfiles": "^2.4.1"
   }
 }
