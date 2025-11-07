@@ -15,10 +15,10 @@
     "./dist/**/*"
   ],
   "dependencies": {
-    "@teardown/logger": "^1.1.0-beta-05",
-    "@teardown/util": "^1.1.0-beta-05",
-    "@teardown/websocket": "^1.1.0-beta-05",
-    "@teardown/react-native": "^1.1.0-beta-05"
+    "@teardown/logger": "^1.1.0-beta-04",
+    "@teardown/util": "^1.1.0-beta-04",
+    "@teardown/websocket": "^1.1.0-beta-04",
+    "@teardown/react-native": "^1.1.0-beta-04"
   },
   "devDependencies": {
     "@react-navigation/bottom-tabs": "^6.6.1",
