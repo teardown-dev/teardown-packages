@@ -1,0 +1,9 @@
+import * as React from "react";
+import Svg, { Path } from "react-native-svg";
+import type { SvgProps } from "react-native-svg";
+const SvgEndOfRoadRight = (props: SvgProps) => (
+  <Svg viewBox="0 0 20 20" {...props}>
+    <Path d="M12.8 6.2v1.6H2.501a.302.302 0 0 1-.301-.301V6.5a.302.302 0 0 1 .301-.301zM13 6H2.501A.501.501 0 0 0 2 6.501V7.5A.501.501 0 0 0 2.501 8H13zm-3 1.982h1.988a.358.358 0 0 1 .377.542l-1.344 2.952a.387.387 0 0 0 .624.41L17.992 7l-6.347-4.922a.387.387 0 0 0-.624.41l1.344 2.951a.358.358 0 0 1-.377.543H10V5.98l-.011.002A6.06 6.06 0 0 0 4 12.055V16h.003l-.002 1.503a.496.496 0 0 0 .496.497h1.007A.496.496 0 0 0 6 17.504v-5.45a4.058 4.058 0 0 1 3.989-4.072z" />
+  </Svg>
+);
+export default SvgEndOfRoadRight;

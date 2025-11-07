@@ -1,0 +1,9 @@
+import * as React from "react";
+import Svg, { Path } from "react-native-svg";
+import type { SvgProps } from "react-native-svg";
+const SvgNotificationSharpLeft = (props: SvgProps) => (
+  <Svg viewBox="0 0 20 20" {...props}>
+    <Path d="M15.498 17.995a.498.498 0 0 1-.498-.497V4.999l-.28-.006a2.568 2.568 0 0 0-2.096.79L7.23 10.396a.35.35 0 0 0 .083.632l2.928 1.393a.387.387 0 0 1-.213.715l-8.01.332 1.695-7.836a.387.387 0 0 1 .74-.088l.873 3.123a.358.358 0 0 0 .638.172l.004.005 5.392-4.61a4.466 4.466 0 0 1 3.385-1.24l.264.001a1.93 1.93 0 0 1 1.434.57A2.102 2.102 0 0 1 17 5.024v12.473a.498.498 0 0 1-.497.497z" />
+  </Svg>
+);
+export default SvgNotificationSharpLeft;

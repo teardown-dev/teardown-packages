@@ -1,0 +1,9 @@
+import * as React from "react";
+import Svg, { Path } from "react-native-svg";
+import type { SvgProps } from "react-native-svg";
+const SvgMergeSlightRight = (props: SvgProps) => (
+  <Svg viewBox="0 0 20 20" {...props}>
+    <Path d="M11.792 9.2v8.295a.305.305 0 0 1-.305.305h-.99a.305.305 0 0 1-.305-.305V9.2zm.2-.2h-2v8.495a.505.505 0 0 0 .505.505h.99a.505.505 0 0 0 .505-.505zm3.918-1.664L11.007.993 6.103 7.336a.387.387 0 0 0 .41.623l2.951-1.343a.357.357 0 0 1 .542.376l.002 2.036a4.656 4.656 0 0 1-2.448 3.957l-4.305 2.682a.503.503 0 0 0-.161.692l.526.844a.503.503 0 0 0 .692.161l4.311-2.685a6.601 6.601 0 0 0 3.383-5.72V6.993a.358.358 0 0 1 .543-.377l2.952 1.343a.387.387 0 0 0 .41-.623" />
+  </Svg>
+);
+export default SvgMergeSlightRight;
