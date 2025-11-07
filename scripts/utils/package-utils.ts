@@ -76,6 +76,9 @@ export const git = {
 			stdio: "inherit",
 		});
 	},
+	reset: () => {
+		execSync("git reset --hard", { stdio: "inherit" });
+	},
 };
 
 // Version management
@@ -93,3 +96,205 @@ export const DEP_TYPES = [
 	"peerDependencies",
 	"devDependencies",
 ] as const;
+
+// New utility functions
+export const npm = {
+	publish: (packageDir: string) => {
+		execSync(`cd ${packageDir} && npm publish --access public`, {
+			stdio: "inherit",
+		});
+	},
+	build: (packageDir: string) => {
+		execSync(`cd ${packageDir} && bun run build`, { stdio: "inherit" });
+	},
+};
+
+export function getPackagePath(packageName: string): string {
+	return `./packages/${packageName.replace("@teardown/", "")}`;
+}
+
+export function delay(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function logStep(message: string): void {
+	console.log(`\n📋 ${message}`);
+}
+
+export function logSuccess(message: string): void {
+	console.log(`\n✅ ${message}`);
+}
+
+export function logSkip(message: string): void {
+	console.log(`\n⏭️  ${message}`);
+}
+
+export function logError(message: string, error?: unknown): void {
+	console.error(`\n❌ ${message}`, error || "");
+}
+
+// Add these functions from update-versions.ts
+export function replaceLinkedDependencies() {
+	const currentVersion = getCurrentVersion();
+	const packageDirs = getPackageDirs();
+
+	packageDirs.forEach((packagePath) => {
+		try {
+			const pkg = readPackageJson(packagePath);
+			let hasChanges = false;
+
+			for (const depType of DEP_TYPES) {
+				if (pkg[depType]) {
+					Object.entries(pkg[depType]).forEach(([dep, version]) => {
+						if (typeof version === "string" && version.startsWith("link:")) {
+							if (pkg[depType]) {
+								pkg[depType][dep] = currentVersion;
+								hasChanges = true;
+							}
+						}
+					});
+				}
+			}
+
+			if (hasChanges) {
+				writePackageJson(packagePath, pkg);
+				logSuccess(`Replaced link dependencies in ${pkg.name}`);
+			}
+		} catch (error) {
+			logError(`Error updating links in ${packagePath}:`, error);
+		}
+	});
+}
+
+export function updateVersions(
+	releaseType?: "major" | "minor" | "patch",
+): string {
+	const NEW_VERSION = releaseType
+		? incrementVersion(getCurrentVersion(), releaseType)
+		: process.env.VERSION || getCurrentVersion();
+
+	if (!isValidVersion(NEW_VERSION)) {
+		throw new Error(`Invalid version format: ${NEW_VERSION}`);
+	}
+
+	// Update root package.json
+	try {
+		const rootPkg = getRootPackageJson();
+		rootPkg.version = NEW_VERSION;
+		writePackageJson(".", rootPkg);
+		logSuccess(`Updated root package.json to ${NEW_VERSION}`);
+	} catch (error) {
+		logStep("No root package.json found or error updating it");
+	}
+
+	// Update all package versions
+	getPackageDirs().forEach((packagePath) => {
+		try {
+			const pkg = readPackageJson(packagePath);
+			const oldVersion = pkg.version;
+			pkg.version = NEW_VERSION;
+			writePackageJson(packagePath, pkg);
+			logSuccess(`Updated ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`);
+		} catch (error) {
+			logError(`Error updating ${packagePath}:`, error);
+		}
+	});
+
+	logSuccess("Version update complete!");
+	return NEW_VERSION;
+}
+
+type PackageInfo = {
+	name: string;
+	path: string;
+	dependencies: string[];
+	allDependencies: string[];
+};
+
+export function getPublishOrder(): string[] {
+	const PACKAGES_DIR = "./packages";
+	const packages = new Map<string, PackageInfo>();
+
+	// First pass: collect all package info
+	readdirSync(PACKAGES_DIR, { withFileTypes: true })
+		.filter((dirent) => dirent.isDirectory())
+		.forEach((dirent) => {
+			const packagePath = join(PACKAGES_DIR, dirent.name);
+			const pkgJson = JSON.parse(
+				readFileSync(join(packagePath, "package.json"), "utf-8"),
+			);
+
+			// Collect all dependency types
+			const allDependencies = [
+				...Object.keys(pkgJson.dependencies || {}),
+				...Object.keys(pkgJson.peerDependencies || {}),
+				...Object.keys(pkgJson.devDependencies || {}),
+			];
+
+			// Filter to only include our internal packages
+			const internalDeps = allDependencies.filter((dep) =>
+				dep.startsWith("@teardown/"),
+			);
+
+			packages.set(pkgJson.name, {
+				name: pkgJson.name,
+				path: packagePath,
+				dependencies: internalDeps,
+				allDependencies: allDependencies,
+			});
+		});
+
+	// Topological sort
+	const sorted: string[] = [];
+	const visited = new Set<string>();
+	const temp = new Set<string>();
+
+	function visit(pkgName: string) {
+		if (temp.has(pkgName)) {
+			throw new Error(`Circular dependency detected: ${pkgName}`);
+		}
+		if (visited.has(pkgName)) return;
+
+		temp.add(pkgName);
+		const pkg = packages.get(pkgName);
+		if (pkg) {
+			for (const dep of pkg.dependencies) {
+				visit(dep);
+			}
+		}
+		temp.delete(pkgName);
+		visited.add(pkgName);
+		sorted.unshift(pkgName);
+	}
+
+	// Visit all packages
+	for (const pkgName of packages.keys()) {
+		if (!visited.has(pkgName)) {
+			visit(pkgName);
+		}
+	}
+
+	return sorted;
+}
+
+export async function buildPackages() {
+	try {
+		const packages = getPublishOrder();
+		logStep(`Building packages in order: ${packages.join(" -> ")}`);
+
+		for (const packageName of packages) {
+			const packageDir = getPackagePath(packageName);
+			const pkg = readPackageJson(packageDir);
+
+			if (pkg.scripts?.build) {
+				logStep(`Building ${packageName}...`);
+				npm.build(packageDir);
+			}
+		}
+
+		logSuccess("All packages built successfully!");
+	} catch (error) {
+		logError("Build failed", error);
+		process.exit(1);
+	}
+}
