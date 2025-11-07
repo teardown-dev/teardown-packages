@@ -4,10 +4,8 @@
   "description": "",
   "private": true,
   "workspaces": [
-    "example",
     "examples/*",
     "apps/*",
-    "packages/*",
-    "packages/**/example"
+    "packages/*"
   ]
 }

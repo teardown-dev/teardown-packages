@@ -1,72 +1,76 @@
-import {NativeModules, Platform} from 'react-native';
+import { NativeModules, Platform } from "react-native";
 import {
-  ClientWebsocketEvents,
-  ConnectionEstablishedWebsocketEvent,
-  WebsocketClient,
-  WebsocketClientOptions,
-  WebsocketConnectionStatus,
-} from '@teardown/websocket';
+	type ClientWebsocketEvents,
+	type ConnectionEstablishedWebsocketEvent,
+	WebsocketClient,
+	type WebsocketClientOptions,
+	type WebsocketConnectionStatus,
+} from "@teardown/websocket";
 
 export type DebuggerStatus = WebsocketConnectionStatus;
 
 export type DebuggerOptions = WebsocketClientOptions;
 
 export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
+	public onEvent(event: ClientWebsocketEvents[keyof ClientWebsocketEvents]) {
+		this.logger.log("onEvent", event);
+		return event;
+	}
 
-  constructor(options?: DebuggerOptions) {
-    super(options);
-  }
+	public onConnectionEstablished(event: ConnectionEstablishedWebsocketEvent) {
+		this.logger.log("Connection established", event);
 
-  public onEvent(event: ClientWebsocketEvents[keyof ClientWebsocketEvents]) {
-    this.logger.log('onEvent', event);
-    return event;
-  }
+		this._client_id = event.client_id;
 
-  public onConnectionEstablished(event: ConnectionEstablishedWebsocketEvent) {
-    this.logger.log('Connection established', event);
+		this.send("CLIENT_CONNECTION_ESTABLISHED", {
+			deviceName: "~~~--- device name here ---~~~",
+			platform: Platform.OS,
+			platformVersion: Platform.Version,
+			reactNativeVersion: Platform.constants.reactNativeVersion,
+			isDisableAnimations: Platform.constants.isDisableAnimations ?? false,
+			isTesting: Platform.constants.isTesting,
+		});
+	}
 
-    this.client_id = event.client_id;
+	getHostFromUrl(url: string) {
+		const host = url.match(
+			/^(?:https?:\/\/)?(\[[^\]]+\]|[^/:\s]+)(?::\d+)?(?:[/?#]|$)/,
+		)?.[1];
 
-    this.send('CLIENT_CONNECTION_ESTABLISHED', {
-      deviceName: '~~~--- device name here ---~~~',
-      platform: Platform.OS,
-      platformVersion: Platform.Version,
-      reactNativeVersion: Platform.constants.reactNativeVersion,
-      isDisableAnimations: Platform.constants.isDisableAnimations ?? false,
-      isTesting: Platform.constants.isTesting,
-    });
-  }
+		if (typeof host !== "string") {
+			throw new Error("Invalid URL - host not found");
+		}
+		return host;
+	}
 
-  getHostFromUrl(url: string) {
-    const host = url.match(
-      /^(?:https?:\/\/)?(\[[^\]]+\]|[^/:\s]+)(?::\d+)?(?:[/?#]|$)/,
-    )?.[1];
+	getHost() {
+		try {
+			// https://github.com/facebook/react-native/blob/2a7f969500cef73b621269299619ee1f0ee9521a/packages/react-native/src/private/specs/modules/NativeSourceCode.js#L16
+			const scriptURL = NativeModules?.SourceCode?.getConstants().scriptURL;
+			if (typeof scriptURL !== "string")
+				throw new Error("Invalid non-string URL");
+			console.log("scriptURL", scriptURL);
 
-    if (typeof host !== 'string') {
-      throw new Error('Invalid URL - host not found');
-    }
-    return host;
-  }
+			return this.getHostFromUrl(scriptURL);
+		} catch (error) {
+			const superHost = super.getHost();
 
-  getHost() {
-    try {
-      // https://github.com/facebook/react-native/blob/2a7f969500cef73b621269299619ee1f0ee9521a/packages/react-native/src/private/specs/modules/NativeSourceCode.js#L16
-      const scriptURL = NativeModules?.SourceCode?.getConstants().scriptURL
-      if (typeof scriptURL !== "string") throw new Error("Invalid non-string URL")
-      console.log('scriptURL', scriptURL);
+			const errorMessage =
+				typeof error === "object" && error !== null && "message" in error
+					? error.message
+					: String(error);
 
-      return this.getHostFromUrl(scriptURL)
-    } catch (error) {
-      const superHost = super.getHost();
-      this.logger.warn(`Failed to get host: "${error.message}" - Falling back to ${superHost}`);
-      return superHost;
-    }
-  }
+			this.logger.warn(
+				`Failed to get host: "${errorMessage}" - Falling back to ${superHost}`,
+			);
+			return superHost;
+		}
+	}
 
-  public send<
-    Type extends keyof ClientWebsocketEvents,
-    Payload extends ClientWebsocketEvents[Type]['payload'],
-  >(type: Type, payload: Payload) {
-    super.send(type, payload);
-  }
+	public send<
+		Type extends keyof ClientWebsocketEvents,
+		Payload extends ClientWebsocketEvents[Type]["payload"],
+	>(type: Type, payload: Payload) {
+		super.send(type, payload);
+	}
 }
