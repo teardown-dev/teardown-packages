@@ -333,7 +333,7 @@ export function getPublishOrder(): string[] {
 		}
 	}
 
-	return sorted;
+	return sorted.reverse();
 }
 
 export async function buildPackages() {
