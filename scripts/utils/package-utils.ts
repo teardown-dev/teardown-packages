@@ -77,7 +77,11 @@ export const git = {
 		});
 	},
 	push: (tags = false) => {
-		execSync(`git push origin release${tags ? " --tags" : ""}`, {
+		// Get current branch name
+		const currentBranch = execSync("git rev-parse --abbrev-ref HEAD")
+			.toString()
+			.trim();
+		execSync(`git push origin ${currentBranch}${tags ? " --tags" : ""}`, {
 			stdio: "inherit",
 		});
 	},
