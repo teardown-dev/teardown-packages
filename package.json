@@ -3,19 +3,14 @@
   "version": "1.2.7",
   "description": "",
   "private": true,
-  "packageManager": "bun@1.1.30",
+  "packageManager": "bun@1.1.18",
   "scripts": {
     "dev": "turbo run dev",
     "fmt": "bunx @biomejs/biome format --write ./packages/**/*.ts ./apps/**/*.ts ./examples/**/*.ts",
     "lint": "bunx @biomejs/biome lint --write ./src",
-    "version": "VERSION=$npm_config_version && bun ./scripts/update-versions.ts",
-    "version:beta": "VERSION=1.1.0-beta-05 && bun ./scripts/update-versions.ts",
-    "update-deps": "bun run ./scripts/update-dependencies.ts",
-    "publish": "bun run ./scripts/publish-packages.ts",
-    "release": "bun run ./scripts/release.ts",
-    "update-versions": "bun run ./scripts/update-versions.ts",
-    "prepare-release": "bun run scripts/prepare-release.ts",
-    "publish-release": "bun run scripts/publish-release.ts"
+    "prepare-release": "bun run ./scripts/prepare-release.ts",
+    "build-packages": "bun run ./scripts/build-packages.ts",
+    "publish-packages": "bun run ./scripts/publish-packages.ts"
   },
   "workspaces": [
     "examples/*",

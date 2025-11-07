@@ -3,27 +3,37 @@ import { git } from "./utils/package-utils";
 
 async function prepareRelease() {
 	try {
+		console.log("Starting prepare-release script...");
+
 		const releaseType = process.argv[2] as "major" | "minor" | "patch";
+		console.log("Release type:", releaseType);
+
 		if (!releaseType || !["major", "minor", "patch"].includes(releaseType)) {
 			throw new Error("Please specify release type: major, minor, or patch");
 		}
 
-		console.log(`\n📦 Updating versions for ${releaseType} release...`);
+		console.log("Updating versions...");
 		const newVersion = updateVersions(releaseType);
+		console.log("New version calculated:", newVersion);
 
-		console.log("\n🔨 Committing version updates...");
+		console.log("Committing changes...");
 		git.commit(`chore: prepare release v${newVersion}`);
 
-		console.log("\n📤 Pushing changes...");
+		console.log("Pushing changes...");
 		git.push();
 
-		console.log(
-			`\n✨ Version bump complete! Run 'bun run publish-release' when ready to publish.`,
-		);
+		console.log(`\n✅ Version bumped to ${newVersion}`);
+		console.log(`Run 'npm run publish-packages' when ready to publish`);
 	} catch (error) {
 		console.error("\n❌ Version bump failed:", error);
 		process.exit(1);
 	}
 }
 
-prepareRelease();
+if (require.main === module) {
+	console.log("Script started");
+	prepareRelease().catch((error) => {
+		console.error("Unhandled error:", error);
+		process.exit(1);
+	});
+}

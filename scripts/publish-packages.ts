@@ -1,54 +1,64 @@
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { getPublishOrder } from "./get-package-order";
+import { buildPackages } from "./build-packages";
+import { replaceLinkedDependencies, updateVersions } from "./update-versions";
 
-async function publishPackages() {
+export async function publishPackages() {
 	try {
+		// 1. Build all packages first
+		await buildPackages();
+
+		// 2. Temporarily replace linked dependencies
+		console.log("\n🔗 Replacing linked dependencies for publishing...");
+		replaceLinkedDependencies();
+
+		// 3. Publish packages in correct order
 		const publishOrder = getPublishOrder();
-		console.log("📦 Publishing packages in order:", publishOrder.join(" -> "));
+		console.log(
+			"\n📦 Publishing packages in order:",
+			publishOrder.join(" -> "),
+		);
 
 		for (const packageName of publishOrder) {
-			console.log(`\n🚀 Publishing ${packageName}...`);
-
-			// Get package directory from name
 			const packageDir = `./packages/${packageName.replace("@teardown/", "")}`;
+			const pkg = require(`../${packageDir}/package.json`);
 
-			try {
-				// Read package.json to check if private
-				const pkgJson = JSON.parse(
-					readFileSync(`${packageDir}/package.json`, "utf-8"),
-				);
-
-				if (pkgJson.private) {
-					console.log(`⏭️  Skipping private package ${packageName}`);
-					continue;
-				}
-
-				// Publish the package
-				execSync(`cd ${packageDir} && npm publish --access public`, {
-					stdio: "inherit",
-				});
-
-				// Wait a short time to ensure npm registry is updated
-				await new Promise((resolve) => setTimeout(resolve, 5000));
-
-				console.log(`✅ Successfully published ${packageName}`);
-			} catch (error) {
-				console.error(`❌ Failed to publish ${packageName}:`, error);
-				throw error;
+			if (pkg.private) {
+				console.log(`\n⏭️  Skipping private package ${packageName}`);
+				continue;
 			}
+
+			console.log(`\n🚀 Publishing ${packageName}...`);
+			execSync(`cd ${packageDir} && npm publish --access public`, {
+				stdio: "inherit",
+			});
+
+			// Small delay between publishes
+			await new Promise((resolve) => setTimeout(resolve, 5000));
 		}
 
-		console.log("\n✨ All packages published successfully!");
+		// 4. Revert temporary changes and bump patch version
+		console.log("\n↩️  Reverting temporary dependency changes...");
+		execSync("git reset --hard", { stdio: "inherit" });
+
+		// 5. Bump to next patch version
+		console.log("\n📈 Bumping to next patch version...");
+		const nextVersion = updateVersions("patch");
+		execSync("git add .");
+		execSync(`git commit -m "chore: prepare next version ${nextVersion}"`, {
+			stdio: "inherit",
+		});
+		execSync("git push", { stdio: "inherit" });
+
+		console.log("\n✅ Publish complete!");
 	} catch (error) {
-		console.error("\n❌ Publishing failed:", error);
+		console.error("\n❌ Publish failed:", error);
+		// Ensure we revert any temporary changes on failure
+		execSync("git reset --hard", { stdio: "inherit" });
 		process.exit(1);
 	}
 }
 
-// Run if called directly
 if (require.main === module) {
 	publishPackages();
 }
-
-export { publishPackages };
