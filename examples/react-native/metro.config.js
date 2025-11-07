@@ -1,7 +1,7 @@
 const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
 
 const path = require("node:path");
-const metroPlugin = require("@teardown/react-native/metro");
+// const metroPlugin = require("@teardown/react-native/metro");
 
 /**
  * Resolves the paths for the given packages relative to the provided package root.

@@ -1806,7 +1806,7 @@ DEPENDENCIES:
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
-  trunk:
+  https://github.com/CocoaPods/Specs:
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -2017,8 +2017,8 @@ SPEC CHECKSUMS:
   RNReanimated: 77242c6d67416988a2fd9f5cf574bb3e60016362
   RNScreens: e389d6a6a66a4f0d3662924ecae803073ccce8ec
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
-  Yoga: 1d66db49f38fd9e576a1d7c3b081e46ab4c28b9e
+  Yoga: f8ec45ce98bba1bc93dd28f2ee37215180e6d2b6
 
-PODFILE CHECKSUM: 71a689932e49f453bd6454dd189b45915dda66a0
+PODFILE CHECKSUM: 55b9164cddc24acc10f5dd475eb6f2e4402c6899
 
-COCOAPODS: 1.14.3
+COCOAPODS: 1.16.2
