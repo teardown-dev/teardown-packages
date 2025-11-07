@@ -68,7 +68,7 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
     private reconnectAttempts = 0;
     private eventQueue: Array<BaseWebsocketEvent<keyof Events, Events[keyof Events]['payload']>> = [];
 
-    private _client_id: string | null = null;
+    _client_id: string | null = null;
 
     constructor(options?: WebsocketClientOptions) {
         const {

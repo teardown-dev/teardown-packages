@@ -110,11 +110,6 @@ export type NetworkHTTPRequestWebsocketEvent = BaseWebsocketEvent<
     HTTPRequestInfo
 >;
 
-export type NetworkHTTPResponseWebsocketEvent = BaseWebsocketEvent<
-    'NETWORK_HTTP_RESPONSE',
-    HTTPRequestInfo
->;
-
 export type NetworkWebSocketOpenEvent = BaseWebsocketEvent<
     'NETWORK_WEBSOCKET_OPEN',
     WebSocketInfo
@@ -135,7 +130,6 @@ export type ClientWebsocketEvents = WebsocketEvents<{
   CLIENT_CONNECTION_ESTABLISHED: ClientConnectionEstablishedWebsocketEvent; // SEND
   CONSOLE_LOG: ConsoleLogWebsocketEvent; // SEND
   NETWORK_HTTP_REQUEST: NetworkHTTPRequestWebsocketEvent; // SEND
-  NETWORK_HTTP_RESPONSE: NetworkHTTPResponseWebsocketEvent; // SEND
   NETWORK_WEBSOCKET_OPEN: NetworkWebSocketOpenEvent; // SEND
   NETWORK_WEBSOCKET_MESSAGE: NetworkWebSocketMessageEvent; // SEND
   NETWORK_WEBSOCKET_CLOSE: NetworkWebSocketCloseEvent; // SEND

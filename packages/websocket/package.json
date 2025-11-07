@@ -1,6 +1,6 @@
 {
   "name": "@teardown/websocket",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
@@ -13,7 +13,7 @@
   ],
   "dependencies": {
     "@teardown/event-emitter": "1.0.3",
-    "@teardown/logger": "1.0.0",
+    "@teardown/logger": "1.0.1",
     "@teardown/util": "1.0.1"
   }
 }
