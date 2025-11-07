@@ -31,6 +31,7 @@ export type WebsocketClientOptions = {
 	wss?: boolean;
 	host?: string;
 	port?: number;
+	path?: string;
 	reconnectInterval?: number;
 	maxReconnectAttempts?: number;
 	autoConnect?: boolean;
@@ -61,6 +62,7 @@ export class WebsocketClient {
 	private wss: boolean;
 	private host: string;
 	private port: number;
+	private path: string;
 	private reconnectInterval: number;
 	private maxReconnectAttempts: number;
 	private reconnectAttempts = 0;
@@ -85,6 +87,7 @@ export class WebsocketClient {
 		this.wss = wss;
 		this.host = options?.host ?? this.getHost();
 		this.port = port;
+		this.path = options?.path ?? "/";
 		this.reconnectInterval = reconnectInterval;
 		this.maxReconnectAttempts = maxReconnectAttempts;
 
@@ -108,7 +111,7 @@ export class WebsocketClient {
 	}
 
 	public getUrl() {
-		return `${this.getProtocol()}://${this.host}:${this.port}`;
+		return `${this.getProtocol()}://${this.host}:${this.port}${this.path}`;
 	}
 
 	private async connect() {
