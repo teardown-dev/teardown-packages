@@ -15,12 +15,11 @@
     "README.md",
     "dist/**/*"
   ],
-  "dependencies": {
-    "@teardown/config": "^1.1.0-beta-04",
-    "@teardown/util": "^1.1.0-beta-04",
-    "react": "1.1.4"
+	"dependencies": {
+		"@teardown/config": "link:@teardown/config",
+		"@teardown/util": "link:@teardown/util"
   },
-  "devDependencies": {
-    "@types/react": "^18.3.1"
+  "peerDependencies": {
+    "typescript": "^5.6.3"
   }
 }
