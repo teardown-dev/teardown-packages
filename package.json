@@ -1,0 +1,30 @@
+{
+	"name": "@teardown/source",
+	"private": true,
+	"packageManager": "bun@1.3.1",
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"test": "bun run --filter='./packages/*' test",
+		"lint": "bun run --filter='./packages/*' lint",
+		"clean": "bun run --filter='./packages/*' clean",
+		"fmt": "bunx @biomejs/biome format --write .",
+		"biome:lint": "bunx @biomejs/biome lint --write .",
+		"biome:check": "bunx @biomejs/biome check --write .",
+		"app:prebuild": "bun run --cwd ./apps/app prebuild",
+		"app:ios": "bun run --cwd ./apps/app ios",
+		"app:android": "bun run --cwd ./apps/app android",
+		"typecheck": "bun x turbo typecheck",
+		"build": "bun x turbo build",
+		"dev": "bun x turbo dev --ui=tui",
+		"nuke": "rm -rf node_modules ./apps/**/node_modules ./packages/**/node_modules && bun install"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.4",
+		"@types/bun": "latest",
+		"turbo": "^2.6.0",
+		"typescript": "^5"
+	}
+}

@@ -1,0 +1,32 @@
+{
+	"name": "@teardown/react-native",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"out/src/**/*"
+	],
+	"main": "./out/src/index.js",
+	"module": "./out/src/index.js",
+	"types": "./out/src/index.d.ts",
+	"scripts": {
+		"build": "tsc --project ./tsconfig.json",
+		"dev": "tsc --watch --project ./tsconfig.json",
+		"typecheck": "tsc --noEmit --project ./tsconfig.json",
+		"prepublishOnly": "bun run build"
+	},
+	"dependencies": {
+		"@teardown/ingest-api": "^0.0.4"
+	},
+	"peerDependencies": {
+		"react": "*",
+		"react-native": "*",
+		"typescript": "*"
+	},
+	"devDependencies": {
+		"@types/react": "*",
+		"@types/bun": "latest",
+		"@teardown/tsconfig": "workspace:*"
+	}
+}

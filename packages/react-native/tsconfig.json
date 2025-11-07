@@ -1,0 +1,18 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.react.json",
+	"include": [
+		"src/**/*",
+		"scripts/**/*"
+	],
+	"compilerOptions": {
+		"baseUrl": ".",
+		"rootDir": ".",
+		"outDir": "./out",
+		"noEmit": false,
+		"paths": {
+			"@/*": [
+				"./src/*"
+			]
+		}
+	}
+}
