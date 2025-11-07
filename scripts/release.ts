@@ -3,19 +3,13 @@ import { execSync } from "node:child_process";
 
 async function release() {
 	try {
-		// Get release type from command line argument
-		const releaseType = process.argv[2] as "major" | "minor" | "patch";
-		if (!releaseType || !["major", "minor", "patch"].includes(releaseType)) {
-			throw new Error("Please specify release type: major, minor, or patch");
-		}
-
 		// 1. Replace link: dependencies with actual versions
 		console.log("\n🔗 Replacing linked dependencies...");
 		replaceLinkedDependencies();
 
 		// 2. Update versions
-		console.log(`\n📦 Updating versions for ${releaseType} release...`);
-		const newVersion = updateVersions(releaseType);
+		console.log(`\n📦 Setting versions for @teardown packages in release...`);
+		const newVersion = updateVersions();
 
 		// 3. Git commit and tag
 		console.log("\n🔨 Committing version updates...");

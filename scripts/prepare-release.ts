@@ -16,14 +16,13 @@ async function prepareRelease() {
 		// 2. Git commit the version updates
 		console.log("\n🔨 Committing version updates...");
 		execSync("git add .");
-		execSync(`git commit -m "chore: bump version to v${newVersion}"`, {
+		execSync(`git commit -m "chore: prepare release v${newVersion}"`, {
 			stdio: "inherit",
 		});
-		execSync(`git tag v${newVersion}`, { stdio: "inherit" });
 
-		// 3. Push changes and tags
-		console.log("\n📤 Pushing changes and tags...");
-		execSync("git push origin main --tags", { stdio: "inherit" });
+		// 3. Push changes
+		console.log("\n📤 Pushing changes...");
+		execSync("git push origin main", { stdio: "inherit" });
 
 		console.log(
 			`\n✨ Version bump complete! Run 'bun run publish-release' when ready to publish.`,

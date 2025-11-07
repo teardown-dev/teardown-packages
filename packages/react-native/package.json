@@ -14,9 +14,9 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/logger": "link:@teardown/logger",
-    "@teardown/util": "link:@teardown/util",
-    "@teardown/websocket": "link:@teardown/websocket"
+    "@teardown/logger": "1.2.5",
+    "@teardown/util": "1.2.5",
+    "@teardown/websocket": "1.2.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",

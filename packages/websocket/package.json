@@ -15,10 +15,10 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/config": "link:@teardown/config",
-    "@teardown/event-emitter": "link:@teardown/event-emitter",
-    "@teardown/logger": "link:@teardown/logger",
-    "@teardown/util": "link:@teardown/util",
+    "@teardown/config": "1.2.5",
+    "@teardown/event-emitter": "1.2.5",
+    "@teardown/logger": "1.2.5",
+    "@teardown/util": "1.2.5",
     "async-mutex": "^0.5.0"
   },
   "devDependencies": {
