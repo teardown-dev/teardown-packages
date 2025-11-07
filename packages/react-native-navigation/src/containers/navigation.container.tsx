@@ -21,5 +21,6 @@ export const NavigationContainer: FunctionComponent<
 const styles = StyleSheet.create({
 	root: {
 		flex: 1,
+		backgroundColor: "pink",
 	},
 });

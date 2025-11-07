@@ -14,9 +14,12 @@
     "dist/**/*"
   ],
   "dependencies": {
+    "@react-native/dev-middleware": "^0.76.1",
     "@teardown/logger": "link:@teardown/logger",
     "@teardown/util": "link:@teardown/util",
-    "@teardown/websocket": "link:@teardown/websocket"
+    "@teardown/websocket": "link:@teardown/websocket",
+    "chalk": "^5.3.0",
+    "debug": "^4.3.7"
   },
   "devDependencies": {
     "@teardown/config": "link:@teardown/config",

@@ -74,14 +74,18 @@ export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
 	}
 
 	getHost() {
+		console.log("getHost");
 		try {
 			// https://github.com/facebook/react-native/blob/2a7f969500cef73b621269299619ee1f0ee9521a/packages/react-native/src/private/specs/modules/NativeSourceCode.js#L16
 			const scriptURL = NativeModules?.SourceCode?.getConstants().scriptURL;
-			if (typeof scriptURL !== "string")
+			console.log("scriptURL", scriptURL);
+			if (typeof scriptURL !== "string") {
 				throw new Error("Invalid non-string URL");
+			}
 
 			return this.getHostFromUrl(scriptURL);
 		} catch (error) {
+			console.log("getHost error", error);
 			const superHost = super.getHost();
 
 			const errorMessage =

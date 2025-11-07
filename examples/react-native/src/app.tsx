@@ -11,16 +11,16 @@ import teardownClient from "../teardown.client.ts";
 import { router } from "./screens.gen.tsx";
 
 function App(): React.JSX.Element {
-	teardownClient.logger.log("App started");
+	// teardownClient.logger.log("App started");
 
-	useEffect(() => {
-		teardownClient.logger.log("App mounted");
+	// useEffect(() => {
+	// 	teardownClient.logger.log("App mounted");
 
-		return () => {
-			teardownClient.logger.log("App unmounted");
-			teardownClient.shutdown();
-		};
-	}, []);
+	// 	return () => {
+	// 		teardownClient.logger.log("App unmounted");
+	// 		teardownClient.shutdown();
+	// 	};
+	// }, []);
 
 	return (
 		<SafeAreaProvider style={{ flex: 1 }}>

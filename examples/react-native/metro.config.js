@@ -24,13 +24,14 @@ function resolvePackages(packageRoot, packages) {
 
 const packageRoot = path.resolve(__dirname, "../../packages");
 const packages = [
+	"config",
+	"event-emitter",
 	"logger",
 	"util",
-	"event-emitter",
-	"websocket",
 	"react-native",
-	"react-native-ui",
 	"react-native-navigation",
+	"react-native-ui",
+	"websocket",
 ];
 
 const { watchFolders, extraNodeModules } = resolvePackages(
