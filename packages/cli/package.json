@@ -1,31 +1,27 @@
 {
-  "version": "1.2.21",
   "name": "@teardown/cli",
-  "scripts": {
-    "build": "tsc ",
-    "dev": "tsc --watch"
-  },
+  "version": "0.0.1",
+  "description": "Teardown CLI",
+  "main": "dist/index.js",
   "bin": {
-    "td": "./dist/index.js",
-    "teardown": "./dist/index.js"
+    "teardown": "./bin/teardown.js",
+    "td": "./bin/teardown.js"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
+    "bin/**/*",
     "README.md",
     "dist/**/*"
   ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
   "dependencies": {
-    "@inquirer/prompts": "^7.0.1",
-    "bun": "^1.1.33",
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0"
+    "@react-native/dev-middleware": "^0.76.1",
+    "commander": "^11.0.0"
   },
   "devDependencies": {
-    "@teardown/config": "link:@teardown/config",
-    "@types/bun": "^1.1.12"
-  },
-  "peerDependencies": {
-    "typescript": "^5.6.3"
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   }
 }

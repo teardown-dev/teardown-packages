@@ -15,15 +15,22 @@
   ],
   "dependencies": {
     "@react-native/dev-middleware": "^0.76.1",
+    "@teardown/cli": "^1.2.20",
     "@teardown/logger": "link:@teardown/logger",
     "@teardown/util": "link:@teardown/util",
     "@teardown/websocket": "link:@teardown/websocket",
+    "async-mutex": "^0.5.0",
     "chalk": "^5.3.0",
-    "debug": "^4.3.7"
+    "compression": "^1.7.5",
+    "connect": "^3.7.0",
+    "debug": "^4.3.7",
+    "pretty-format": "^29.7.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@teardown/config": "link:@teardown/config",
-    "@teardown/react-native-ui": "link:@teardown/react-native-ui",
+    "@types/compression": "^1.7.5",
+    "@types/connect": "^3.4.38",
     "@types/react": "^18.3.12",
     "@types/react-native": "^0.73.0",
     "metro-config": "^0.81.0",
@@ -37,7 +44,6 @@
     "react": "^18",
     "react-native": "^0.75",
     "react-native-device-info": "^14",
-    "react-native-gesture-handler": "^2",
-    "@teardown/react-native-ui": "^1"
+    "react-native-gesture-handler": "^2"
   }
 }

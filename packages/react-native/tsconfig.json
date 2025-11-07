@@ -1,6 +1,12 @@
 {
 	"extends": "@teardown/config/tsconfig.json",
-	"include": ["src"],
+	"include": [
+		"src",
+		"../cli/src/modules/metro/config.ts",
+		"../cli/src/modules/metro/index.ts",
+		"../cli/src/modules/metro/middlewares/middleware.ts",
+		"../cli/src/modules/metro/types.ts"
+	],
 	"compilerOptions": {
 		"outDir": "./dist",
 		"module": "Node16",

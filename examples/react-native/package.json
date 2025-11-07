@@ -6,16 +6,19 @@
 		"android": "react-native run-android",
 		"ios": "react-native run-ios --terminal Warp.app",
 		"lint": "eslint .",
-		"start": "react-native start",
+		"dev": "teardown dev",
 		"test": "jest"
 	},
 	"dependencies": {
+		"@react-native/dev-middleware": "^0.76.1",
 		"@react-navigation/bottom-tabs": "^6.6.1",
 		"@react-navigation/drawer": "^6.7.2",
 		"@react-navigation/native": "^6.1.18",
 		"@react-navigation/native-stack": "^6.11.0",
 		"@react-navigation/stack": "^6.4.1",
+		"@teardown/react-native": "link:@teardown/react-native",
 		"async-mutex": "^0.5.0",
+		"bun": "^1.1.33",
 		"nativewind": "^4.0.1",
 		"react": "^18.3.1",
 		"react-native": "0.76.0",
@@ -27,6 +30,7 @@
 		"tailwindcss": "^3.4.13"
 	},
 	"devDependencies": {
+		"@teardown/cli": "link:@teardown/cli",
 		"@babel/core": "^7.25.2",
 		"@babel/preset-env": "^7.25.3",
 		"@babel/runtime": "^7.25.0",
