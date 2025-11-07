@@ -36,10 +36,10 @@ jobs:
       - name: Build Packages
         run: bun run build-packages
 
-    #   - name: Publish Packages
-    #     run: bun run publish-packages
-    #     env:
-    #       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish Packages
+        run: bun run publish-packages
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     #   - name: Get Version
     #     id: version

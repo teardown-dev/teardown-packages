@@ -262,7 +262,7 @@ export const git = {
 };
 
 export const npm = {
-	publish: (packageDir: string) => {
+	publish: (packageDir: string, dryRun = false) => {
 		try {
 			const pkg = readPackageJson(packageDir);
 
@@ -289,11 +289,18 @@ export const npm = {
 			}
 
 			// Publish the package
-			logStep(`Publishing ${pkg.name}@${pkg.version}...`);
-			execSync(`cd ${packageDir} && npm publish --access public`, {
-				stdio: "inherit",
-			});
-			logSuccess(`Published ${pkg.name}@${pkg.version}`);
+			logStep(
+				`${dryRun ? "[DRY RUN] Would publish" : "Publishing"} ${pkg.name}@${pkg.version}...`,
+			);
+
+			if (!dryRun) {
+				execSync(`cd ${packageDir} && npm publish --access public`, {
+					stdio: "inherit",
+				});
+				logSuccess(`Published ${pkg.name}@${pkg.version}`);
+			} else {
+				logSuccess(`[DRY RUN] Would have published ${pkg.name}@${pkg.version}`);
+			}
 		} catch (error) {
 			// If error is not about existing version, rethrow
 			if (
@@ -303,7 +310,10 @@ export const npm = {
 			) {
 				throw error;
 			}
-			logError(`Failed to publish ${packageDir}`, error);
+			logError(
+				`Failed to ${dryRun ? "dry run " : ""}publish ${packageDir}`,
+				error,
+			);
 		}
 	},
 	build: (packageDir: string) => {
