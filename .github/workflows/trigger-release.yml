@@ -19,6 +19,7 @@ jobs:
       version_type: ${{ inputs.releaseType }}
     secrets: inherit 
 
-  publish-packages:
+  publish:
+    needs: bump
     uses: ./.github/workflows/publish-packages.yml
     secrets: inherit
