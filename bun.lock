@@ -5,6 +5,7 @@
       "name": "teardown-packages",
       "devDependencies": {
         "@biomejs/biome": "2.2.4",
+        "@teardown/tsconfig": "workspace:*",
         "@types/bun": "latest",
         "turbo": "^2.6.0",
         "typescript": "^5",
