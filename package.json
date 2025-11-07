@@ -1,0 +1,40 @@
+{
+	"name": "@teardown/source",
+	"private": true,
+	"packageManager": "bun@1.3.3",
+	"workspaces": {
+		"packages": [
+			"apps/*",
+			"packages/*"
+		],
+		"catalogs": {
+			"teardown": {
+				"@teardown/ingest-api": "0.1.49",
+				"@teardown/schemas": "0.1.49",
+				"@teardown/types": "0.1.49"
+			}
+		}
+	},
+	"scripts": {
+		"clean": "bun run --filter='./packages/*' clean",
+		"app:prebuild": "bun run --cwd ./apps/app prebuild",
+		"app:ios": "bun run --cwd ./apps/app ios",
+		"app:android": "bun run --cwd ./apps/app android",
+		"typecheck": "bun x turbo typecheck",
+		"build": "bun x turbo build",
+		"lint": "bun x turbo lint",
+		"fmt": "bun x turbo fmt",
+		"test": "bun x turbo test",
+		"dev": "bun x turbo dev --ui=tui",
+		"nuke": "rm -rf node_modules ./apps/**/node_modules ./packages/**/node_modules && bun install --no-cache",
+		"bundle": "bun run scripts/bundle-packages.ts",
+		"catalog:update": "bun run scripts/update-catalog.ts"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.2.4",
+		"@teardown/tsconfig": "workspace:*",
+		"@types/bun": "latest",
+		"turbo": "^2.6.0",
+		"typescript": "^5"
+	}
+}

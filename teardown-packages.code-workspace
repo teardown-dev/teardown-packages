@@ -1,0 +1,103 @@
+{
+	"folders": [
+		{
+			"name": "📱 App",
+			"path": "apps/app"
+		},
+		{
+			"name": "📦 React Native Package",
+			"path": "packages/react-native"
+		},
+		{
+			"name": "📦 TS Config",
+			"path": "packages/tsconfig"
+		},
+		{
+			"name": "🏠 Root",
+			"path": "."
+		}
+	],
+	"settings": {
+		"explorer.autoReveal": true,
+		"workbench.editor.labelFormat": "medium",
+		"typescript.preferences.useAliasesForRenames": false,
+		"typescript.suggest.autoImports": true,
+		"typescript.tsserver.maxTsServerMemory": 9000,
+		"typescript.tsserver.nodePath": "node",
+		"typescript.tsserver.experimental.enableProjectDiagnostics": true,
+		"typescript.disableAutomaticTypeAcquisition": false,
+		"typescript.tsserver.enableTracing": false,
+		"typescript.tsserver.watchOptions": {
+			"excludeDirectories": ["**/node_modules", "**/dist", "**/build", "**/.git", "**/target", "**/bun.lockb"]
+		},
+		"files.exclude": {
+			"**/node_modules": true,
+			"**/bun.lockb": true,
+			"**/.git": true,
+			"**/target": true,
+			"**/build": true,
+			"**/dist": true,
+			"**/.tsbuildinfo": true,
+			"**/.next": true,
+			"**/.vercel": true,
+			"**/.cache": true
+		},
+		"search.exclude": {
+			"**/bun.lockb": true,
+			"**/target": true,
+			"**/build": true,
+			"**/dist": true,
+			"**/.tsbuildinfo": true,
+			"**/.conductor": true
+		},
+		"files.watcherExclude": {
+			"**/node_modules/**": true,
+			"**/dist/**": true,
+			"**/build/**": true,
+			"**/.git/objects/**": true,
+			"**/.git/subtree-cache/**": true,
+			"**/target/**": true,
+			"**/bun.lockb": true
+		},
+		"npm.packageManager": "bun",
+		"npm.scriptRunner": "bun",
+		"typescript.tsdk": "node_modules/typescript/lib",
+		"editor.formatOnSave": true,
+		"editor.formatOnPaste": true,
+		"emmet.showExpandedAbbreviation": "never",
+		"editor.codeActionsOnSave": {
+			"source.fixAll.biome": "explicit",
+			"source.organizeImports.biome": "explicit"
+		},
+		"[biome_syntax_tree]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[javascript]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[typescript]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[javascriptreact]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[typescriptreact]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[json]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[jsonc]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[css]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		},
+		"[graphql]": {
+			"editor.defaultFormatter": "biomejs.biome"
+		}
+	},
+	"extensions": {
+		"recommendations": ["biomejs.biome"]
+	}
+}

@@ -1,0 +1,11 @@
+{
+	"name": "@teardown/tsconfig",
+	"private": true,
+	"version": "1.0.0",
+	"files": [
+		"tsconfig.base.json",
+		"tsconfig.lib.json",
+		"tsconfig.bun.json",
+		"tsconfig.react.json"
+	]
+}

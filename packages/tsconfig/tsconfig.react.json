@@ -1,0 +1,10 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": "src",
+		"jsx": "react-jsx",
+		"tsBuildInfoFile": "dist/tsconfig.react.tsbuildinfo",
+		"lib": ["DOM", "DOM.Iterable", "ES2022"]
+	},
+	"include": ["src/**/*.ts", "src/**/*.tsx"]
+}

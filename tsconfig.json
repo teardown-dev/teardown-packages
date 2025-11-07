@@ -1,0 +1,14 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.base.json",
+	"references": [
+		{
+			"path": "./apps/app"
+		},
+		{
+			"path": "./packages/react-native"
+		},
+		{
+			"path": "./tsconfig.scripts.json"
+		}
+	]
+}

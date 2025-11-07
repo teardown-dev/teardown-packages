@@ -1,0 +1,9 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.base.json",
+	"include": ["scripts/**/*"],
+	"compilerOptions": {
+		"baseUrl": "scripts",
+		"rootDir": "scripts",
+		"outDir": "scripts/dist"
+	}
+}
