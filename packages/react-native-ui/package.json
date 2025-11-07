@@ -1,40 +1,43 @@
 {
-	"name": "@teardown/react-native-ui",
-	"version": "1.1.0-alpha-01",
-	"description": "",
-	"scripts": {
-		"prepublishOnly": "bun run build",
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "tsc --declaration",
-		"dev": "tsc --declaration --watch"
-	},
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"files": ["README.md", "./dist/**/*"],
-	"dependencies": {
-		"@gorhom/bottom-sheet": "^5.0.2",
-		"class-variance-authority": "^0.7.0",
-		"clsx": "^2.1.1",
-		"lucide-react-native": "^0.416.0",
-		"tailwind-merge": "^2.4.0"
-	},
-	"devDependencies": {
-		"@types/react": "^18.3.1",
-		"nativewind": "^2.0.11",
-		"react": "^18.3.1",
-		"react-native": "^0.75.4",
-		"react-native-gesture-handler": "^2.17.1",
-		"react-native-reanimated": "^3.14.0",
-		"react-native-safe-area-context": "^4.11.0",
-		"tailwindcss": "^3.4.13"
-	},
-	"peerDependencies": {
-		"nativewind": "^2.0",
-		"react": "^18",
-		"react-native": "^0.75",
-		"react-native-gesture-handler": "^2",
-		"react-native-reanimated": "^3",
-		"react-native-safe-area-context": "^4",
-		"tailwindcss": "^3"
-	}
+  "name": "@teardown/react-native-ui",
+  "version": "1.1.0-beta-05",
+  "description": "",
+  "scripts": {
+    "prepublishOnly": "bun run build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc --declaration",
+    "dev": "tsc --declaration --watch"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "README.md",
+    "./dist/**/*"
+  ],
+  "dependencies": {
+    "@gorhom/bottom-sheet": "^5.0.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "lucide-react-native": "^0.416.0",
+    "tailwind-merge": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "nativewind": "^2.0.11",
+    "react": "^18.3.1",
+    "react-native": "^0.75.4",
+    "react-native-gesture-handler": "^2.17.1",
+    "react-native-reanimated": "^3.14.0",
+    "react-native-safe-area-context": "^4.11.0",
+    "tailwindcss": "^3.4.13"
+  },
+  "peerDependencies": {
+    "nativewind": "^2.0",
+    "react": "^18",
+    "react-native": "^0.75",
+    "react-native-gesture-handler": "^2",
+    "react-native-reanimated": "^3",
+    "react-native-safe-area-context": "^4",
+    "tailwindcss": "^3"
+  }
 }
