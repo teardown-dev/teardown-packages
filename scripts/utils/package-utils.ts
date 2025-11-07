@@ -398,6 +398,8 @@ export async function synchronizePackageVersions(
 	newVersion: string,
 	dryRun = false,
 ): Promise<string> {
+	logStep(`Synchronizing package versions to ${newVersion}`);
+
 	if (!version.valid(newVersion)) {
 		throw new Error(`Invalid version format: ${newVersion}`);
 	}
