@@ -39,6 +39,7 @@ async function publishPackages() {
 			logStep("🏷️ All packages published successfully, creating git tag...");
 
 			try {
+				git.reset();
 				git.pull();
 				// Create and push git tag
 				git.tag(version, `Release version ${version}`);
