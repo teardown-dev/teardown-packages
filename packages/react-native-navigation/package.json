@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native-navigation",
-  "version": "1.1.4",
+  "version": "1.2.1",
   "description": "",
   "scripts": {
     "prepublishOnly": "bun run build",
@@ -15,10 +15,10 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/logger": "^1.1.0-beta-04",
-    "@teardown/util": "^1.1.0-beta-04",
-    "@teardown/websocket": "^1.1.0-beta-04",
-    "@teardown/react-native": "^1.1.0-beta-04"
+    "@teardown/logger": "link:@teardown/logger",
+    "@teardown/util": "link:@teardown/util",
+    "@teardown/websocket": "link:@teardown/websocket",
+    "@teardown/react-native": "link:@teardown/react-native"
   },
   "devDependencies": {
     "@react-navigation/bottom-tabs": "^6.6.1",
@@ -30,13 +30,13 @@
     "react-native-reanimated": "^3.14.0",
     "react-native-safe-area-context": "^4.11.0",
     "@types/react": "^18.3.1",
-    "react": "1.1.4",
-    "react-native": "1.1.4",
+    "react": "^18.3.1",
+    "react-native": "^0.75.4",
     "typescript": "^5.6.3"
   },
   "peerDependencies": {
-    "react": "1.1.4",
-    "react-native": "1.1.4",
+    "react": "^18",
+    "react-native": "^0.75",
     "react-native-gesture-handler": "^2",
     "react-native-reanimated": "^3",
     "react-native-safe-area-context": "^4",
