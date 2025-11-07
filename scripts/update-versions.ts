@@ -29,36 +29,8 @@ function updatePackageVersion(packagePath: string) {
 
 		// Update the package's own version
 		pkg.version = NEW_VERSION;
-
-		// Update dependencies that are part of the monorepo
-		if (pkg.dependencies) {
-			Object.keys(pkg.dependencies).forEach((dep) => {
-				if (dep.startsWith("@teardown/")) {
-					pkg.dependencies[dep] = `^${NEW_VERSION}`;
-				}
-			});
-		}
-
-		// Update devDependencies that are part of the monorepo
-		if (pkg.devDependencies) {
-			Object.keys(pkg.devDependencies).forEach((dep) => {
-				if (dep.startsWith("@teardown/")) {
-					pkg.devDependencies[dep] = `^${NEW_VERSION}`;
-				}
-			});
-		}
-
-		// Update peerDependencies that are part of the monorepo
-		if (pkg.peerDependencies) {
-			Object.keys(pkg.peerDependencies).forEach((dep) => {
-				if (dep.startsWith("@teardown/")) {
-					pkg.peerDependencies[dep] = `^${NEW_VERSION}`;
-				}
-			});
-		}
-
 		// Write the updated package.json
-		writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2) + "\n");
+		writeFileSync(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
 		console.log(`✅ Updated ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`);
 	} catch (error) {
 		console.error(`❌ Error updating ${packagePath}:`, error);
