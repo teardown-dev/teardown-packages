@@ -1,67 +1,66 @@
+#!/usr/bin/env bun
+import { $ } from "bun";
+import { join } from "node:path";
 import {
-	getPublishOrder,
-	buildPackages,
-	replaceLinkedDependencies,
-	updateVersions,
-	git,
-	npm,
-	getPackagePath,
-	delay,
 	logStep,
 	logSuccess,
-	logSkip,
 	logError,
+	getPublishOrder,
 	readPackageJson,
+	replaceLinkedDependencies,
 } from "./utils/package-utils";
+
+async function isPackagePublished(
+	packageName: string,
+	version: string,
+): Promise<boolean> {
+	try {
+		const result = await $`npm view ${packageName}@${version} version`.text();
+		return result.trim() === version;
+	} catch {
+		return false;
+	}
+}
+
+async function publishPackage(packagePath: string) {
+	const pkg = readPackageJson(packagePath);
+
+	if (await isPackagePublished(pkg.name, pkg.version)) {
+		logStep(
+			`Package ${pkg.name}@${pkg.version} is already published, skipping...`,
+		);
+		return;
+	}
+
+	logStep(`Publishing ${pkg.name}@${pkg.version}...`);
+	await $`cd ${packagePath} && npm publish --access public`;
+}
 
 export async function publishPackages() {
 	try {
-		// 1. Build all packages first
-		await buildPackages();
-
-		// 2. Temporarily replace linked dependencies
-		logStep("Replacing linked dependencies for publishing...");
+		logStep("Replacing linked dependencies...");
 		replaceLinkedDependencies();
 
-		// 3. Publish packages in correct order
-		const publishOrder = getPublishOrder();
-		logStep(`Publishing packages in order: ${publishOrder.join(" -> ")}`);
+		logStep("Building packages...");
+		await $`bun run build-packages`;
 
-		for (const packageName of publishOrder) {
-			const packageDir = getPackagePath(packageName);
-			const pkg = readPackageJson(packageDir);
+		const orderedPackages = getPublishOrder();
+		logStep(`Publishing packages in order: ${orderedPackages.join(" -> ")}`);
 
-			if (pkg.private) {
-				logSkip(`Skipping private package ${packageName}`);
-				continue;
-			}
-
-			logStep(`Publishing ${packageName}...`);
-			npm.publish(packageDir);
-
-			// Small delay between publishes
-			await delay(5000);
+		for (const packagePath of orderedPackages) {
+			await publishPackage(packagePath);
 		}
 
-		// 4. Revert temporary changes and bump patch version
-		logStep("Reverting temporary dependency changes...");
-		git.reset();
-
-		// 5. Bump to next patch version
-		logStep("Bumping to next patch version...");
-		const nextVersion = updateVersions("patch");
-		git.commit(`chore: prepare next version ${nextVersion}`);
-		git.push();
-
-		logSuccess("Publish complete!");
+		logSuccess("All packages published successfully!");
 	} catch (error) {
-		logError("Publish failed", error);
-		// Ensure we revert any temporary changes on failure
-		git.reset();
+		logError("Package publishing failed", error);
 		process.exit(1);
 	}
 }
 
 if (require.main === module) {
-	publishPackages();
+	publishPackages().catch((error) => {
+		logError("Unhandled error", error);
+		process.exit(1);
+	});
 }

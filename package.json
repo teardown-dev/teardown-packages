@@ -6,13 +6,15 @@
   "packageManager": "bun@1.1.33",
   "scripts": {
     "dev": "turbo run dev",
+    "build": "turbo run build",
     "fmt": "bunx @biomejs/biome format --write ./packages/**/*.ts ./apps/**/*.ts ./examples/**/*.ts",
     "lint": "bunx @biomejs/biome lint --write ./src",
     "link-packages": "bun run ./scripts/link-packages.ts",
     "prepare-release": "bun run ./scripts/prepare-release.ts",
     "build-packages": "bun run ./scripts/build-packages.ts",
     "publish-packages": "bun run ./scripts/publish-packages.ts",
-    "prepare-version": "bun run scripts/prepare-version.ts"
+    "prepare-version": "bun run scripts/prepare-version.ts",
+    "bump-version": "bun scripts/bump-version.ts"
   },
   "workspaces": [
     "examples/*",

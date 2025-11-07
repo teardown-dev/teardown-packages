@@ -1,0 +1,29 @@
+name: Release Packages
+
+on:
+  push:
+    branches:
+      - 'release/v*'
+
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/heads/release/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build packages
+        run: bun run build
+
+      - name: Publish packages
+        run: bun run publish-packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

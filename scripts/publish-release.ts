@@ -1,4 +1,8 @@
-import { replaceLinkedDependencies, updateVersions } from "./update-versions";
+import {
+	logError,
+	replaceLinkedDependencies,
+	updateVersions,
+} from "./utils/package-utils";
 import { publishPackages } from "./publish-packages";
 import { getCurrentVersion, git } from "./utils/package-utils";
 
@@ -36,4 +40,9 @@ async function publishRelease() {
 	}
 }
 
-publishRelease();
+if (require.main === module) {
+	publishRelease().catch((error) => {
+		logError("Unhandled error", error);
+		process.exit(1);
+	});
+}

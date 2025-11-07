@@ -1,15 +1,10 @@
-import {
-	getNewVersion,
-	execCommand,
-	gitCommands,
-	logError,
-} from "./utils/package-utils";
+import { getNewVersion, execCommand, gitCommands } from "./utils/package-utils";
 import type { VersionType } from "./utils/package-utils";
 
 const versionType = (process.argv[2] || "patch") as VersionType;
 const getVersionOnly = process.argv.includes("--get-version");
 
-async function prepareVersion() {
+async function bumpPackagesVersion() {
 	const newVersion = await getNewVersion(versionType);
 
 	if (getVersionOnly) {
@@ -44,9 +39,4 @@ async function prepareVersion() {
 	}
 }
 
-if (require.main === module) {
-	prepareVersion().catch((error) => {
-		logError("Unhandled error", error);
-		process.exit(1);
-	});
-}
+bumpPackagesVersion().catch(console.error);
