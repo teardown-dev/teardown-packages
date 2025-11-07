@@ -13,12 +13,9 @@ on:
             - major
           default: 'patch'
     
-    workflow_call:
-      inputs:
-        version_type:
-          description: 'Version bump type'
-          required: true
-          type: string
+    push:
+      branches:
+        - main
 
 jobs:
   release:
