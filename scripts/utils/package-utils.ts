@@ -262,6 +262,8 @@ type PackageInfo = {
 	path: string;
 	dependencies: string[];
 	allDependencies: string[];
+	peerDependencies: string[];
+	devDependencies: string[];
 };
 
 export function getPublishOrder(): string[] {
@@ -274,37 +276,47 @@ export function getPublishOrder(): string[] {
 		try {
 			const pkgJson = readPackageJson(packagePath);
 
-			// Collect all dependency types
-			const allDependencies = [
-				...Object.keys(pkgJson.dependencies || {}),
-				...Object.keys(pkgJson.peerDependencies || {}),
-				...Object.keys(pkgJson.devDependencies || {}),
-			];
+			// Collect dependencies by type
+			const deps = Object.keys(pkgJson.dependencies || {});
+			const peerDeps = Object.keys(pkgJson.peerDependencies || {});
+			const devDeps = Object.keys(pkgJson.devDependencies || {});
 
 			// Filter to only include our internal packages that exist
-			const internalDeps = allDependencies.filter((dep) => {
-				if (!dep.startsWith("@teardown/")) return false;
-				const depPath = getPackagePath(dep);
-				try {
-					readPackageJson(depPath);
-					return true;
-				} catch {
-					return false;
-				}
-			});
+			const filterInternalDeps = (deps: string[]) =>
+				deps.filter((dep) => {
+					if (!dep.startsWith("@teardown/")) return false;
+					const depPath = getPackagePath(dep);
+					try {
+						readPackageJson(depPath);
+						return true;
+					} catch {
+						return false;
+					}
+				});
+
+			const internalDeps = filterInternalDeps(deps);
+			const internalPeerDeps = filterInternalDeps(peerDeps);
+			const internalDevDeps = filterInternalDeps(devDeps);
+
+			// Combine all internal dependencies for sorting
+			const allInternalDeps = [
+				...new Set([...internalDeps, ...internalPeerDeps, ...internalDevDeps]),
+			];
 
 			packages.set(pkgJson.name, {
 				name: pkgJson.name,
 				path: packagePath,
 				dependencies: internalDeps,
-				allDependencies: allDependencies,
+				peerDependencies: internalPeerDeps,
+				devDependencies: internalDevDeps,
+				allDependencies: allInternalDeps,
 			});
 		} catch (error) {
 			logError(`Error reading package at ${packagePath}`, error);
 		}
 	});
 
-	// Topological sort
+	// Topological sort considering all dependency types
 	const sorted: string[] = [];
 	const visited = new Set<string>();
 	const temp = new Set<string>();
@@ -318,8 +330,8 @@ export function getPublishOrder(): string[] {
 		temp.add(pkgName);
 		const pkg = packages.get(pkgName);
 		if (pkg) {
-			// Visit dependencies first
-			for (const dep of pkg.dependencies) {
+			// Visit all dependencies first
+			for (const dep of pkg.allDependencies) {
 				if (packages.has(dep)) {
 					visit(dep);
 				}

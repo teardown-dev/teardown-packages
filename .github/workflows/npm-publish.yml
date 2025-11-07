@@ -1,9 +1,17 @@
 name: Publish NPM Packages
 
 on:
-  push:
-    branches:
-      - release/packages
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version increment type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   publish:
@@ -38,7 +46,7 @@ jobs:
         run: bun run build-packages
           
       - name: Prepare Release
-        run: bun run prepare-release patch
+        run: bun run prepare-release ${{ github.event.inputs.version_type }}
 
       - name: Publish Packages
         run: bun run publish-packages
@@ -58,6 +66,7 @@ jobs:
           release_name: Release v${{ steps.version.outputs.new_version }}
           body: |
             Release v${{ steps.version.outputs.new_version }}
+            Type: ${{ github.event.inputs.version_type }}
             
             Changes in this release:
             ${{ github.event.head_commit.message }}
