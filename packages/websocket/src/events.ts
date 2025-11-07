@@ -31,8 +31,8 @@ export type WebsocketEvents<WebsocketEvents extends Record<string, any>> = {
 
 export type ReactNativeVersion = PlatformConstants["reactNativeVersion"];
 
-export type ClientConnectionEstablishedWebsocketEvent = BaseWebsocketEvent<
-	"CLIENT_CONNECTION_ESTABLISHED",
+export type DeviceConnectionEstablishedWebsocketEvent = BaseWebsocketEvent<
+	"DEVICE_CONNECTION_ESTABLISHED",
 	{
 		deviceId: string;
 		deviceName: string;
@@ -44,8 +44,8 @@ export type ClientConnectionEstablishedWebsocketEvent = BaseWebsocketEvent<
 	}
 >;
 
-export type ClientConnectionDisconnectedWebsocketEvent = BaseWebsocketEvent<
-	"CLIENT_CONNECTION_DISCONNECTED",
+export type DeviceConnectionDisconnectedWebsocketEvent = BaseWebsocketEvent<
+	"DEVICE_CONNECTION_DISCONNECTED",
 	{}
 >;
 
@@ -135,8 +135,8 @@ export type NetworkWebSocketCloseEvent = BaseWebsocketEvent<
 
 export type ClientWebsocketEvents = WebsocketEvents<{
 	CONNECTION_ESTABLISHED: ConnectionEstablishedWebsocketEvent; // RECEIVE
-	CLIENT_CONNECTION_ESTABLISHED: ClientConnectionEstablishedWebsocketEvent; // SEND
-	CLIENT_CONNECTION_DISCONNECTED: ClientConnectionDisconnectedWebsocketEvent; // SEND
+	DEVICE_CONNECTION_ESTABLISHED: DeviceConnectionEstablishedWebsocketEvent; // SEND
+	DEVICE_CONNECTION_DISCONNECTED: DeviceConnectionDisconnectedWebsocketEvent; // SEND
 	CONSOLE_LOG: ConsoleLogWebsocketEvent; // SEND
 	NETWORK_HTTP_REQUEST: NetworkHTTPRequestWebsocketEvent; // SEND
 	NETWORK_WEBSOCKET_OPEN: NetworkWebSocketOpenEvent; // SEND

@@ -94,6 +94,12 @@ export abstract class WebsocketClient<Events extends WebsocketEvents<any>> {
 		this.reconnectInterval = reconnectInterval;
 		this.maxReconnectAttempts = maxReconnectAttempts;
 
+		console.log("WebsocketClient constructor", {
+			host: this.host,
+			port: this.port,
+			wss,
+		});
+
 		this.connect(wss);
 	}
 
@@ -212,17 +218,17 @@ export abstract class WebsocketClient<Events extends WebsocketEvents<any>> {
 	}
 
 	private async onMessage(event: WebSocketMessageEvent) {
-		this.logger.log("onMessage", event);
+		// this.logger.log("onMessage", event);
 
 		const websocketEvent = await this.parseWebsocketData(event);
-		this.logger.log("parsed websocket event", websocketEvent);
+		// this.logger.log("parsed websocket event", websocketEvent);
 
 		if (websocketEvent == null) {
 			this.logger.error("Failed to parse websocket message", { event });
 			return;
 		}
 
-		console.log("websocket event", websocketEvent);
+		// console.log("websocket event", websocketEvent);
 		this.onEvent?.(websocketEvent);
 
 		switch (websocketEvent.type) {
@@ -251,7 +257,7 @@ export abstract class WebsocketClient<Events extends WebsocketEvents<any>> {
 			this.isProcessingQueue = false;
 			this.processingQueueMutex.release();
 		}
-		this.logger.log("Connection established", event);
+		this.logger.log("Connection established");
 
 		this.onConnectionEstablished?.(event);
 	}
@@ -298,9 +304,9 @@ export abstract class WebsocketClient<Events extends WebsocketEvents<any>> {
 	}
 
 	private async processEventQueue() {
-		this.logger.log(
-			`Processing event queue (${this.eventQueue.length} events)`,
-		);
+		// this.logger.log(
+		// 	`Processing event queue (${this.eventQueue.length} events)`,
+		// );
 		while (this.eventQueue.length > 0) {
 			const queuedEvent = this.eventQueue.shift();
 			if (queuedEvent) {

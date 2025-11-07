@@ -13,40 +13,28 @@ import DeviceInfo from "react-native-device-info";
 export type DebuggerStatus = WebsocketConnectionStatus;
 
 export type DebuggerOptions = WebsocketClientOptions & {
-	deviceName?: string; // Allow custom device name override
+	deviceName?: string;
 };
 
 export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
-	private deviceId: string;
-	private customDeviceName?: string;
+	private readonly customDeviceName?: string;
 
-	constructor(options: DebuggerOptions) {
+	constructor(options?: DebuggerOptions) {
 		super({
 			logger: new Logger("Debugger"),
 			...options,
 		});
-		this.customDeviceName = options.deviceName;
-		// Initialize with a temporary value, will be set properly in init()
-		this.deviceId = "";
-		this.init();
+		this.customDeviceName = options?.deviceName;
 	}
 
-	private async init() {
-		// Get unique device ID
-		this.deviceId = await DeviceInfo.getUniqueId();
-	}
-
-	async getDeviceName() {
+	private async getDeviceName() {
 		if (this.customDeviceName) {
 			return this.customDeviceName;
 		}
 
-		// Get actual device name if possible
 		try {
-			const deviceName = await DeviceInfo.getDeviceName();
-			return deviceName;
+			return await DeviceInfo.getDeviceName();
 		} catch (error) {
-			// Fallback to basic platform names
 			return Platform.select({
 				ios: "iPhone",
 				android: "Android",
@@ -58,10 +46,13 @@ export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
 	public async onConnectionEstablished(
 		event: ConnectionEstablishedWebsocketEvent,
 	) {
-		const deviceName = await this.getDeviceName();
+		const [deviceId, deviceName] = await Promise.all([
+			DeviceInfo.getUniqueId(),
+			this.getDeviceName(),
+		]);
 
-		this.send("CLIENT_CONNECTION_ESTABLISHED", {
-			deviceId: this.deviceId,
+		this.send("DEVICE_CONNECTION_ESTABLISHED", {
+			deviceId,
 			deviceName,
 			platform: Platform.OS,
 			platformVersion: Platform.Version,

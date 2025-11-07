@@ -59,7 +59,8 @@ export class TeardownClient<T extends readonly PluginTuple[]> {
 			"TeardownClient",
 			options?.loggingEnabled ?? false,
 		);
-		this.debugger = options?.debuggerEnabled ? new Debugger(options) : null;
+		const debuggerEnabled = options?.debuggerEnabled ?? __DEV__;
+		this.debugger = debuggerEnabled ? new Debugger(options) : null;
 
 		options?.plugins?.forEach(([key, plugin]) => {
 			this.plugins.set(key, plugin);
