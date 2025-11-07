@@ -112,7 +112,7 @@ const DebuggerStatusHandleComponent: FunctionComponent<
   const {client} = TeardownService.useState();
 
   const [debuggerStatus, setDebuggerStatus] = useState<DebuggerStatus | null>(
-    client.debugger.getStatus(),
+    client.debugger?.getStatus() ?? null,
   );
 
     useEffect(() => {
@@ -122,7 +122,7 @@ const DebuggerStatusHandleComponent: FunctionComponent<
         })
 
         return () => {
-          listener.remove();
+          listener?.remove();
         };
     }, [client]);
 

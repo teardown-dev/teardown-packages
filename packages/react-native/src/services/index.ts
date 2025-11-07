@@ -1,1 +1,1 @@
-// export * from './teardown.service';
+export * from './teardown.service';

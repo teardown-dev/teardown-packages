@@ -14,7 +14,9 @@
   "dependencies": {
     "@gorhom/bottom-sheet": "^4.6.3",
     "class-variance-authority": "^0.7.0",
-    "lucide-react-native": "^0.416.0"
+    "clsx": "^2.1.1",
+    "lucide-react-native": "^0.416.0",
+    "tailwind-merge": "^2.4.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

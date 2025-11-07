@@ -13,10 +13,9 @@
     "src/**/*"
   ],
   "dependencies": {
-    "@teardown/logger": "1.0.1",
-    "@teardown/react-native-ui": "1.0.1",
-    "@teardown/util": "1.0.1",
-    "@teardown/websocket": "1.0.11"
+    "@teardown/logger": "workspace:*",
+    "@teardown/util": "workspace:*",
+    "@teardown/websocket": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

@@ -35,14 +35,14 @@ export class TeardownClient<T extends readonly PluginTuple[]> {
 
   public api: InferPluginsFromArray<T> = {} as InferPluginsFromArray<T>;
 
-  constructor(options: TeardownClientOptions<T>) {
-    // this.debugger = __DEV__ ? new Debugger(options) : null;
-    //
-    // options.plugins?.forEach(([key, plugin]) => {
-    //   this.plugins.set(key, plugin);
-    // });
-    //
-    // this.installPlugins();
+  constructor(options?: TeardownClientOptions<T>) {
+    this.debugger = __DEV__ ? new Debugger(options) : null;
+
+    options?.plugins?.forEach(([key, plugin]) => {
+      this.plugins.set(key, plugin);
+    });
+
+    this.installPlugins();
   }
 
   private installPlugins() {

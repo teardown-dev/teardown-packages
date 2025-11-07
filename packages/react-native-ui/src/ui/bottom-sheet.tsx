@@ -1,7 +1,7 @@
-import {
+import React, {
     createContext,
     FunctionComponent,
-    PropsWithChildren, RefObject, useContext,
+    PropsWithChildren, RefObject,
     useImperativeHandle,
     useRef,
 } from 'react';
@@ -38,7 +38,7 @@ const BottomSheetContext =
 export const useBottomSheetContext = <
   T extends BottomSheet | BottomSheetModal,
 >() => {
-  const context = useContext(
+  const context = React.useContext(
     BottomSheetContext,
   ) as BottomSheetContextType<T> | null;
 
