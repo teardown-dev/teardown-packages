@@ -37,15 +37,15 @@ export type WebsocketClientOptions = {
 	autoConnect?: boolean;
 };
 
-interface WebSocketMessageEvent extends Event {
+export interface WebSocketMessageEvent extends Event {
 	data?: any | undefined;
 }
 
-interface WebSocketErrorEvent extends Event {
+export interface WebSocketErrorEvent extends Event {
 	message?: string;
 }
 
-interface WebSocketCloseEvent extends Event {
+export interface WebSocketCloseEvent extends Event {
 	code?: number | undefined;
 	reason?: string | undefined;
 	message?: string | undefined;
