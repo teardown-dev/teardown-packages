@@ -1,6 +1,6 @@
 {
   "name": "@teardown/cli",
-  "version": "1.2.27",
+  "version": "1.2.29",
   "description": "Teardown CLI",
   "main": "dist/index.js",
   "bin": {

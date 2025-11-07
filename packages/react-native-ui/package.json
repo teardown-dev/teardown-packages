@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native-ui",
-  "version": "1.2.27",
+  "version": "1.2.29",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
