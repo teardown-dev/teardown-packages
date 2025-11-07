@@ -9,6 +9,7 @@
     "build": "turbo run build",
     "fmt": "bunx @biomejs/biome format --write ./packages/**/*.ts ./apps/**/*.ts ./examples/**/*.ts",
     "lint": "bunx @biomejs/biome lint --write ./src",
+    "bump-packages": "bun run ./scripts/bump-packages.ts",
     "link-packages": "bun run ./scripts/link-packages.ts",
     "build-packages": "bun run ./scripts/build-packages.ts",
     "replace-links": "bun run ./scripts/replace-link-dependencies.ts",
