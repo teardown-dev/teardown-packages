@@ -1,4 +1,3 @@
-require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 # Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
@@ -15,22 +14,7 @@ if linkage != nil
   use_frameworks! :linkage => linkage.to_sym
 end
 
-$RNMapboxMapsVersion = '= 11.0.0'
-
 target 'example' do
-  use_expo_modules!
-  post_integrate do |installer|
-    begin
-      expo_patch_react_imports!(installer)
-    rescue => e
-      Pod::UI.warn e
-    end
-    begin
-      expo_patch_react_imports!(installer)
-    rescue => e
-      Pod::UI.warn e
-    end
-  end
   config = use_native_modules!
 
   use_react_native!(
@@ -44,14 +28,7 @@ target 'example' do
     # Pods for testing
   end
 
-  pre_install do |installer|
-    $RNMapboxMaps.pre_install(installer)
-  end
-
   post_install do |installer|
-
-    $RNMapboxMaps.post_install(installer)
-
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,

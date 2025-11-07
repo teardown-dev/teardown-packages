@@ -1,9 +1,0 @@
-import * as React from "react";
-import Svg, { Path } from "react-native-svg";
-import type { SvgProps } from "react-native-svg";
-const SvgRotaryRight = (props: SvgProps) => (
-  <Svg viewBox="0 0 20 20" {...props}>
-    <Path d="M7 6.2A3.8 3.8 0 1 1 3.2 10 3.804 3.804 0 0 1 7 6.2m0 7A3.2 3.2 0 1 0 3.8 10 3.204 3.204 0 0 0 7 13.2M7 6a4 4 0 1 0 4 4 4.005 4.005 0 0 0-4-4m0 7a3 3 0 1 1 3-3 3.003 3.003 0 0 1-3 3m7.838-5.452a.193.193 0 0 0-.312.205l.672 1.476a.179.179 0 0 1-.189.271H10v.5a3 3 0 0 1-3 3h-.5v4h1v-3.03a4.003 4.003 0 0 0 3.47-3.47h4.04a.179.179 0 0 1 .188.271l-.672 1.476a.193.193 0 0 0 .312.205L18.009 10Z" />
-  </Svg>
-);
-export default SvgRotaryRight;

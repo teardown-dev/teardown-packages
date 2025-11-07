@@ -1,9 +1,0 @@
-import * as React from "react";
-import Svg, { Path } from "react-native-svg";
-import type { SvgProps } from "react-native-svg";
-const SvgUpdown = (props: SvgProps) => (
-  <Svg viewBox="0 0 20 20" {...props}>
-    <Path d="M14.913 12.657 10.009 19l-4.904-6.343a.387.387 0 0 1 .41-.623l2.952 1.343A.358.358 0 0 0 9.009 13V7.008a.358.358 0 0 0-.542-.377L5.515 7.975a.387.387 0 0 1-.41-.624l4.904-6.343 4.904 6.343a.387.387 0 0 1-.41.624L11.552 6.63a.358.358 0 0 0-.543.377V13a.358.358 0 0 0 .543.377l2.951-1.343a.387.387 0 0 1 .41.623" />
-  </Svg>
-);
-export default SvgUpdown;

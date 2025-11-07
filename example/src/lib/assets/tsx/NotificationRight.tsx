@@ -1,9 +1,0 @@
-import * as React from "react";
-import Svg, { Path } from "react-native-svg";
-import type { SvgProps } from "react-native-svg";
-const SvgNotificationRight = (props: SvgProps) => (
-  <Svg viewBox="0 0 20 20" {...props}>
-    <Path d="M9.989 7.982A4.058 4.058 0 0 0 6 12.055v5.449a.496.496 0 0 1-.496.496H4.497a.496.496 0 0 1-.496-.497L4.003 16H4v-3.945a6.06 6.06 0 0 1 5.989-6.073L10 5.98v.002h1.988a.358.358 0 0 0 .377-.543L11.02 2.487a.387.387 0 0 1 .624-.409L17.992 7l-6.347 4.885a.387.387 0 0 1-.624-.409l1.344-2.952a.358.358 0 0 0-.377-.542z" />
-  </Svg>
-);
-export default SvgNotificationRight;

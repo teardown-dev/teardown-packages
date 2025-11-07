@@ -1,9 +1,0 @@
-import * as React from "react";
-import Svg, { Path } from "react-native-svg";
-import type { SvgProps } from "react-native-svg";
-const SvgArriveRight = (props: SvgProps) => (
-  <Svg viewBox="0 0 20 20" {...props}>
-    <Path d="M15 10a2 2 0 1 1 2 2 2 2 0 0 1-2-2m-8 1.055h1v-.01a.358.358 0 0 1 .377.543L7.034 14.54a.387.387 0 0 0 .623.41L14 10.046 7.657 5.142a.387.387 0 0 0-.623.41l1.343 2.951A.358.358 0 0 1 8 9.046v.009h-.992v-.02l-.01.002A6.056 6.056 0 0 0 1.013 15H1v1.488a.512.512 0 0 0 .512.512h.976A.512.512 0 0 0 3 16.488V15.11h.008a4.058 4.058 0 0 1 3.99-4.073" />
-  </Svg>
-);
-export default SvgArriveRight;
