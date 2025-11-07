@@ -100,12 +100,45 @@ export const DEP_TYPES = [
 // New utility functions
 export const npm = {
 	publish: (packageDir: string) => {
-		execSync(`cd ${packageDir} && npm publish --access public`, {
-			stdio: "inherit",
-		});
+		try {
+			// Check if version exists
+			const pkg = readPackageJson(packageDir);
+			const versionCheck = execSync(
+				`npm view ${pkg.name}@${pkg.version} version`,
+				{ stdio: "pipe" },
+			)
+				.toString()
+				.trim();
+
+			if (versionCheck === pkg.version) {
+				logSkip(
+					`Version ${pkg.version} of ${pkg.name} already exists, skipping`,
+				);
+				return;
+			}
+
+			execSync(`cd ${packageDir} && npm publish --access public`, {
+				stdio: "inherit",
+			});
+			logSuccess(`Published ${pkg.name}@${pkg.version}`);
+		} catch (error) {
+			// If error is not about existing version, rethrow
+			if (
+				error instanceof Error &&
+				!error.message.includes("previously published versions")
+			) {
+				throw error;
+			}
+			logSkip(`Version already exists, skipping`);
+		}
 	},
 	build: (packageDir: string) => {
-		execSync(`cd ${packageDir} && bun run build`, { stdio: "inherit" });
+		try {
+			execSync(`cd ${packageDir} && bun run build`, { stdio: "inherit" });
+		} catch (error) {
+			// If build fails, log but don't throw
+			logError(`Build failed for ${packageDir}`, error);
+		}
 	},
 };
 
