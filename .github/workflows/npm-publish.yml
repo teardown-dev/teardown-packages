@@ -19,11 +19,13 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Link packages
+        run: bun run link-packages
+        
       - name: Install Dependencies
         run: bun install
 
-      - name: Link packages
-        run: bun run link-packages
+    
 
       - name: Build Packages
         run: bun run build-packages
