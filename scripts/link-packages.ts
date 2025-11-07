@@ -31,10 +31,6 @@ async function linkPackages() {
 		}
 
 		logSuccess("All packages linked successfully!");
-
-		// Build packages after linking
-		logStep("Building packages after linking...");
-		await buildPackages();
 	} catch (error) {
 		logError("Package linking failed", error);
 		process.exit(1);
