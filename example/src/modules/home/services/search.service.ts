@@ -1,5 +1,3 @@
-
-
 export class SearchService {
-	constructor() {}
-};
+  constructor() {}
+}

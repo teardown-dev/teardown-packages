@@ -1,6 +1,6 @@
 import {FunctionComponent, PropsWithChildren, useMemo} from 'react';
 import React from 'react';
-import {Keyboard} from 'react-native';
+import {Keyboard, View} from 'react-native';
 import {BottomSheet} from '../../../components/bottom-sheet.tsx';
 import {SearchSheetContent} from './content/search.sheet-content.tsx';
 import {HomeService} from '../services/home.service.ts';
@@ -25,18 +25,21 @@ export const HomeSheet: FunctionComponent<HomeSheetProps> = props => {
     }
   };
 
+  const {control} = HomeService.useState();
+
   const state = HomeService.useCurrentState();
 
   const sheetContent = useMemo(() => {
     switch (state.type) {
       case 'ROUTE_BUILDER':
+        console.log('ROUTE_BUILDER state', state);
         return <RouteBuilderSheetContent state={state} />;
       case 'SEARCH':
         return <SearchSheetContent state={state} />;
       case 'NAVIGATION':
         break;
     }
-  }, [state.type]);
+  }, [state]);
 
   return (
     <BottomSheet

@@ -3,7 +3,32 @@ import {
   EventEmitter,
   Events,
 } from '../../../lib/modules/event-emitter';
-import {State, StateChangedEvent, StateService} from './state.service.ts';
+import {GeoJSON} from 'geojson';
+
+export type StateRequired<Type = string> = {
+  type: Type;
+};
+
+export type StateType<State extends StateRequired> = State;
+
+export type SearchState = StateType<{
+  type: 'SEARCH';
+  query: string;
+}>;
+export type RouteBuilderState = StateType<{
+  type: 'ROUTE_BUILDER';
+  waypoints: GeoJSON.Position[];
+}>;
+export type NavigationState = StateType<{type: 'NAVIGATION'}>;
+
+export type StateValidator<
+  T extends {
+    type: string;
+  },
+> = T;
+export type State = StateValidator<
+  SearchState | RouteBuilderState | NavigationState
+>;
 
 export type History = {
   state: State;
@@ -16,25 +41,23 @@ export type HistoryChangedEvent = BaseEventEmitterEvent<
   }
 >;
 
-export type BannerEvents = Events<{
+export type StateEvents = Events<{
   HISTORY_STATE_CHANGED: HistoryChangedEvent;
 }>;
 
-export class StateHistoryService {
-  emitter = new EventEmitter<BannerEvents>();
+export class StateService {
+  emitter = new EventEmitter<StateEvents>();
 
-  private stateService: StateService;
+  private history: History[] = [
+    {
+      state: {
+        type: 'SEARCH',
+        query: '',
+      },
+    },
+  ];
 
-  private history: History[] = [];
-
-  constructor(stateService: StateService) {
-    this.stateService = stateService;
-
-    this.stateService.emitter.on(
-      'STATE_CHANGED',
-      this.onStateChanged.bind(this),
-    );
-  }
+  constructor() {}
 
   setHistory(history: History[]) {
     this.history = history;
@@ -45,33 +68,16 @@ export class StateHistoryService {
     return this.history;
   }
 
-  onStateChanged(event: StateChangedEvent) {
-    const {payload} = event;
-    const {state, direction} = payload;
-
-    switch (direction) {
-      case 'FORWARD': {
-        this.onStateChangedForward(state);
-        break;
-      }
-      case 'BACKWARD': {
-        this.onStateChangedBackward();
-      }
-    }
+  getCurrentState() {
+    return this.history[this.history.length - 1];
   }
 
-  onStateChangedForward(state: State) {
-    const newHistory: History = {
-      state,
-    };
-
-    const newHistoryState = this.history.concat(newHistory);
-
-    this.setHistory(newHistoryState);
+  navigate(state: State) {
+    this.setHistory([...this.history, {state}]);
   }
 
-  onStateChangedBackward() {
-    const newHistoryState = this.history.slice(0, -1);
-    this.setHistory(newHistoryState);
+  goBack() {
+    const history = this.history.slice(0, this.history.length - 1);
+    this.setHistory(history);
   }
 }

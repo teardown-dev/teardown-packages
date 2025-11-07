@@ -4,8 +4,9 @@ import {
   type DirectionsResponse,
   type DirectionsService,
   type DirectionsWaypoint,
-  GeocodingClient,
+  GeocodeResponse,
   GeocodeService,
+  GeocodingClient,
   type Route,
 } from '../mapbox.ts';
 
@@ -55,9 +56,18 @@ export class MapboxService {
     return data.body as DirectionsResponse<GeoJSON.LineString>;
   }
 
-  searchForLocation(query: string) {
-    return this.geocodingClient.forwardGeocode({
-      query,
-    });
+  async forwardGeocode(query: string): Promise<GeocodeResponse> {
+    const {body} = await this.geocodingClient
+      .forwardGeocode({
+        query,
+        proximity: 'ip',
+      })
+      .send();
+
+    if (body == null) {
+      throw new Error('Failed to search for location');
+    }
+
+    return body as GeocodeResponse;
   }
 }

@@ -1,9 +1,7 @@
 import type {FunctionComponent, PropsWithChildren} from 'react';
 import React from 'react';
-import {Pressable, View} from 'react-native';
 import {NavigationService} from '../../../services/navigation.service.ts';
-import {useCameraLock} from '../../camera';
-import {LocateOff, Locate, LocateFixed} from 'lucide-react-native';
+import {LocateFixed, LocateOff} from 'lucide-react-native';
 import {useUserLocationVisible} from '../hooks';
 import {Icon} from '../../../../components/icon.tsx';
 

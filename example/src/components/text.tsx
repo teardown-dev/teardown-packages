@@ -5,7 +5,9 @@ import {Text as RNText} from 'react-native';
 
 const textVariants = cva('text-foreground', {
   variants: {
-    type: {
+    variant: {
+      label: 'text-[12px] leading-5',
+
       largeTitle: 'text-4xl',
       title1: 'text-2xl',
       title2: 'text-[22px] leading-7',
@@ -24,10 +26,17 @@ const textVariants = cva('text-foreground', {
       tertiary: 'text-muted-foreground/90',
       quarternary: 'text-muted-foreground/50',
     },
+    size: {
+      sm: 'text-md',
+      md: 'text-base',
+      lg: 'text-lg',
+      xl: 'text-xl',
+    },
   },
   defaultVariants: {
-    type: 'body',
+    variant: 'body',
     color: 'primary',
+    size: 'md',
   },
 });
 
@@ -35,7 +44,7 @@ const TextClassContext = React.createContext<string | undefined>(undefined);
 
 function Text({
   className,
-  type,
+  variant,
   color,
   ...props
 }: React.ComponentPropsWithoutRef<typeof RNText> &
@@ -43,11 +52,7 @@ function Text({
   const textClassName = React.useContext(TextClassContext);
   return (
     <RNText
-      className={cn(
-        textVariants({variant: type, color}),
-        textClassName,
-        className,
-      )}
+      className={cn(textVariants({variant, color}), textClassName, className)}
       {...props}
     />
   );

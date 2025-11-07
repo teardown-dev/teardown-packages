@@ -14,7 +14,7 @@ import {TextClassContext} from './text.tsx';
 
 const buttonVariants = cva('flex-row items-center justify-center gap-2', {
   variants: {
-    type: {
+    variant: {
       primary: 'ios:active:opacity-80 bg-primary',
       secondary:
         'ios:border-primary ios:active:bg-primary/5 border border-foreground/40',
@@ -53,7 +53,7 @@ const androidRootVariants = cva('overflow-hidden', {
 
 const buttonTextVariants = cva('font-medium', {
   variants: {
-    type: {
+    variant: {
       primary: 'text-white',
       secondary: 'ios:text-primary text-foreground',
       tonal: 'ios:text-primary text-foreground',

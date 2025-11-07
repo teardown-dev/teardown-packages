@@ -1,7 +1,5 @@
 import {Logger} from '../../logger';
 import {Location} from '@rnmapbox/maps';
-import * as turf from '@turf/turf';
-import * as GeoJSON from 'geojson';
 import {BaseEventEmitterEvent, EventEmitter, Events} from '../../event-emitter';
 
 export type UserLocation = Location['coords'];
@@ -82,4 +80,8 @@ export class UserLocationService {
       isVisible: isVisible,
     });
   }
+
+  onUserLocationUpdate = (location: Location) => {
+    this.setUserLocation(location);
+  };
 }

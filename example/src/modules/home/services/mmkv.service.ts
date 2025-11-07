@@ -1,5 +1,12 @@
+import {MMKV} from 'react-native-mmkv';
 
+export class MmkvService extends MMKV {
+  id: string;
 
-export class MmkvService {
-	constructor() {}
-};
+  constructor(id: string) {
+    super({
+      id,
+    });
+    this.id = id;
+  }
+}

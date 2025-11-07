@@ -1,17 +1,10 @@
-
-
-
-import type { FunctionComponent, PropsWithChildren } from 'react';
+import type {FunctionComponent, PropsWithChildren} from 'react';
 import React from 'react';
-import { View } from "react-native";
+import {View} from 'react-native';
 
-export type MapProps = PropsWithChildren<{}>
+export type MapProps = PropsWithChildren<{}>;
 
-
-export const Map: FunctionComponent<MapProps> = (props) => {
-    const {} = props;
-    return (
-        <View>
-        </View>
-    );
-}
+export const Map: FunctionComponent<MapProps> = props => {
+  const {} = props;
+  return <View />;
+};

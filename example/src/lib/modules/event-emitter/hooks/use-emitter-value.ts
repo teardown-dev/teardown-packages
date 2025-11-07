@@ -6,15 +6,15 @@ export const useEmitterValue = <
   Key extends keyof EmitterEvents,
   Value extends EmitterEvents[Key]['payload'],
 >(
-  emitter: () => EventEmitter<EmitterEvents>,
+  emitter: EventEmitter<EmitterEvents>,
   key: Key,
-  defaultValue: Value,
+  defaultValue: Value | null = null,
 ) => {
-  const [value, setValue] = useState<Value>(defaultValue);
+  const [value, setValue] = useState<Value | null>(defaultValue);
 
   useEffect(() => {
-    const listener = emitter().on(key, ({payload: {state}}) => {
-      setValue(state);
+    const listener = emitter.on(key, ({payload}) => {
+      setValue(payload);
     });
 
     return () => {

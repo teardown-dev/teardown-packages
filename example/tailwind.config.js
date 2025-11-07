@@ -24,9 +24,6 @@ const allFlattenedTokens = Object.entries(flattenedTokens).reduce(
   {},
 );
 
-console.log(allFlattenedTokens);
-console.log(tokensForReactNative);
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',

@@ -8,7 +8,7 @@ import {
 // @ts-ignore
 import MapboxDirectionsClient from '@mapbox/mapbox-sdk/services/directions';
 // @ts-ignore
-import MapboxGeocodingClient from '@mapbox/mapbox-sdk/services/geocoding';
+import MapboxGeocodingClient from '@mapbox/mapbox-sdk/services/geocoding-v6';
 import MapiClient, {
   SdkConfig,
   // @ts-ignore
@@ -657,7 +657,7 @@ export interface GeocodeRequest {
   routing?: boolean | undefined;
 }
 
-interface GeocodeResponse {
+export interface GeocodeResponse {
   /**
    * "Feature Collection" , a GeoJSON type from the GeoJSON specification.
    */
@@ -771,6 +771,8 @@ export interface Geometry {
 }
 
 export interface GeocodeProperties extends GeocodeFeature {
+  full_address?: string | undefined;
+
   /**
    * The Wikidata identifier for the returned feature.
    */

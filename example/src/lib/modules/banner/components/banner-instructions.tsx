@@ -2,16 +2,15 @@ import type {FunctionComponent, PropsWithChildren} from 'react';
 import React from 'react';
 import {Text, View} from 'react-native';
 import {useBannerState} from '../hooks';
-import {useManeuver} from '../../../containers/navigation.container.tsx';
+// import {useManeuver} from '../../maneuver/hooks/use-maneuver.ts';
 
 export type BannerInstructionsProps = PropsWithChildren<{}>;
 
 export const BannerInstructions: FunctionComponent<
   BannerInstructionsProps
-> = (props) => {
-
+> = props => {
   const bannerState = useBannerState();
-  const maneuver = useManeuver();
+  // const maneuver = useManeuver();
 
   if (bannerState == null) {
     return null;
@@ -27,11 +26,11 @@ export const BannerInstructions: FunctionComponent<
           <Text className={'text-lg font-semibold text-gray-800 truncate'}>
             {bannerState.bannerInstruction.primary.text}
           </Text>
-          {maneuver != null && (
-            <Text className={'text-md font-normal text-gray-600'}>
-              {maneuver?.instruction}
-            </Text>
-          )}
+          {/*{maneuver != null && (*/}
+          {/*  <Text className={'text-md font-normal text-gray-600'}>*/}
+          {/*    {maneuver?.instruction}*/}
+          {/*  </Text>*/}
+          {/*)}*/}
         </View>
       </View>
     </>

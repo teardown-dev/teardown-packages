@@ -1,17 +1,10 @@
-
-
-
-import type { FunctionComponent, PropsWithChildren } from 'react';
+import type {FunctionComponent, PropsWithChildren} from 'react';
 import React from 'react';
-import { View } from "react-native";
+import {View} from 'react-native';
 
-export type SettingsScreenProps = PropsWithChildren<{}>
+export type SettingsScreenProps = PropsWithChildren<{}>;
 
-
-export const SettingsScreen: FunctionComponent<SettingsScreenProps> = (props) => {
-    const {} = props;
-    return (
-        <View>
-        </View>
-    );
-}
+export const SettingsScreen: FunctionComponent<SettingsScreenProps> = props => {
+  const {} = props;
+  return <View />;
+};

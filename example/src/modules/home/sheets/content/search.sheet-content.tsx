@@ -1,4 +1,4 @@
-import React, {FunctionComponent, useRef, useState} from 'react';
+import React, {FunctionComponent, useEffect, useRef, useState} from 'react';
 import {View} from 'react-native';
 import {Input} from '../../../../components/input.tsx';
 import {
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 import {Icon} from '../../../../components/icon.tsx';
 import {ToursBottomSheet} from '../../../tours/bottom-sheets/tours.tsx';
-import {useTextInputFocus} from '../../../../hooks/use-text-input-focus.ts';
+import {useFocus} from '../../../../hooks/use-focus.ts';
 import {useTextInput} from '../../../../hooks/use-text-input.ts';
 import {MapboxQueries} from '../../../mapbox/queries/mapbox.queries.ts';
 import {Text} from '../../../../components/text.tsx';
@@ -26,6 +26,7 @@ import * as turf from '@turf/turf';
 import {SearchState} from '../../services/state.service.ts';
 import {useCameraLock} from '../../../../lib/modules/camera';
 import {useColorScheme} from '../../../../theme';
+import {useEmitterValue} from "../../../../lib/modules/event-emitter";
 
 export type SearchSheetContentProps = {
   state: SearchState;
@@ -63,13 +64,13 @@ export const SearchSheetContent: FunctionComponent<
   return (
     <>
       <OverlayPortal position={'top-right'}>
-        <Icon shape={'rounded'} size={'sm'} onPress={onSettingsPress}>
+        <Icon shape={'rounded'} size={'md'} onPress={onSettingsPress}>
           <Cog />
         </Icon>
 
         <Icon
           shape={'rounded'}
-          size={'sm'}
+          size={'md'}
           variant={isCameraLocked ? 'subtle' : 'default'}
           onPress={() => control.cameraService.toggleCameraLock()}>
           {!isCameraLocked ? (
@@ -117,13 +118,69 @@ export type HeaderProps = {
 const Header: FunctionComponent<HeaderProps> = props => {
   const {onSearchTextChange, isSearching} = props;
 
+  const {control} = HomeService.useState();
+
   const toursBottomSheet = useRef<ToursBottomSheet>(null);
 
-  const [isFocused, focusProps] = useTextInputFocus();
+  const [isFocused, focusProps] = useFocus({
+    onFocus: () => {
+        console.log('onFocus');
+      control.cameraService.unlockCamera();
+
+      const userLocation = control.useLocationService.getUserLocation();
+
+        if (userLocation) {
+            control.cameraService.setCamera({
+            centerCoordinate: [userLocation.longitude, userLocation.latitude],
+            zoomLevel: 14,
+            });
+        }
+
+    },
+  });
 
   const [text, onChangeText] = useTextInput({
     onChange: onSearchTextChange,
   });
+
+
+  const bottomSheetHeight = useEmitterValue(control.bottomSheetService.emitter, "BOTTOM_SHEET_LAYOUT_CHANGED");
+  const keyboardState = useEmitterValue(control.keyboardService.emitter, "KEYBOARD_STATE_CHANGED");
+
+
+
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        // Clear existing timeout to reset debounce timer
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        // Set new timeout
+        debounceRef.current = setTimeout(() => {
+            const keyboardHeight = keyboardState?.state.isKeyboardShown ? keyboardState?.state?.event?.startCoordinates?.height ?? 0 : 0;
+            const sheetHeight = bottomSheetHeight?.newLayout.height ?? 0;
+
+            console.log('keyboardHeight', keyboardHeight);
+            console.log('sheetHeight', sheetHeight);
+
+            const totalBottomPadding = sheetHeight + keyboardHeight;
+
+            control.cameraService.setCamera({
+                padding: {
+                    paddingBottom: totalBottomPadding,
+                }
+            });
+        }, 500); // Adjust the delay as needed
+
+        // Cleanup on unmount
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, [keyboardState?.state.isKeyboardShown, keyboardState?.state?.event?.startCoordinates?.height, bottomSheetHeight?.newLayout.height]);
 
   return (
     <>

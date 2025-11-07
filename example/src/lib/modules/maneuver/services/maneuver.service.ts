@@ -347,10 +347,12 @@ export class ManeuverService {
     }
 
     const userLocationPoint = turf.point([
-      userLocation.longitude,
       userLocation.latitude,
+      userLocation.longitude,
     ]);
+
     const maneuverPoint = turf.point(state.location);
+
     return turf.distance(
       userLocationPoint,
       maneuverPoint,

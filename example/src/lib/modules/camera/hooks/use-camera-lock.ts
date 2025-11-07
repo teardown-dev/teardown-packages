@@ -1,15 +1,11 @@
-import {NavigationService} from '../../../services/navigation.service.ts';
 import {useEffect, useState} from 'react';
+import {CameraService} from '../services';
 
-export const useCameraLock = () => {
-  const {navigationClient} = NavigationService.useState();
-
-  const [isLocked, setIsLocked] = useState(
-    navigationClient.cameraService.isLocked(),
-  );
+export const useCameraLock = (cameraService: CameraService) => {
+  const [isLocked, setIsLocked] = useState(cameraService.isLocked());
 
   useEffect(() => {
-    const navigationStateListener = navigationClient.cameraService.emitter.on(
+    const navigationStateListener = cameraService.emitter.on(
       'CAMERA_LOCK_CHANGED',
       ({payload}) => {
         setIsLocked(payload.isLocked);
@@ -19,7 +15,7 @@ export const useCameraLock = () => {
     return () => {
       navigationStateListener.remove();
     };
-  }, [navigationClient.cameraService.emitter]);
+  }, [cameraService.emitter]);
 
   return isLocked;
 };
