@@ -1,5 +1,6 @@
 // launchClient.ts
 import {AxiosInstance, AxiosResponse} from 'axios';
+import {QueryOptions, QueryResult} from './types';
 
 export interface Launch {
   flight_number: number;
@@ -70,25 +71,6 @@ export interface Launch {
   };
   auto_update: boolean;
   id: string;
-}
-
-export interface QueryOptions {
-  query: Record<string, any>;
-  options: Record<string, any>;
-}
-
-export interface QueryResult<T> {
-  docs: T[];
-  totalDocs: number;
-  offset: number;
-  limit: number;
-  totalPages: number;
-  page: number;
-  pagingCounter: number;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
-  prevPage: number | null;
-  nextPage: number | null;
 }
 
 class LaunchClient {

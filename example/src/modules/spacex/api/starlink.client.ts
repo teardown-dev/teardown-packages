@@ -1,7 +1,7 @@
 // shipClient.ts
 import {AxiosInstance, AxiosResponse} from 'axios';
 
-export interface Ship {
+export interface StarlinkSatellite {
   legacy_id: string;
   model: string | null;
   type: string;
@@ -28,37 +28,12 @@ export interface Ship {
   id: string;
 }
 
-export interface QueryOptions {
-  query: Record<string, any>;
-  options: Record<string, any>;
-}
-
-export interface QueryResult<T> {
-  docs: T[];
-  totalDocs: number;
-  offset: number;
-  limit: number;
-  totalPages: number;
-  page: number;
-  pagingCounter: number;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
-  prevPage: number | null;
-  nextPage: number | null;
-}
-
-class ShipClient {
+class StarlinkClient {
   constructor(private api: AxiosInstance) {}
 
-  async getShips(
-    options: QueryOptions,
-  ): Promise<AxiosResponse<QueryResult<Ship>>> {
-    return this.api.post('/ships/query', options);
-  }
-
-  async getShipById(id: string): Promise<AxiosResponse<Ship>> {
-    return this.api.get(`/ships/${id}`);
+  async getSatellites(): Promise<AxiosResponse<StarlinkSatellite[]>> {
+    return this.api.get('/starlink');
   }
 }
 
-export default ShipClient;
+export default StarlinkClient;

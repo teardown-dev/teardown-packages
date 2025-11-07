@@ -1,3 +1,6 @@
-import {TeardownClient} from '@teardown/react-native';
+import {TeardownClient} from '../react-native/src';
 
-const teardownClient = new TeardownClient({});
+export const teardownClient = new TeardownClient({
+  host: '0.tcp.ngrok.io',
+  port: 13858,
+});

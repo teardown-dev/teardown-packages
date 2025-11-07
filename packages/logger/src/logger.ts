@@ -1,12 +1,8 @@
 
-
-
 const originalConsoleLog = console.log;
 const originalConsoleWarn = console.warn;
 const originalConsoleDebug = console.debug;
 const originalConsoleError = console.error;
-
-
 
 export class Logger {
   private static DEFAULT_PREFIX = 'Teardown';
