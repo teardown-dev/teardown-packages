@@ -1,10 +1,17 @@
 import type React from "react";
-import { NativeModules, Text, View } from "react-native";
+import { useEffect } from "react";
+import { Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function App(): React.JSX.Element {
 	console.log("App mounted");
+
+	useEffect(() => {
+		setInterval(() => {
+			console.log("App interval");
+		}, 2500);
+	}, []);
 
 	return (
 		<SafeAreaProvider style={{ flex: 1 }}>
@@ -12,12 +19,12 @@ function App(): React.JSX.Element {
 				<View
 					style={{
 						flex: 1,
-						backgroundColor: "red",
+						backgroundColor: "green",
 						justifyContent: "center",
 						alignItems: "center",
 					}}
 				>
-					<Text>Helllo</Text>
+					<Text>Hello</Text>
 				</View>
 			</GestureHandlerRootView>
 		</SafeAreaProvider>

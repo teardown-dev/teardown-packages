@@ -6,11 +6,6 @@ import {
 import { Logger } from "@teardown/logger";
 import { Util } from "@teardown/util";
 import { Mutex } from "async-mutex";
-import type {
-	BaseWebsocketEvent,
-	ConnectionEstablishedWebsocketEvent,
-	WebsocketEvents,
-} from "./events";
 
 export type WebsocketConnectionStatus =
 	| "CONNECTING"
@@ -27,7 +22,7 @@ export type WebsocketConnectionStatusChangedEvent = BaseEventEmitterEvent<
 	}
 >;
 
-export type WebsocketLocalEvents = Events<{
+export type WebsocketEvents = Events<{
 	CONNECTION_STATUS_CHANGED: WebsocketConnectionStatusChangedEvent;
 }>;
 
@@ -55,14 +50,13 @@ interface WebSocketCloseEvent extends Event {
 	message?: string | undefined;
 }
 
-export class WebsocketClient<Events extends WebsocketEvents<any>> {
+export class WebsocketClient<Events extends Record<string, any>> {
 	readonly instanceId = Util.generateUUID();
 	public logger: Logger;
 
 	private ws: WebSocket | null = null;
 	private _status: WebsocketConnectionStatus = "CONNECTING";
-	emitter: EventEmitter<WebsocketLocalEvents> =
-		new EventEmitter<WebsocketLocalEvents>();
+	emitter: EventEmitter<WebsocketEvents> = new EventEmitter<WebsocketEvents>();
 
 	private wss: boolean;
 	private host: string;
@@ -70,9 +64,7 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 	private reconnectInterval: number;
 	private maxReconnectAttempts: number;
 	private reconnectAttempts = 0;
-	private eventQueue: Array<
-		BaseWebsocketEvent<keyof Events, Events[keyof Events]["payload"]>
-	> = [];
+	private eventQueue: Array<Events[keyof Events]> = [];
 
 	_client_id: string | null = null;
 
@@ -102,7 +94,9 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 			wss,
 		});
 
-		this.connect();
+		if (autoConnect) {
+			this.connect();
+		}
 	}
 
 	public getHost() {
@@ -149,6 +143,7 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 		this.logger.log("Debugger connection opened");
 		this.setStatus("CONNECTED");
 		this.reconnectAttempts = 0;
+		this.processEventQueue();
 	}
 
 	private onWebsocketDisconnect(event: WebSocketCloseEvent) {
@@ -179,142 +174,25 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 		}
 	}
 
-	private async parseWebsocketData(
-		event: WebSocketMessageEvent,
-	): Promise<Events[keyof Events]["payload"] | null> {
-		try {
-			let rawData: any;
-
-			if (typeof event.data === "string") {
-				rawData = JSON.parse(event.data);
-			} else if (event.data instanceof ArrayBuffer) {
-				rawData = JSON.parse(new TextDecoder().decode(event.data));
-			} else if (event.data instanceof Blob) {
-				const text = await new Promise<string>((resolve, reject) => {
-					if (!(event.data instanceof Blob)) {
-						return reject(new Error("Invalid Blob data"));
-					}
-
-					const reader = new FileReader();
-					reader.onload = () => resolve(reader.result as string);
-					reader.onerror = () => reject(new Error("Failed to read Blob data"));
-					reader.readAsText(event.data);
-				});
-				rawData = JSON.parse(text);
-			} else {
-				rawData = JSON.parse(JSON.stringify(event.data));
-			}
-
-			if (
-				rawData == null ||
-				typeof rawData !== "object" ||
-				!("type" in rawData)
-			) {
-				console.error("Invalid websocket message format", { event, rawData });
-				return null;
-			}
-
-			console.log("parsed websocket data", rawData);
-
-			return rawData as Events[keyof Events]["payload"];
-		} catch (error) {
-			console.error("Failed to parse websocket message", {
-				event,
-				error,
-			});
-			return null;
-		}
-	}
-
-	private async onMessage(event: WebSocketMessageEvent) {
-		// this.logger.log("onMessage", event);
-
-		const websocketEvent = await this.parseWebsocketData(event);
-		// this.logger.log("parsed websocket event", websocketEvent);
-
-		if (websocketEvent == null) {
-			this.logger.error("Failed to parse websocket message", { event });
-			return;
-		}
-
-		// console.log("websocket event", websocketEvent);
-		this.onEvent?.(websocketEvent);
-
-		switch (websocketEvent.type) {
-			case "CONNECTION_ESTABLISHED":
-				this.handleConnectionEstablished(websocketEvent);
-				break;
-			default:
-		}
-	}
+	public onMessage(event: WebSocketMessageEvent) {}
 
 	protected onEvent(event: Events[keyof Events]) {
 		this.logger.log("onEvent", event);
 	}
 
-	public async handleConnectionEstablished(
-		event: ConnectionEstablishedWebsocketEvent,
-	) {
-		this._client_id = event.client_id;
-
-		// Set flag and acquire mutex before processing queue
-		this.isProcessingQueue = true;
-		await this.processingQueueMutex.acquire();
-		try {
-			await this.processEventQueue();
-		} finally {
-			this.isProcessingQueue = false;
-			this.processingQueueMutex.release();
-		}
-		this.logger.log("Connection established");
-
-		this.onConnectionEstablished?.(event);
-	}
-
-	public onConnectionEstablished?(
-		event: ConnectionEstablishedWebsocketEvent,
-	): void;
-
-	public async send<
-		Type extends keyof Events,
-		Payload extends Events[Type]["payload"],
-	>(type: Type, payload: Payload) {
-		const event: BaseWebsocketEvent<Type, Payload> = {
-			instance_id: this.instanceId,
-			event_id: Util.generateUUID(),
-			client_id: this._client_id ?? "",
-			timestamp: performance.now(),
-			type,
-			payload,
-		};
-
-		if (this._client_id === null || this.getStatus() !== "CONNECTED") {
-			this.eventQueue.push(event);
+	public async send(data: string) {
+		if (
+			this.ws == null ||
+			this._client_id === null ||
+			this.getStatus() !== "CONNECTED"
+		) {
+			this.eventQueue.push(data);
 			return;
 		}
 
 		// Wait for queue processing to complete before sending new events
 		if (this.isProcessingQueue) {
 			await this.processingQueueMutex.waitForUnlock();
-		}
-
-		this.sendEvent(event);
-	}
-
-	private sendEvent<
-		Type extends keyof Events,
-		Payload extends Events[Type]["payload"],
-	>(event: BaseWebsocketEvent<Type, Payload>) {
-		if (this.ws == null) {
-			return;
-		}
-
-		this.sendRaw(JSON.stringify(event));
-	}
-
-	public sendRaw(data: string) {
-		if (this.ws == null) {
-			return;
 		}
 
 		this.ws.send(data);
@@ -324,6 +202,7 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 		// this.logger.log(
 		// 	`Processing event queue (${this.eventQueue.length} events)`,
 		// );
+
 		while (this.eventQueue.length > 0) {
 			const queuedEvent = this.eventQueue.shift();
 			if (queuedEvent) {
@@ -332,19 +211,13 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 					throw new Error("Websocket client ID is null");
 				}
 
-				const event: BaseWebsocketEvent<
-					typeof queuedEvent.type,
-					typeof queuedEvent.payload
-				> = {
-					...queuedEvent,
-					client_id: this._client_id,
-				};
-				this.sendEvent(event);
+				this.send(queuedEvent);
 			}
 		}
 	}
 
 	public shutdown() {
+		console.log("Shutting down websocket client");
 		this.ws?.close();
 	}
 }

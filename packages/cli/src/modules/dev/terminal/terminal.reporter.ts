@@ -1,12 +1,12 @@
-import { Terminal } from "metro-core";
 import util from "node:util";
+import { Terminal } from "metro-core";
 
 // @ts-ignore
 import chalk from "chalk";
 import type { TerminalReportableEvent } from "metro/src/lib/TerminalReporter";
+import { KeyboardHandlerManager } from "../dev-menu/keyboard-handler";
+import type { DevServer } from "../dev-server/dev-server";
 import { BaseTerminalReporter } from "./base.terminal.reporter";
-import { KeyboardHandlerManager } from "../menu/keyboard-handler";
-import type { DevServer } from "../server";
 
 class LogRespectingTerminal extends Terminal {
 	constructor(
@@ -35,11 +35,8 @@ class LogRespectingTerminal extends Terminal {
 const terminal = new LogRespectingTerminal(process.stdout);
 
 export class TeardownTerminalReporter extends BaseTerminalReporter {
-	devServer: DevServer;
-
-	constructor(devServer: DevServer) {
+	constructor(readonly devServer: DevServer) {
 		super(terminal);
-		this.devServer = devServer;
 	}
 
 	_log(event: TerminalReportableEvent): void {
@@ -80,31 +77,13 @@ export class TeardownTerminalReporter extends BaseTerminalReporter {
 
 	update(event: TerminalReportableEvent): void {
 		super.update(event);
-		
-		this.devServer?.messageSocket?.broadcast("report_event", event);
 
-		switch (event.type) {
-			// @ts-ignore
+		this.devServer?.reportMetroEvent(event);
+
+		switch (event.type as string) {
 			case "initialize_done":
-				this.onInitializeDone();
+				this.devServer.onInitializeDone?.();
 				break;
 		}
-	}
-
-	onInitializeDone() {
-		// console.log("onInitializeDone");
-
-		if (!this.devServer.messageSocket) {
-			console.log("No message socket");
-			return;
-		}
-
-		const keyboardHandler = new KeyboardHandlerManager({
-			devServerUrl: this.devServer.getServerUrl(),
-			messageSocket: this.devServer.messageSocket,
-			reporter: this,
-		});
-
-		keyboardHandler.initialize();
 	}
 }

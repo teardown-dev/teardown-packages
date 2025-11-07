@@ -1,6 +1,6 @@
 import path from "node:path";
 import { Command } from "commander";
-import { DevServer } from "../../modules/dev/server";
+import { DevServer } from "../../modules/dev/dev-server/dev-server";
 
 export interface DevServerOptions {
 	projectRoot: string;
@@ -65,7 +65,19 @@ export class DevServerCommand {
 
 	private async action(options: DevServerOptions): Promise<void> {
 		try {
-			const server = new DevServer(options);
+			const server = new DevServer({
+				projectRoot: options.projectRoot,
+				host: options.host,
+				port: options.port,
+				logRequests: true,
+				https: options.https
+					? {
+							key: options.key ?? "",
+							cert: options.cert ?? "",
+						}
+					: undefined,
+			});
+			await server.initialize();
 			await server.start();
 		} catch (error) {
 			console.error("Failed to start development server:", error);

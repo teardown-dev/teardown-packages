@@ -2,12 +2,8 @@ import readline from "node:readline";
 import { ReadStream } from "node:tty";
 // @ts-ignore
 import chalk from "chalk";
-import type { TeardownTerminalReporter } from "../terminal/terminal.reporter";
+import type { DevServer } from "../dev-server/dev-server";
 import OpenDebuggerKeyboardHandler from "./open-debugger-keyboard-handler";
-
-export interface MessageSocket {
-	broadcast: (type: string, params?: Record<string, unknown> | null) => void;
-}
 
 interface KeyEvent {
 	sequence: string;
@@ -17,36 +13,24 @@ interface KeyEvent {
 	shift: boolean;
 }
 
-interface KeyboardHandlerConfig {
-	devServerUrl: string;
-	messageSocket: MessageSocket;
-	reporter: TeardownTerminalReporter;
-}
-
 export class KeyboardHandlerManager {
 	private static readonly CTRL_C = "\u0003";
 	private static readonly CTRL_D = "\u0004";
 	private static readonly RELOAD_TIMEOUT = 500;
 
-	private readonly devServerUrl: string;
-	private readonly messageSocket: MessageSocket;
-	private readonly reporter: TeardownTerminalReporter;
 	private readonly openDebuggerKeyboardHandler: OpenDebuggerKeyboardHandler;
 	private previousCallTimestamp = 0;
 
-	constructor(config: KeyboardHandlerConfig) {
-		this.devServerUrl = config.devServerUrl;
-		this.messageSocket = config.messageSocket;
-		this.reporter = config.reporter;
+	constructor(readonly devServer: DevServer) {
 		this.openDebuggerKeyboardHandler = new OpenDebuggerKeyboardHandler({
-			reporter: this.reporter,
-			devServerUrl: this.devServerUrl,
+			reporter: this.devServer.terminalReporter,
+			devServerUrl: this.devServer.getDevServerUrl(),
 		});
 	}
 
 	public initialize(): void {
 		if (!this.isTTYSupported()) {
-			this.reporter.update({
+			this.devServer.terminalReporter.update({
 				type: "client_log",
 				level: "info",
 				data: ["Interactive mode is not supported in this environment"],
@@ -100,22 +84,22 @@ export class KeyboardHandlerManager {
 			KeyboardHandlerManager.RELOAD_TIMEOUT
 		) {
 			this.previousCallTimestamp = currentCallTimestamp;
-			this.reporter.update({
+			this.devServer.terminalReporter.update({
 				type: "client_log",
 				level: "info",
 				data: ["Reloading connected app(s)..."],
 			});
-			this.messageSocket.broadcast("reload", null);
+			this.devServer.messageServer.broadcast("reload");
 		}
 	}
 
 	private handleDevMenu(): void {
-		this.reporter.update({
+		this.devServer.terminalReporter.update({
 			type: "client_log",
 			level: "info",
 			data: ["Opening Dev Menu..."],
 		});
-		this.messageSocket.broadcast("devMenu", null);
+		this.devServer.messageServer.broadcast("devMenu");
 	}
 
 	private async handleOpenDebugger(): Promise<void> {
@@ -124,7 +108,7 @@ export class KeyboardHandlerManager {
 
 	private handleExit(): void {
 		this.openDebuggerKeyboardHandler.dismiss();
-		this.reporter.update({
+		this.devServer.terminalReporter.update({
 			type: "client_log",
 			level: "info",
 			data: ["Stopping server"],
@@ -144,7 +128,7 @@ export class KeyboardHandlerManager {
 	}
 
 	private printAvailableCommands(): void {
-		this.reporter.update({
+		this.devServer.terminalReporter.update({
 			type: "client_log",
 			level: "info",
 			data: [
