@@ -14,10 +14,10 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/logger": "1.2.5",
-    "@teardown/util": "1.2.5",
-    "@teardown/websocket": "1.2.5",
-    "@teardown/react-native": "1.2.5"
+    "@teardown/logger": "link:@teardown/logger",
+    "@teardown/util": "link:@teardown/util",
+    "@teardown/websocket": "link:@teardown/websocket",
+    "@teardown/react-native": "link:@teardown/react-native"
   },
   "devDependencies": {
     "@react-navigation/bottom-tabs": "^6.6.1",
