@@ -22,22 +22,8 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-      - name: Configure Git
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Determine Version Bump
-        id: bump
-        run: |
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          if [[ $COMMIT_MSG == *"BREAKING CHANGE"* ]] || [[ $COMMIT_MSG == *"!:"* ]]; then
-            echo "type=major" >> $GITHUB_OUTPUT
-          elif [[ $COMMIT_MSG == *"feat:"* ]]; then
-            echo "type=minor" >> $GITHUB_OUTPUT
-          else
-            echo "type=patch" >> $GITHUB_OUTPUT
-          fi
+      - name: Link packages
+        run: bun run link-packages
 
       - name: Build Packages
         run: bun run build-packages
