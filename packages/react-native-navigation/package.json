@@ -20,6 +20,7 @@
     "@teardown/react-native": "link:@teardown/react-native"
   },
   "devDependencies": {
+    "@teardown/config": "link:@teardown/config",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/drawer": "^6.7.2",
     "@react-navigation/native": "^6.1.18",

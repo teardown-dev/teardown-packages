@@ -15,6 +15,7 @@
     "dist/**/*"
   ],
   "devDependencies": {
+    "@teardown/config": "link:@teardown/config",
     "typescript": "^5.6.3"
   }
 }

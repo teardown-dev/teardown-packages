@@ -15,8 +15,10 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/config": "link:@teardown/config",
     "@teardown/util": "link:@teardown/util"
+  },
+  "devDependencies": {
+    "@teardown/config": "link:@teardown/config"
   },
   "peerDependencies": {
     "typescript": "^5.6.3"

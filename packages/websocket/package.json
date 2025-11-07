@@ -14,13 +14,13 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/config": "link:@teardown/config",
     "@teardown/event-emitter": "link:@teardown/event-emitter",
     "@teardown/logger": "link:@teardown/logger",
     "@teardown/util": "link:@teardown/util",
     "async-mutex": "^0.5.0"
   },
   "devDependencies": {
+	"@teardown/config": "link:@teardown/config",
     "typescript": "^5.6.3"
   }
 }
