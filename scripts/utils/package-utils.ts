@@ -71,21 +71,6 @@ export function writePackageJson(packagePath: string, pkg: PackageJson) {
 	);
 }
 
-export function execCommand(command: string) {
-	try {
-		return execSync(command, { stdio: "inherit" });
-	} catch (error) {
-		console.error(`Error executing command: ${command}`);
-		throw error;
-	}
-}
-
-export function gitCommands(commands: string[]) {
-	for (const command of commands) {
-		execCommand(`git ${command}`);
-	}
-}
-
 export function getCurrentVersion(): string {
 	return getRootPackageJson().version;
 }
@@ -246,7 +231,7 @@ export const git = {
 		});
 	},
 	tag: (version: string, message: string) => {
-		execSync(`git tag -a v${version} -m "${message}"`, {
+		execSync(`git tag -a release/packages/${version} -m "${message}"`, {
 			stdio: "inherit",
 		});
 	},

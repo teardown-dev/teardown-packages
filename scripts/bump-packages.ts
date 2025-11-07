@@ -1,7 +1,6 @@
 import {
 	getNewVersion,
 	git,
-	gitCommands as gitCommand,
 	logError,
 	logStep,
 	logSuccess,
