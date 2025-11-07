@@ -22,7 +22,7 @@ async function bumpPackages(versionType: VersionType) {
 	logStep("💫 Committing changes and pushing to main...");
 	git.addAll();
 	git.commit(`chore: bump version to ${newVersion}`);
-	// git.push();
+	git.push();
 
 	logSuccess("🎊 Version bump process completed successfully!");
 }

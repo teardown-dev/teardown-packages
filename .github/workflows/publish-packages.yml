@@ -1,0 +1,58 @@
+name: Release Packages
+
+on:
+    workflow_dispatch:
+      inputs:
+        version_type:
+          description: 'Version bump type'
+          required: true
+          type: choice
+          options:
+            - patch
+            - minor
+            - major
+          default: 'patch'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Setup NPM Auth
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Link Packages
+        run: bun run link-packages
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Build Packages
+        run: bun run build-packages
+
+      - name: Replace Link Dependencies
+        run: bun run replace-links
+
+      - name: Publish Packages
+        run: bun run publish-packages
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Bump Version
+        if: success()
+        run: bun run bump-packages ${{ inputs.version_type }} 
