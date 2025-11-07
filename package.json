@@ -11,7 +11,8 @@
     "link-packages": "bun run ./scripts/link-packages.ts",
     "prepare-release": "bun run ./scripts/prepare-release.ts",
     "build-packages": "bun run ./scripts/build-packages.ts",
-    "publish-packages": "bun run ./scripts/publish-packages.ts"
+    "publish-packages": "bun run ./scripts/publish-packages.ts",
+    "prepare-version": "bun run scripts/prepare-version.ts"
   },
   "workspaces": [
     "examples/*",
@@ -22,6 +23,8 @@
     "turbo": "^2.1.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.3"
+    "@biomejs/biome": "^1.9.3",
+    "semver": "^7.5.4",
+    "@types/semver": "^7.5.8"
   }
 }
