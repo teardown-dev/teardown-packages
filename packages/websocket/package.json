@@ -1,6 +1,6 @@
 {
   "name": "@teardown/websocket",
-  "version": "1.2.14",
+  "version": "1.2.15",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -20,7 +20,7 @@
     "async-mutex": "^0.5.0"
   },
   "devDependencies": {
-	"@teardown/config": "link:@teardown/config",
+    "@teardown/config": "link:@teardown/config",
     "typescript": "^5.6.3"
   }
 }
