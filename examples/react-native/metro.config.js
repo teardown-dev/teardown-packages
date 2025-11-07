@@ -24,12 +24,12 @@ function resolvePackages(packageRoot, packages) {
 
 const packageRoot = path.resolve(__dirname, "../../packages");
 const packages = [
+	"cli",
 	"config",
 	"event-emitter",
 	"logger",
 	"util",
 	"react-native",
-	"react-native-navigation",
 	"react-native-ui",
 	"websocket",
 ];
@@ -39,6 +39,9 @@ const { watchFolders, extraNodeModules } = resolvePackages(
 	packages,
 );
 
+// Add node_modules to watch folders
+const nodeModulesPath = path.resolve(__dirname, "node_modules");
+
 /**
  * Metro configuration
  * https://reactnative.dev/docs/metro
@@ -46,22 +49,20 @@ const { watchFolders, extraNodeModules } = resolvePackages(
  * @type {import('metro-config').MetroConfig}
  */
 const config = {
-	watchFolders: watchFolders,
+	watchFolders: [
+		...watchFolders,
+		// nodeModulesPath,
+	],
 	resolver: {
 		extraNodeModules: new Proxy(extraNodeModules, {
 			get: (target, name) =>
-				// redirects dependencies referenced from myExtraModule/ to local node_modules
 				name in target
 					? target[name]
 					: path.join(process.cwd(), `node_modules/${name}`),
 		}),
-		// unstable_enableSymlinks: true,  // defaults to true since Metro v0.79.0
+		unstable_enableSymlinks: true, // Enable symlink support explicitly
 	},
 	resetCache: true,
 };
 
-module.exports = mergeConfig(
-	getDefaultConfig(__dirname),
-	config,
-	metroPlugin.getMetroConfig(),
-);
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);

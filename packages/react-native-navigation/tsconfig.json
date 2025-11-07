@@ -1,7 +1,0 @@
-{
-	"extends": "@teardown/config/tsconfig.json",
-	"include": ["src", "metro"],
-	"compilerOptions": {
-		"outDir": "./dist"
-	}
-}

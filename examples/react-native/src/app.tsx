@@ -1,40 +1,24 @@
-import { NavigationContainer as ReactNavigationContainer } from "@react-navigation/native";
-import { TeardownContainer } from "@teardown/react-native";
-import type { Router } from "@teardown/react-native-navigation";
-import { NavigationContainer } from "@teardown/react-native-navigation";
 import type React from "react";
-import { Fragment, useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { NativeModules, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import teardownClient from "../teardown.client.ts";
-// import { router } from "./screens.gen.tsx";
-import { NativeModules } from "react-native";
-
-NativeModules.DevSettings.setIsDebuggingRemotely(true);
 
 function App(): React.JSX.Element {
-	// teardownClient.logger.log("App started");
-
-	// useEffect(() => {
-	// 	teardownClient.logger.log("App mounted");
-
-	// 	return () => {
-	// 		teardownClient.logger.log("App unmounted");
-	// 		teardownClient.shutdown();
-	// 	};
-	// }, []);
+	console.log("App mounted");
 
 	return (
 		<SafeAreaProvider style={{ flex: 1 }}>
 			<GestureHandlerRootView style={{ flex: 1, backgroundColor: "pink" }}>
-				{/* <TeardownContainer client={teardownClient}>
-					<ReactNavigationContainer>
-						<NavigationContainer>
-							<TeardownRouter router={router} />
-						</NavigationContainer>
-					</ReactNavigationContainer>
-				</TeardownContainer> */}
+				<View
+					style={{
+						flex: 1,
+						backgroundColor: "red",
+						justifyContent: "center",
+						alignItems: "center",
+					}}
+				>
+					<Text>Helllo</Text>
+				</View>
 			</GestureHandlerRootView>
 		</SafeAreaProvider>
 	);

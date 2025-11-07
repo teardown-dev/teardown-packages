@@ -6,7 +6,8 @@
 		"android": "react-native run-android",
 		"ios": "react-native run-ios --terminal Warp.app",
 		"lint": "eslint .",
-		"dev": "teardown dev",
+		"_dev": "react-native start",
+		"start": "teardown dev",
 		"test": "jest"
 	},
 	"dependencies": {
@@ -18,7 +19,6 @@
 		"@react-navigation/stack": "^6.4.1",
 		"@teardown/react-native": "link:@teardown/react-native",
 		"async-mutex": "^0.5.0",
-		"bun": "^1.1.33",
 		"nativewind": "^4.0.1",
 		"react": "^18.3.1",
 		"react-native": "0.76.0",
