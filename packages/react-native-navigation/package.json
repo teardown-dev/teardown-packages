@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native-navigation",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "",
   "scripts": {
     "prepublishOnly": "bun run build",
@@ -15,10 +15,10 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/logger": "^1.1.0-beta-04",
-    "@teardown/util": "^1.1.0-beta-04",
-    "@teardown/websocket": "^1.1.0-beta-04",
-    "@teardown/react-native": "^1.1.0-beta-04"
+    "@teardown/logger": "link:@teardown/logger",
+    "@teardown/util": "link:@teardown/util",
+    "@teardown/websocket": "link:@teardown/websocket",
+    "@teardown/react-native": "link:@teardown/react-native"
   },
   "devDependencies": {
     "@react-navigation/bottom-tabs": "^6.6.1",

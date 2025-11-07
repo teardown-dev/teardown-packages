@@ -1,6 +1,6 @@
 {
   "name": "@teardown/websocket",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "description": "",
   "scripts": {
     "prepublishOnly": "bun run build",
@@ -15,10 +15,10 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/config": "^1.1.0-beta-04",
-    "@teardown/event-emitter": "^1.1.0-beta-04",
-    "@teardown/logger": "^1.1.0-beta-04",
-    "@teardown/util": "^1.1.0-beta-04",
+    "@teardown/config": "link:@teardown/config",
+    "@teardown/event-emitter": "link:@teardown/event-emitter",
+    "@teardown/logger": "link:@teardown/logger",
+    "@teardown/util": "link:@teardown/util",
     "async-mutex": "^0.5.0"
   },
   "devDependencies": {

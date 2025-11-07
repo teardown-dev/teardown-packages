@@ -1,7 +1,7 @@
-import { updateVersions, replaceLinkedDependencies } from "./update-versions";
 import { execSync } from "node:child_process";
+import { updateVersions } from "./update-versions";
 
-async function release() {
+async function prepareRelease() {
 	try {
 		// Get release type from command line argument
 		const releaseType = process.argv[2] as "major" | "minor" | "patch";
@@ -9,36 +9,29 @@ async function release() {
 			throw new Error("Please specify release type: major, minor, or patch");
 		}
 
-		// 1. Replace link: dependencies with actual versions
-		console.log("\n🔗 Replacing linked dependencies...");
-		replaceLinkedDependencies();
-
-		// 2. Update versions
+		// 1. Update versions across all packages
 		console.log(`\n📦 Updating versions for ${releaseType} release...`);
 		const newVersion = updateVersions(releaseType);
 
-		// 3. Git commit and tag
+		// 2. Git commit the version updates
 		console.log("\n🔨 Committing version updates...");
 		execSync("git add .");
-
-		execSync(`git commit -m "chore: release v${newVersion}"`, {
+		execSync(`git commit -m "chore: bump version to v${newVersion}"`, {
 			stdio: "inherit",
 		});
 		execSync(`git tag v${newVersion}`, { stdio: "inherit" });
 
-		// 4. Run publish script
-		console.log("\n🚀 Publishing packages...");
-		execSync("bun run publish-packages", { stdio: "inherit" });
-
-		// 5. Push changes and tags
+		// 3. Push changes and tags
 		console.log("\n📤 Pushing changes and tags...");
 		execSync("git push origin main --tags", { stdio: "inherit" });
 
-		console.log(`\n✨ Release v${newVersion} completed successfully!`);
+		console.log(
+			`\n✨ Version bump complete! Run 'bun run publish-release' when ready to publish.`,
+		);
 	} catch (error) {
-		console.error("\n❌ Release failed:", error);
+		console.error("\n❌ Version bump failed:", error);
 		process.exit(1);
 	}
 }
 
-release();
+prepareRelease();

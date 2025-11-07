@@ -27,6 +27,50 @@ function incrementVersion(
 	}
 }
 
+// Function to replace link: dependencies with actual versions
+export function replaceLinkedDependencies() {
+	const PACKAGES_DIR = "./packages";
+	const rootPkg = JSON.parse(readFileSync("./package.json", "utf-8"));
+	const currentVersion = rootPkg.version;
+
+	const packageDirs = readdirSync(PACKAGES_DIR, { withFileTypes: true })
+		.filter((dirent) => dirent.isDirectory())
+		.map((dirent) => join(PACKAGES_DIR, dirent.name));
+
+	packageDirs.forEach((packagePath) => {
+		const pkgJsonPath = join(packagePath, "package.json");
+
+		try {
+			const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
+
+			let hasChanges = false;
+			// Update any dependency that uses link: prefix
+			for (const depType of [
+				"dependencies",
+				"peerDependencies",
+				"devDependencies",
+			]) {
+				if (pkg[depType]) {
+					Object.entries(pkg[depType]).forEach(([dep, version]) => {
+						if (typeof version === "string" && version.startsWith("link:")) {
+							pkg[depType][dep] = currentVersion;
+							hasChanges = true;
+						}
+					});
+				}
+			}
+
+			if (hasChanges) {
+				writeFileSync(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
+				console.log(`🔗 Replaced link dependencies in ${pkg.name}`);
+			}
+		} catch (error) {
+			console.error(`❌ Error updating links in ${packagePath}:`, error);
+		}
+	});
+}
+
+// Function to update versions across all packages
 export function updateVersions(releaseType?: "major" | "minor" | "patch") {
 	const PACKAGES_DIR = "./packages";
 
@@ -51,42 +95,6 @@ export function updateVersions(releaseType?: "major" | "minor" | "patch") {
 		.filter((dirent) => dirent.isDirectory())
 		.map((dirent) => join(PACKAGES_DIR, dirent.name));
 
-	// Update function for a single package.json
-	function updatePackageVersion(packagePath: string) {
-		const pkgJsonPath = join(packagePath, "package.json");
-
-		try {
-			const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
-			const oldVersion = pkg.version;
-
-			// Update the package's own version
-			pkg.version = NEW_VERSION;
-
-			// Update any dependency that uses link: prefix
-			for (const depType of [
-				"dependencies",
-				"peerDependencies",
-				"devDependencies",
-			]) {
-				if (pkg[depType]) {
-					Object.entries(pkg[depType]).forEach(([dep, version]) => {
-						if (typeof version === "string" && version.startsWith("link:")) {
-							pkg[depType][dep] = NEW_VERSION;
-						}
-					});
-				}
-			}
-
-			// Write the updated package.json
-			writeFileSync(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
-			console.log(
-				`✅ Updated ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`,
-			);
-		} catch (error) {
-			console.error(`❌ Error updating ${packagePath}:`, error);
-		}
-	}
-
 	// Update root package.json if it exists
 	try {
 		const rootPkg = JSON.parse(readFileSync("./package.json", "utf-8"));
@@ -97,11 +105,24 @@ export function updateVersions(releaseType?: "major" | "minor" | "patch") {
 		console.log("ℹ️ No root package.json found or error updating it");
 	}
 
-	// Update all packages
-	packageDirs.forEach(updatePackageVersion);
+	// Update all package versions
+	packageDirs.forEach((packagePath) => {
+		const pkgJsonPath = join(packagePath, "package.json");
+
+		try {
+			const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
+			const oldVersion = pkg.version;
+			pkg.version = NEW_VERSION;
+			writeFileSync(pkgJsonPath, `${JSON.stringify(pkg, null, 2)}\n`);
+			console.log(
+				`✅ Updated ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`,
+			);
+		} catch (error) {
+			console.error(`❌ Error updating ${packagePath}:`, error);
+		}
+	});
 
 	console.log("\n🎉 Version update complete!");
-
 	return NEW_VERSION;
 }
 
@@ -112,5 +133,9 @@ if (require.main === module) {
 		| "minor"
 		| "patch"
 		| undefined;
+
+	// First replace any link: dependencies
+	replaceLinkedDependencies();
+	// Then update versions
 	updateVersions(releaseType);
 }
