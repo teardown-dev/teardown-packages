@@ -1,0 +1,24 @@
+name: Trigger Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'Release Type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  bump:
+    uses: ./.github/workflows/bump-packages.yml
+    with:
+      version_type: ${{ inputs.releaseType }}
+    secrets: inherit 
+
+  publish-packages:
+    uses: ./.github/workflows/publish-packages.yml
+    secrets: inherit
