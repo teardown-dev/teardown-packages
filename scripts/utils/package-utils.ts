@@ -318,7 +318,7 @@ export function getPublishOrder(): string[] {
 		}
 		temp.delete(pkgName);
 		visited.add(pkgName);
-		sorted.unshift(pkgName);
+		sorted.push(pkgName);
 	}
 
 	// Visit all packages
