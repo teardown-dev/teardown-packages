@@ -5,7 +5,7 @@
   "scripts": {
     "prepublishOnly": "bun run build",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "bun run update-deps && tsc --declaration",
+    "build": "tsc --declaration",
     "dev": "tsc --declaration --watch",
     "update-deps": "bun scripts/update-dependencies.ts"
   },
@@ -13,7 +13,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "README.md",
-    "./dist/**/*"
+    "dist/**/*"
   ],
   "dependencies": {
     "@teardown/config": "^1.1.0-beta-04",

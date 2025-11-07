@@ -12,7 +12,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "README.md",
-    "./dist/**/*"
+    "dist/**/*"
   ],
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.0.2",

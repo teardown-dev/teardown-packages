@@ -10,7 +10,9 @@
     "lint": "bunx @biomejs/biome lint --write ./src",
     "version": "VERSION=$npm_config_version bun scripts/update-versions.ts",
     "version:beta": "VERSION=1.1.0-beta-01 bun scripts/update-versions.ts",
-    "update-deps": "bun scripts/update-dependencies.ts"
+    "update-deps": "bun scripts/update-dependencies.ts",
+    "publish-packages": "bun scripts/publish-packages.ts",
+    "publish-packages:dry": "DRY_RUN=true bun scripts/publish-packages.ts"
   },
   "workspaces": [
     "examples/*",

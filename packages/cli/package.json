@@ -13,7 +13,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "README.md",
-    "./dist/**/*"
+    "dist/**/*"
   ],
   "dependencies": {
     "@inquirer/prompts": "^7.0.0",
