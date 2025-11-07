@@ -28,6 +28,7 @@ export type WebsocketEvents = Events<{
 
 export type WebsocketClientOptions = {
 	logger?: Logger;
+	loggerName?: string;
 	wss?: boolean;
 	host?: string;
 	port?: number;
@@ -68,8 +69,6 @@ export class WebsocketClient {
 	private reconnectAttempts = 0;
 	private eventQueue: Array<string> = [];
 
-	_client_id: string | null = null;
-
 	private processingQueueMutex = new Mutex();
 	private isProcessingQueue = false;
 
@@ -82,7 +81,8 @@ export class WebsocketClient {
 			autoConnect = true,
 		} = options ?? {};
 
-		this.logger = options?.logger ?? new Logger("Websocket");
+		this.logger =
+			options?.logger ?? new Logger(options?.loggerName ?? "Websocket");
 
 		this.wss = wss;
 		this.host = options?.host ?? this.getHost();
@@ -120,6 +120,7 @@ export class WebsocketClient {
 		this.logger.log("Connecting to websocket", {
 			host: this.host,
 			port: this.port,
+			path: this.path,
 			url,
 		});
 
@@ -131,7 +132,7 @@ export class WebsocketClient {
 	}
 
 	private setStatus(status: WebsocketConnectionStatus) {
-		this.logger.log("Debugger status change", status);
+		this.logger.log("Websocket status change", status);
 		this._status = status;
 		this.emitter.emit("CONNECTION_STATUS_CHANGED", {
 			status,
@@ -143,23 +144,21 @@ export class WebsocketClient {
 	}
 
 	private onWebsocketConnect() {
-		this.logger.log("Debugger connection opened");
+		this.logger.log("Websocket connection opened");
 		this.setStatus("CONNECTED");
 		this.reconnectAttempts = 0;
 		this.processEventQueue();
 	}
 
 	private onWebsocketDisconnect(event: WebSocketCloseEvent) {
-		this.logger.log("Debugger disconnected", event);
+		this.logger.log("Websocket disconnected", event);
 		this.setStatus("DISCONNECTED");
-		this._client_id = null;
 		this.attemptReconnect();
 	}
 
 	private onWebsocketConnectFailed(error: WebSocketErrorEvent) {
-		this.logger.error("Debugger connection failed", error);
+		this.logger.error("Websocket connection failed", error);
 		this.setStatus("FAILED");
-		this._client_id = null;
 		this.attemptReconnect();
 	}
 
@@ -180,11 +179,7 @@ export class WebsocketClient {
 	public onMessage(event: WebSocketMessageEvent) {}
 
 	public async send(data: string) {
-		if (
-			this.ws == null ||
-			this._client_id === null ||
-			this.getStatus() !== "CONNECTED"
-		) {
+		if (this.ws == null || this.getStatus() !== "CONNECTED") {
 			this.eventQueue.push(data);
 			return;
 		}
@@ -205,11 +200,6 @@ export class WebsocketClient {
 		while (this.eventQueue.length > 0) {
 			const queuedEvent = this.eventQueue.shift();
 			if (queuedEvent) {
-				if (this._client_id == null) {
-					this.logger.error("Client ID is null while processing event queue");
-					throw new Error("Websocket client ID is null");
-				}
-
 				this.send(queuedEvent);
 			}
 		}

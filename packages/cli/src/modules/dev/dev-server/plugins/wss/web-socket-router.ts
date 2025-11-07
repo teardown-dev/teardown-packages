@@ -27,7 +27,7 @@ export class WebSocketRouter {
 		this.fastify.server.on(
 			"upgrade",
 			(request: IncomingMessage, socket: Socket, head: Buffer) => {
-				// console.log("WebSocketRouter upgrade", request.url);
+				console.log("WebSocketRouter upgrade", request.url);
 				const { pathname } = new URL(request.url || "", "http://localhost");
 				let matched = false;
 				for (const server of this.servers) {
