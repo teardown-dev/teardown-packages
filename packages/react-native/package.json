@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -22,15 +22,15 @@
     "@types/react": "^18.3.1",
     "@types/react-native": "^0.73.0",
     "metro-config": "^0.81.0",
-    "react": "1.1.3",
-    "react-native": "1.1.3",
+    "react": "1.1.4",
+    "react-native": "1.1.4",
     "react-native-device-info": "^14.0.0",
     "react-native-gesture-handler": "^2.20.0",
     "typescript": "^5.6.3"
   },
   "peerDependencies": {
-    "react": "1.1.3",
-    "react-native": "1.1.3",
+    "react": "1.1.4",
+    "react-native": "1.1.4",
     "react-native-device-info": "^14",
     "react-native-gesture-handler": "^2"
   }

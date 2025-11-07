@@ -117,7 +117,7 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 		return `${this.getProtocol()}://${this.host}:${this.port}`;
 	}
 
-	private connect() {
+	private async connect() {
 		const url = this.getUrl();
 
 		this.logger.log("Connecting to websocket", {
