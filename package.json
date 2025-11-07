@@ -1,6 +1,6 @@
 {
   "name": "teardown",
-  "version": "1.2.38",
+  "version": "1.2.39",
   "description": "Teardown monorepo of packages, apps, and examples",
   "private": true,
   "packageManager": "bun@1.1.33",
