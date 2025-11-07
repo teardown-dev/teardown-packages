@@ -1,19 +1,24 @@
 {
 	"name": "@teardown/websocket",
-	"version": "1.1.0-alpha-01",
+	"version": "1.1.0-alpha-02",
 	"description": "",
 	"scripts": {
+		"prepublishOnly": "bun run build",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build": "tsc --declaration",
 		"dev": "tsc --declaration --watch"
 	},
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
-	"files": ["README.md", "./dist/**/*"],
+	"files": ["README.md", "dist/**/*"],
 	"dependencies": {
-		"@teardown/event-emitter": "link:@teardown/event-emitter",
-		"@teardown/logger": "link:@teardown/logger",
-		"@teardown/util": "link:@teardown/util",
+		"@teardown/config": "^1.1.0-alpha-01",
+		"@teardown/event-emitter": "^1.1.0-alpha-01",
+		"@teardown/logger": "^1.1.0-alpha-01",
+		"@teardown/util": "^1.1.0-alpha-01",
 		"async-mutex": "^0.5.0"
+	},
+	"devDependencies": {
+		"typescript": "^5.6.3"
 	}
 }

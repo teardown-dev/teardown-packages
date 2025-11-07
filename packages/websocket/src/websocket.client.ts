@@ -8,9 +8,7 @@ import { Util } from "@teardown/util";
 import { Mutex } from "async-mutex";
 import type {
 	BaseWebsocketEvent,
-	ClientWebsocketEvents,
 	ConnectionEstablishedWebsocketEvent,
-	TeardownWebsocketEvents,
 	WebsocketEvents,
 } from "./events";
 
@@ -56,7 +54,7 @@ interface WebSocketCloseEvent extends Event {
 	message?: string | undefined;
 }
 
-export abstract class WebsocketClient<Events extends WebsocketEvents<any>> {
+export class WebsocketClient<Events extends WebsocketEvents<any>> {
 	readonly instanceId = Util.generateUUID();
 	public logger: Logger;
 
@@ -262,7 +260,7 @@ export abstract class WebsocketClient<Events extends WebsocketEvents<any>> {
 		this.onConnectionEstablished?.(event);
 	}
 
-	public abstract onConnectionEstablished?(
+	public onConnectionEstablished?(
 		event: ConnectionEstablishedWebsocketEvent,
 	): void;
 

@@ -1,0 +1,6 @@
+{
+	"versions": {
+		"@teardown": "1.1.0-alpha-02",
+		"react": "18.3.1"
+	}
+}

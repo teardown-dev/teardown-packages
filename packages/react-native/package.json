@@ -11,9 +11,9 @@
 	"types": "./dist/index.d.ts",
 	"files": ["README.md", "./dist/**/*"],
 	"dependencies": {
-		"@teardown/logger": "link:@teardown/logger",
-		"@teardown/util": "link:@teardown/util",
-		"@teardown/websocket": "link:@teardown/websocket"
+		"@teardown/logger": "^1.0.1",
+		"@teardown/util": "^1.1.0-alpha-01",
+		"@teardown/websocket": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/react": "^18.3.1",
