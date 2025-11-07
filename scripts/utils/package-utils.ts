@@ -310,6 +310,7 @@ export function getPublishOrder(): string[] {
 		temp.add(pkgName);
 		const pkg = packages.get(pkgName);
 		if (pkg) {
+			// Visit dependencies first
 			for (const dep of pkg.dependencies) {
 				if (packages.has(dep)) {
 					visit(dep);
@@ -318,7 +319,7 @@ export function getPublishOrder(): string[] {
 		}
 		temp.delete(pkgName);
 		visited.add(pkgName);
-		sorted.push(pkgName);
+		sorted.unshift(pkgName); // Changed from push to unshift
 	}
 
 	// Visit all packages
@@ -328,7 +329,7 @@ export function getPublishOrder(): string[] {
 		}
 	}
 
-	return sorted;
+	return sorted; // Reverse the final array to get dependencies first
 }
 
 export async function buildPackages() {
