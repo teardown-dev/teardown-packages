@@ -1,6 +1,6 @@
 {
 	"name": "@teardown/logger",
-	"version": "1.0.2",
+	"version": "1.1.0-alpha-01",
 	"description": "",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
@@ -9,5 +9,8 @@
 	},
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
-	"files": ["README.md", "./dist/**/*"]
+	"files": ["README.md", "./dist/**/*"],
+	"devDependencies": {
+		"typescript": "^5.6.3"
+	}
 }

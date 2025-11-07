@@ -1,52 +1,40 @@
-import {Plugin, TeardownClient} from '../teardown.client';
+import type { IPlugin, TeardownClient } from "../teardown.client";
 
-const originalConsoleLog = console.log;
-const originalConsoleWarn = console.warn;
-const originalConsoleDebug = console.debug;
-const originalConsoleError = console.error;
+type ConsoleMethods = "log" | "warn" | "error" | "debug" | "info";
+const methods: ConsoleMethods[] = ["log", "warn", "error", "debug", "info"];
 
-export class LoggingPlugin implements Plugin {
-  private client: TeardownClient<any> | null = null;
+export class LoggingPlugin implements IPlugin {
+	private client: TeardownClient<any> | null = null;
+	private originalConsoleMethods: Record<ConsoleMethods, typeof console.log> =
+		{} as any;
 
-  install(client: TeardownClient<any>): void {
-    this.client = client;
+	private createConsoleProxy(method: ConsoleMethods) {
+		const original = console[method];
+		return new Proxy(original, {
+			apply: (target, thisArg, args) => {
+				target.apply(thisArg, args);
+				this.client?.debugger?.send("CONSOLE_LOG", {
+					type: method,
+					args,
+				});
+			},
+		});
+	}
 
-    console.log = (...args: Parameters<typeof console.log>) => {
-      originalConsoleLog(...args);
+	constructor() {
+		methods.forEach((method) => {
+			this.originalConsoleMethods[method] = console[method];
+			console[method] = this.createConsoleProxy(method);
+		});
+	}
 
-      this.client?.debugger?.send('CONSOLE_LOG', {
-        type: 'log',
-        args,
-      });
-    };
+	install(client: TeardownClient<any>): void {
+		this.client = client;
+	}
 
-    console.warn = (...args: Parameters<typeof console.warn>) => {
-      originalConsoleWarn(...args);
-
-      this.client?.debugger?.send('CONSOLE_LOG', {
-        type: 'warn',
-        args,
-      });
-    };
-
-    console.debug = (...args: Parameters<typeof console.debug>) => {
-      originalConsoleDebug(...args);
-
-      this.client?.debugger?.send('CONSOLE_LOG', {
-        type: 'debug',
-        args,
-      });
-    };
-
-    console.error = (...args: Parameters<typeof console.error>) => {
-      originalConsoleError(...args);
-
-      this.client?.debugger?.send('CONSOLE_LOG', {
-        type: 'error',
-        args,
-      });
-    };
-  }
-
-  uninstall() {}
+	uninstall() {
+		methods.forEach((method) => {
+			console[method] = this.originalConsoleMethods[method];
+		});
+	}
 }

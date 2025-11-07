@@ -104,7 +104,7 @@ export class EventEmitter<EmitterEvents extends Events<any>> {
   >(type: Type, payload: Payload) {
     const event: BaseEventEmitterEvent<Type, Payload> = {
       event_id: Util.generateUUID(),
-      timestamp: Date.now(),
+      timestamp: performance.now(),
       type,
       payload,
     };

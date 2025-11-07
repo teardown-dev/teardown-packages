@@ -1,171 +1,188 @@
+import { Util } from "@teardown/util";
+import type { HTTPRequestInfo, RequestMethod } from "@teardown/websocket";
 // @ts-ignore
-import XHRInterceptor from 'react-native/Libraries/Network/XHRInterceptor';
-import type {Plugin, TeardownClient} from '../teardown.client';
-import {Logger} from '@teardown/logger';
-import {Util} from '@teardown/util';
-import type {HTTPRequestInfo, RequestMethod} from '@teardown/websocket';
+import XHRInterceptor from "react-native/Libraries/Network/XHRInterceptor";
+import type { PluginOptions, TeardownClient } from "../teardown.client";
+import { type DefaultPluginOptions, Plugin } from "../teardown.client";
 
 interface ExtendedXMLHttpRequest extends XMLHttpRequest {
-  _id: number;
+	_id: number;
 }
 
-export type HTTPPluginOptions = {
-  ignoreURLs?: RegExp[];
-};
+export type HTTPPluginOptions = DefaultPluginOptions<{
+	ignoreURLs?: RegExp[];
+}>;
 
-export class HTTPPlugin implements Plugin {
-  private logger = new Logger('HTTPPlugin');
-  private client: TeardownClient<any> | null = null;
-  private requests: Map<number, HTTPRequestInfo> = new Map();
-  private ignoreURLs: RegExp[];
+export class HTTPPlugin extends Plugin {
+	private client: TeardownClient<any> | null = null;
+	private requests: Map<number, HTTPRequestInfo> = new Map();
+	private ignoreURLs: RegExp[];
 
-  constructor(options: HTTPPluginOptions = {}) {
-    this.ignoreURLs = options.ignoreURLs || [];
-  }
+	constructor(options: HTTPPluginOptions = {}) {
+		super({
+			...options,
+			key: "HTTPPlugin",
+		});
+		this.ignoreURLs = options.ignoreURLs || [];
+	}
 
-  install(client: TeardownClient<any>): void {
-    this.client = client;
-    this.setupXHRInterceptor();
-  }
+	install(client: TeardownClient<any>): void {
+		this.client = client;
+		this.enableXHRInterceptor();
+	}
 
-  private setupXHRInterceptor(): void {
-    if (XHRInterceptor.isInterceptorEnabled()) {
-      this.logger.warn(
-          'XHRInterceptor is already enabled by another library. Disable it or run this plugin first when your app loads.',
-      );
-    }
+	public enableXHRInterceptor(): void {
+		// noinspection TypeScriptUnresolvedReference
+		if (XHRInterceptor.isInterceptorEnabled()) {
+			// this.logger.info(
+			//     'XHRInterceptor is already enabled by another library. Disable it or run this plugin first when your app loads.',
+			// );
+			this.logger.info(
+				"XHRInterceptor is already enabled. Teardown overrides the existing interceptor - other plugins may not work as expected.",
+			);
+			this.disableInterception();
+		}
 
-    XHRInterceptor.setOpenCallback(this.xhrOpenCallback);
-    XHRInterceptor.setRequestHeaderCallback(this.xhrRequestHeaderCallback);
-    XHRInterceptor.setSendCallback(this.xhrSendCallback);
-    XHRInterceptor.setResponseCallback(this.xhrResponseCallback);
+		this.logger.info("Enabling XHRInterceptor");
+		// noinspection TypeScriptUnresolvedReference
+		XHRInterceptor.setOpenCallback(this.xhrOpenCallback);
+		// noinspection TypeScriptUnresolvedReference
+		XHRInterceptor.setRequestHeaderCallback(this.xhrRequestHeaderCallback);
+		// noinspection TypeScriptUnresolvedReference
+		XHRInterceptor.setSendCallback(this.xhrSendCallback);
+		// noinspection TypeScriptUnresolvedReference
+		XHRInterceptor.setResponseCallback(this.xhrResponseCallback);
 
-    XHRInterceptor.enableInterception();
-  }
+		// noinspection TypeScriptUnresolvedReference
+		XHRInterceptor.enableInterception();
+		this.logger.info("XHRInterceptor enabled");
+	}
 
-  private shouldIgnoreURL(url: string): boolean {
-    return this.ignoreURLs.some(ignoreRegex => ignoreRegex.test(url));
-  }
+	public disableInterception(): void {
+		this.logger.info("Disabling XHRInterceptor");
+		XHRInterceptor.disableInterception();
+		this.requests.clear();
+		this.logger.info("XHRInterceptor disabled");
+	}
 
-  private xhrOpenCallback = (
-      method: string,
-      url: string,
-      xhr: ExtendedXMLHttpRequest,
-  ): void => {
-    if (this.shouldIgnoreURL(url)) {
-      return;
-    }
+	private shouldIgnoreURL(url: string): boolean {
+		return this.ignoreURLs.some((ignoreRegex) => ignoreRegex.test(url));
+	}
 
-    const requestId = Util.generateUUID();
+	private xhrOpenCallback = (
+		method: string,
+		url: string,
+		xhr: ExtendedXMLHttpRequest,
+	): void => {
+		if (this.shouldIgnoreURL(url)) {
+			return;
+		}
 
-    const HTTPRequestInfo: HTTPRequestInfo = {
-      id: requestId,
-      type: 'XMLHttpRequest',
-      url,
-      method: method as RequestMethod,
-      requestHeaders: {'TD-Request-ID': requestId},
-      startTime: Date.now(),
-      updatedAt: Date.now(),
-    };
+		const requestId = Util.generateUUID();
 
-    this.requests.set(xhr._id, HTTPRequestInfo);
-  };
+		const HTTPRequestInfo: HTTPRequestInfo = {
+			id: requestId,
+			type: "XMLHttpRequest",
+			url,
+			method: method as RequestMethod,
+			requestHeaders: { "TD-Request-ID": requestId },
+			startTime: performance.now(),
+			updatedAt: performance.now(),
+		};
 
-  private xhrRequestHeaderCallback = (
-      header: string,
-      value: string,
-      xhr: ExtendedXMLHttpRequest,
-  ): void => {
-    const request = this.requests.get(xhr._id);
-    if (request) {
-      request.requestHeaders[header] = value;
-      request.updatedAt = Date.now();
-    }
-  };
+		this.requests.set(xhr._id, HTTPRequestInfo);
+	};
 
-  private xhrSendCallback = (data: any, xhr: ExtendedXMLHttpRequest): void => {
-    const request = this.requests.get(xhr._id);
-    if (request) {
-      xhr.setRequestHeader('TD-Request-ID', request.id);
+	private xhrRequestHeaderCallback = (
+		header: string,
+		value: string,
+		xhr: ExtendedXMLHttpRequest,
+	): void => {
+		const request = this.requests.get(xhr._id);
+		if (request) {
+			request.requestHeaders[header] = value;
+			request.updatedAt = performance.now();
+		}
+	};
 
-      request.dataSent = this.serializeRequestBody(data);
-      request.updatedAt = Date.now();
-      this.sendHTTPEvent(request);
-    }
-  };
+	private xhrSendCallback = (data: any, xhr: ExtendedXMLHttpRequest): void => {
+		const request = this.requests.get(xhr._id);
+		if (request) {
+			xhr.setRequestHeader("TD-Request-ID", request.id);
 
-  private serializeRequestBody(data: any): string {
-    if (typeof data === 'string') {
-      return data;
-    }
-    try {
-      return JSON.stringify(data);
-    } catch (error) {
-      this.logger.warn('Failed to stringify request body', error);
-      return '[Unable to serialize request body]';
-    }
-  }
+			request.dataSent = this.serializeRequestBody(data);
+			request.updatedAt = performance.now();
+			this.sendHTTPEvent(request);
+		}
+	};
 
-  private xhrResponseCallback = (
-      status: number,
-      timeout: number,
-      response: string,
-      responseURL: string,
-      responseType: XMLHttpRequestResponseType,
-      xhr: ExtendedXMLHttpRequest,
-  ): void => {
-    const request = this.requests.get(xhr._id);
-    if (request) {
-      request.status = status;
-      request.responseHeaders = this.parseResponseHeaders(
-          xhr.getAllResponseHeaders(),
-      );
-      request.response = this.parseResponseBody(response, responseType);
-      request.responseURL = responseURL;
-      request.responseType = responseType;
-      request.timeout = timeout;
-      request.endTime = Date.now();
-      request.updatedAt = Date.now();
+	private serializeRequestBody(data: any): string {
+		if (typeof data === "string") {
+			return data;
+		}
+		try {
+			return JSON.stringify(data);
+		} catch (error) {
+			this.logger.warn("Failed to stringify request body", error);
+			return "[Unable to serialize request body]";
+		}
+	}
 
-      this.sendHTTPEvent(request);
-      this.requests.delete(xhr._id);
-    }
-  };
+	private xhrResponseCallback = (
+		status: number,
+		timeout: number,
+		response: string,
+		responseURL: string,
+		responseType: XMLHttpRequestResponseType,
+		xhr: ExtendedXMLHttpRequest,
+	): void => {
+		const request = this.requests.get(xhr._id);
+		if (request) {
+			request.status = status;
+			request.responseHeaders = this.parseResponseHeaders(
+				xhr.getAllResponseHeaders(),
+			);
+			request.response = this.parseResponseBody(response, responseType);
+			request.responseURL = responseURL;
+			request.responseType = responseType;
+			request.timeout = timeout;
+			request.endTime = performance.now();
+			request.updatedAt = performance.now();
 
-  private parseResponseHeaders(headersString: string): Record<string, string> {
-    const headersObject: Record<string, string> = {};
-    if (headersString) {
-      const headerPairs = headersString.trim().split(/[\r\n]+/);
-      headerPairs.forEach(headerPair => {
-        const [key, value] = headerPair.split(': ');
-        headersObject[key] = value;
-      });
-    }
-    return headersObject;
-  }
+			this.sendHTTPEvent(request);
+			this.requests.delete(xhr._id);
+		}
+	};
 
-  private parseResponseBody(
-      response: string,
-      responseType: XMLHttpRequestResponseType,
-  ): string {
-    if (responseType === 'json') {
-      try {
-        return JSON.stringify(JSON.parse(response), null, 2);
-      } catch (error) {
-        this.logger.warn('Failed to parse JSON response', error);
-      }
-    }
-    return response;
-  }
+	private parseResponseHeaders(headersString: string): Record<string, string> {
+		const headersObject: Record<string, string> = {};
+		if (headersString) {
+			const headerPairs = headersString.trim().split(/[\r\n]+/);
+			headerPairs.forEach((headerPair) => {
+				const [key, value] = headerPair.split(": ");
+				headersObject[key] = value;
+			});
+		}
+		return headersObject;
+	}
 
-  private sendHTTPEvent(httpRequestInfo: HTTPRequestInfo): void {
-    if (this.client?.debugger) {
-      this.client.debugger.send('NETWORK_HTTP_REQUEST', httpRequestInfo);
-    }
-  }
+	private parseResponseBody(
+		response: string,
+		responseType: XMLHttpRequestResponseType,
+	): string {
+		if (responseType === "json") {
+			try {
+				return JSON.stringify(JSON.parse(response), null, 2);
+			} catch (error) {
+				this.logger.warn("Failed to parse JSON response", error);
+			}
+		}
+		return response;
+	}
 
-  disableInterception(): void {
-    XHRInterceptor.disableInterception();
-    this.requests.clear();
-  }
+	private sendHTTPEvent(httpRequestInfo: HTTPRequestInfo): void {
+		if (this.client?.debugger) {
+			this.client.debugger.send("NETWORK_HTTP_REQUEST", httpRequestInfo);
+		}
+	}
 }

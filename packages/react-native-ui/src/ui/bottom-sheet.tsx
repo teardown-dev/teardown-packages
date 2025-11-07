@@ -17,7 +17,7 @@ import GorhomBottomSheet, {
     BottomSheetHandle,
 } from '@gorhom/bottom-sheet';
 import {cn} from '../theme';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+// import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {X} from 'lucide-react-native';
 import {Icon} from './icon';
 import {Text, TextProps, View, ViewProps} from 'react-native';
@@ -61,7 +61,7 @@ export const BottomSheet: FunctionComponent<BottomSheetProps> = props => {
   const {children, sheetRef, ...otherProps} = props;
 
   // const {tokens} = useColorScheme();
-  const safeArea = useSafeAreaInsets();
+  // const safeArea = useSafeAreaInsets();
 
   const ref = useRef<BottomSheet>(null);
   useImperativeHandle(sheetRef, () => ref.current!);
@@ -69,7 +69,7 @@ export const BottomSheet: FunctionComponent<BottomSheetProps> = props => {
   return (
     <GorhomBottomSheet
       ref={ref}
-      topInset={safeArea.top}
+      // topInset={safeArea.top}
       enableDynamicSizing
       keyboardBehavior="interactive"
       keyboardBlurBehavior={'restore'}
@@ -105,7 +105,7 @@ export const BottomSheetModal: FunctionComponent<
   const {children, sheetRef, ...otherProps} = props;
 
   // const {tokens} = useColorScheme(); // TODO fix
-  const safeArea = useSafeAreaInsets();
+  // const safeArea = useSafeAreaInsets();
 
   const ref = useRef<BottomSheetModal>(null);
   useImperativeHandle(sheetRef, () => ref.current!);
@@ -116,7 +116,7 @@ export const BottomSheetModal: FunctionComponent<
       enableDynamicSizing
       keyboardBehavior="interactive"
       keyboardBlurBehavior={'restore'}
-      topInset={safeArea.top}
+      // topInset={safeArea.top}
       backdropComponent={backdropProps => (
         <BottomSheetBackdrop
           opacity={0.6}
@@ -146,7 +146,7 @@ export const BottomSheetView: FunctionComponent<
   BottomSheetViewProps
 > = props => {
   const {children, ...otherProps} = props;
-  const safeArea = useSafeAreaInsets();
+  // const safeArea = useSafeAreaInsets();
 
   return (
     <GorhomBottomSheetView {...otherProps}>
@@ -154,7 +154,7 @@ export const BottomSheetView: FunctionComponent<
       <View
         style={{
           width: '100%',
-          height: safeArea.bottom,
+          // height: safeArea.bottom,
         }}
       />
     </GorhomBottomSheetView>
@@ -165,13 +165,13 @@ export function BottomSheetFlatList<T>(props: BottomSheetFlatListProps<T>) {
   const {...otherProps} = props;
 
   const [keyboardShown] = useKeyboard();
-  const safeArea = useSafeAreaInsets();
+  // const safeArea = useSafeAreaInsets();
 
   return (
     <>
       <GorhomBottomSheetFlatList
         contentContainerStyle={{
-          paddingBottom: keyboardShown ? 0 : safeArea.bottom,
+          // paddingBottom: keyboardShown ? 0 : safeArea.bottom,
         }}
         {...otherProps}
       />

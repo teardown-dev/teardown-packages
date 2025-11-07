@@ -1,52 +1,49 @@
-
-const originalConsoleLog = console.log;
-const originalConsoleWarn = console.warn;
-const originalConsoleDebug = console.debug;
-const originalConsoleError = console.error;
+// Global debug state
+const isDebug = true; // toggle this to turn on/off for global control
 
 export class Logger {
-  private static DEFAULT_PREFIX = 'Teardown';
-  private readonly prefix: string;
-  private readonly key: string;
+	private readonly key: string;
 
-  private readonly enabled = true;
+	enabled = false;
 
-  originalConsoleLog: typeof console.log;
-  originalConsoleWarn: typeof console.warn;
-  originalConsoleDebug: typeof console.debug;
-  originalConsoleError: typeof console.error;
+	log: typeof console.log = () => {};
+	error: typeof console.error = () => {};
+	warn: typeof console.warn = () => {};
+	info: typeof console.info = () => {};
+	debug: typeof console.debug = () => {};
 
-  constructor(key: string, prefix?: string) {
-    this.key = key;
-    this.prefix = prefix || Logger.DEFAULT_PREFIX;
+	constructor(key: string, enabled = isDebug) {
+		this.key = key;
+		this.enabled = enabled;
 
-    this.originalConsoleLog = originalConsoleLog;
-    this.originalConsoleWarn = originalConsoleWarn;
-    this.originalConsoleDebug = originalConsoleDebug;
-    this.originalConsoleError = originalConsoleError;
-  }
+		this.setupLogger();
+	}
 
-  buildPrefix() {
-    return `---- [${this.prefix}] ---- ${this.key} ---- `;
-  }
+	// Method to create a proxy for console methods
+	private setupLogger() {
+		this.log = this.enabled
+			? console.log.bind(console, `${this.buildPrefix()} `)
+			: () => {};
+		this.error = this.enabled
+			? console.error.bind(console, `${this.buildPrefix()} `)
+			: () => {};
+		this.warn = this.enabled
+			? console.warn.bind(console, `${this.buildPrefix()} `)
+			: () => {};
+		this.info = this.enabled
+			? console.info.bind(console, `${this.buildPrefix()} `)
+			: () => {};
+		this.debug = this.enabled
+			? console.debug.bind(console, `${this.buildPrefix()} `)
+			: () => {};
+	}
 
-  log(...args: any[]) {
-    this.enabled && console.log(this.buildPrefix(), ...args);
-  }
+	enable(enabled = true) {
+		this.enabled = enabled;
+		this.setupLogger();
+	}
 
-  error(...args: any[]) {
-    this.enabled && console.error(this.buildPrefix(), ...args);
-  }
-
-  warn(...args: any[]) {
-    this.enabled && console.warn(this.buildPrefix(), ...args);
-  }
-
-  info(...args: any[]) {
-    this.enabled && console.info(this.buildPrefix(), ...args);
-  }
-
-  debug(...args: any[]) {
-    this.enabled && console.debug(this.buildPrefix(), ...args);
-  }
+	buildPrefix() {
+		return `---- ${this.key} ----`;
+	}
 }

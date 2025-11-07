@@ -77,3 +77,27 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+
+
+
+// Nativewind
+
+1. `bun add nativewind@^4.0.1 react-native-reanimated tailwindcss`
+2. `bunx pod-install`
+3. `bunx `
+4. Copy the `tailwind.config.js` file from the `nativewind` package to the root of your project.
+   ```javascript
+   /** @type {import('tailwindcss').Config} */
+   module.exports = {
+    content: ["./src/**/*.{js,jsx,ts,tsx}"],
+    presets: [require("nativewind/preset")],
+    theme: {
+    extend: {},
+    },
+    plugins: [],
+   }
+   ```
+5. Global CSS file ```@tailwind base;
+   @tailwind components;
+   @tailwind utilities;```

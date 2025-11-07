@@ -5,7 +5,8 @@
 		"dev": "tsc --declaration --watch"
 	},
 	"bin": {
-		"tsc": "./dist/index.js"
+		"td": "./dist/index.js",
+		"teardown": "./dist/index.js"
 	},
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -20,6 +21,6 @@
 		"@types/bun": "latest"
 	},
 	"peerDependencies": {
-		"typescript": "^5.0.0"
+		"typescript": "^5.6.3"
 	}
 }

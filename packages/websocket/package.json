@@ -1,6 +1,6 @@
 {
 	"name": "@teardown/websocket",
-	"version": "1.0.11",
+	"version": "1.1.0-alpha-01",
 	"description": "",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
@@ -13,6 +13,7 @@
 	"dependencies": {
 		"@teardown/event-emitter": "link:@teardown/event-emitter",
 		"@teardown/logger": "link:@teardown/logger",
-		"@teardown/util": "link:@teardown/util"
+		"@teardown/util": "link:@teardown/util",
+		"async-mutex": "^0.5.0"
 	}
 }

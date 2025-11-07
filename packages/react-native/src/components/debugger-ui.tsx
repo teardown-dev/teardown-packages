@@ -78,7 +78,6 @@ const DebuggerUiEnabled: FunctionComponent<DebuggerUiOptions> = props => {
               )}>
               <BottomSheetCloseIcon />
               <BottomSheetView
-                className={''}
                 style={{
                   paddingBottom: safeAreaInsets.bottom + 16,
                 }}>

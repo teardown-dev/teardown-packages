@@ -1,47 +1,42 @@
 const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
 
-const path = require("path");
+const path = require("node:path");
+// const metroPlugin = require("@teardown/react-native-navigation/metro");
 
-const teardown_ReactNative = path.resolve(
-	__dirname,
-	"../../packages/react-native",
-);
-const teardown_ReactNativeNavigation = path.resolve(
-	__dirname,
-	"../../packages/react-native-navigation",
-);
-const teardown_ReactNativeUI = path.resolve(
-	__dirname,
-	"../../packages/react-native-ui",
-);
-const teardown_Logger = path.resolve(__dirname, "../../packages/logger");
-const teardown_Websocket = path.resolve(__dirname, "../../packages/websocket");
-const teardown_Util = path.resolve(__dirname, "../../packages/util");
-const teardown_EventEmitter = path.resolve(
-	__dirname,
-	"../../packages/event-emitter",
-);
-const extraNodeModules = {
-	"@teardown/logger": teardown_Logger,
-	"@teardown/util": teardown_Util,
-	"@teardown/event-emitter": teardown_EventEmitter,
-	"@teardown/websocket": teardown_Websocket,
-	"@teardown/react-native": teardown_ReactNative,
-	"@teardown/react-native-ui": teardown_ReactNativeUI,
-	"@teardown/react-native-navigation": teardown_ReactNativeNavigation,
-};
-const watchFolders = [
-	// Include extra module dir to work around Metro's bug where resolver.extraNodeModules
-	// does not work without corresponding watchFolders, see also
-	// https://github.com/facebook/metro/issues/834
-	teardown_Logger,
-	teardown_Util,
-	teardown_EventEmitter,
-	teardown_Websocket,
-	teardown_ReactNative,
-	teardown_ReactNativeUI,
-	teardown_ReactNativeNavigation,
+/**
+ * Resolves the paths for the given packages relative to the provided package root.
+ *
+ * @param {string} packageRoot - The root directory where the packages are located.
+ * @param {string[]} packages - An array of package names to resolve.
+ * @returns {{ extraNodeModules: Record<string, string>, watchFolders: string[] }} An object containing the resolved package paths as `extraNodeModules` and `watchFolders`.
+ */
+function resolvePackages(packageRoot, packages) {
+	const resolved = packages.reduce((acc, pkg) => {
+		acc[`@teardown/${pkg}`] = path.resolve(__dirname, `${packageRoot}/${pkg}`);
+		return acc;
+	}, {});
+
+	return {
+		extraNodeModules: resolved,
+		watchFolders: Object.values(resolved),
+	};
+}
+
+const packageRoot = path.resolve(__dirname, "../../packages");
+const packages = [
+	"logger",
+	"util",
+	"event-emitter",
+	"websocket",
+	"react-native",
+	"react-native-ui",
+	"react-native-navigation",
 ];
+
+const { watchFolders, extraNodeModules } = resolvePackages(
+	packageRoot,
+	packages,
+);
 
 /**
  * Metro configuration
@@ -61,7 +56,11 @@ const config = {
 		}),
 		// unstable_enableSymlinks: true,  // defaults to true since Metro v0.79.0
 	},
-	resetCache: true, // https://metrobundler.dev/docs/configuration/#resetcache
+	resetCache: true,
 };
 
-module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+module.exports = mergeConfig(
+	getDefaultConfig(__dirname),
+	config,
+	// metroPlugin.getConfig(),
+);

@@ -1,4 +1,5 @@
-import { NativeModules, Platform } from "react-native";
+import type { Events } from "@teardown/event-emitter";
+import { Logger } from "@teardown/logger";
 import {
 	type ClientWebsocketEvents,
 	type ConnectionEstablishedWebsocketEvent,
@@ -6,24 +7,33 @@ import {
 	type WebsocketClientOptions,
 	type WebsocketConnectionStatus,
 } from "@teardown/websocket";
+import { NativeModules, Platform } from "react-native";
 
 export type DebuggerStatus = WebsocketConnectionStatus;
 
 export type DebuggerOptions = WebsocketClientOptions;
 
 export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
-	public onEvent(event: ClientWebsocketEvents[keyof ClientWebsocketEvents]) {
-		this.logger.log("onEvent", event);
-		return event;
+	constructor(options: DebuggerOptions) {
+		super({
+			logger: new Logger("Debugger"),
+			...options,
+		});
 	}
 
-	public onConnectionEstablished(event: ConnectionEstablishedWebsocketEvent) {
-		this.logger.log("Connection established", event);
+	getDeviceName() {
+		return Platform.select({
+			ios: "iPhone",
+			android: "Android",
+			default: "Unknown Device",
+		});
+	}
 
-		this._client_id = event.client_id;
-
+	public async onConnectionEstablished(
+		event: ConnectionEstablishedWebsocketEvent,
+	) {
 		this.send("CLIENT_CONNECTION_ESTABLISHED", {
-			deviceName: "~~~--- device name here ---~~~",
+			deviceName: this.getDeviceName(),
 			platform: Platform.OS,
 			platformVersion: Platform.Version,
 			reactNativeVersion: Platform.constants.reactNativeVersion,
@@ -49,7 +59,6 @@ export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
 			const scriptURL = NativeModules?.SourceCode?.getConstants().scriptURL;
 			if (typeof scriptURL !== "string")
 				throw new Error("Invalid non-string URL");
-			console.log("scriptURL", scriptURL);
 
 			return this.getHostFromUrl(scriptURL);
 		} catch (error) {
@@ -65,12 +74,5 @@ export class Debugger extends WebsocketClient<ClientWebsocketEvents> {
 			);
 			return superHost;
 		}
-	}
-
-	public send<
-		Type extends keyof ClientWebsocketEvents,
-		Payload extends ClientWebsocketEvents[Type]["payload"],
-	>(type: Type, payload: Payload) {
-		super.send(type, payload);
 	}
 }
