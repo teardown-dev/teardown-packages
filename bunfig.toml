@@ -1,2 +1,2 @@
 [install]
-registry = { url = "https://registry.npmjs.org", token = "$NPM_TOKEN" }
+registry = { url = "https://registry.npmjs.org", token = "$NODE_AUTH_TOKEN" }
