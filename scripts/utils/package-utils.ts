@@ -1,9 +1,8 @@
 import chalk from "chalk";
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import semver from "semver";
-import { readdirSync } from "node:fs";
 
 export interface PackageJson {
 	name: string;
@@ -24,11 +23,11 @@ export const DEP_TYPES = [
 	"peerDependencies",
 ] as const;
 
+export const PACKAGES_DIR = "./packages";
+
 export function getPackagePath(packageName: string): string {
 	return `./packages/${packageName.replace("@teardown/", "")}`;
 }
-
-export const PACKAGES_DIR = "./packages";
 
 export function readPackageJson(packagePath: string): PackageJson {
 	return JSON.parse(readFileSync(join(packagePath, "package.json"), "utf-8"));
@@ -95,9 +94,14 @@ export function isValidVersion(version: string): boolean {
 }
 
 export function getPackageDirs(): string[] {
-	return readdirSync(PACKAGES_DIR, { withFileTypes: true })
-		.filter((dirent) => dirent.isDirectory())
-		.map((dirent) => join(PACKAGES_DIR, dirent.name));
+	try {
+		return readdirSync(PACKAGES_DIR, { withFileTypes: true })
+			.filter((dirent) => dirent.isDirectory())
+			.map((dirent) => `${PACKAGES_DIR}/${dirent.name}`);
+	} catch (error) {
+		// If packages directory doesn't exist, return empty array
+		return [];
+	}
 }
 
 export function getPublishOrder(): string[] {
