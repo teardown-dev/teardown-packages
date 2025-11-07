@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import {
 	GestureHandlerRootView,
@@ -8,12 +8,31 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 function App(): React.JSX.Element {
-	console.log("App mounted");
+	const [isOnline, setIsOnline] = useState<boolean | null>(null);
+	const [lastChecked, setLastChecked] = useState<string>("");
 
 	useEffect(() => {
-		const intervalId = setInterval(() => {
-			console.log("App interval");
-		}, 2500);
+		const checkConnectivity = async () => {
+			try {
+				const start = Date.now();
+				const response = await fetch("https://8.8.8.8", {
+					mode: "no-cors",
+					cache: "no-cache",
+				});
+				const pingTime = Date.now() - start;
+				setIsOnline(true);
+				setLastChecked(`Online (ping: ${pingTime}ms)`);
+			} catch (error) {
+				setIsOnline(false);
+				setLastChecked("Offline");
+			}
+		};
+
+		// Initial check
+		checkConnectivity();
+
+		// Set up interval for periodic checks
+		const intervalId = setInterval(checkConnectivity, 15000);
 
 		return () => {
 			clearInterval(intervalId);
@@ -26,20 +45,41 @@ function App(): React.JSX.Element {
 				<View
 					style={{
 						flex: 1,
-						backgroundColor: "green",
+						backgroundColor: "white",
 						justifyContent: "center",
 						alignItems: "center",
+						gap: 20,
 					}}
 				>
-					<Text>Hello</Text>
+					<Text style={{ fontSize: 24 }}>
+						Connection Status: {isOnline === null ? "Checking..." : lastChecked}
+					</Text>
+
+					<Pressable
+						onPress={() => {
+							setIsOnline(null);
+							setLastChecked("Checking...");
+						}}
+						style={({ pressed }) => ({
+							backgroundColor: pressed ? "#0056b3" : "#007bff",
+							padding: 12,
+							borderRadius: 8,
+						})}
+					>
+						<Text style={{ color: "white" }}>Check Now</Text>
+					</Pressable>
 
 					<Pressable
 						onPress={() => {
 							throw new Error("Test error");
 						}}
-						style={{ backgroundColor: "red", padding: 8 }}
+						style={({ pressed }) => ({
+							backgroundColor: pressed ? "#0056b3" : "#007bff",
+							padding: 12,
+							borderRadius: 8,
+						})}
 					>
-						<Text>Press me</Text>
+						<Text style={{ color: "white" }}>Throw error</Text>
 					</Pressable>
 				</View>
 			</GestureHandlerRootView>
@@ -48,43 +88,3 @@ function App(): React.JSX.Element {
 }
 
 export default App;
-
-// declare module "@teardown/react-native-navigation" {
-// 	interface Register {
-// 		router: typeof router;
-// 	}
-// }
-
-// type TeardownRouterProps = {
-// 	router: Router<any>;
-// };
-
-// function TeardownRouter(props: TeardownRouterProps) {
-// 	const RootStack = props.router.root.stack;
-// 	const RootStackLayout = props.router.root.layout ?? Fragment;
-
-// 	return (
-// 		<View style={styles.root}>
-// 			<RootStackLayout>
-// 				<RootStack.Navigator>
-// 					{Object.keys(props.router.screens).map((screenName) => {
-// 						const screen = props.router.screens[screenName];
-// 						return (
-// 							<RootStack.Screen
-// 								key={screen.name}
-// 								name={screen.name}
-// 								component={screen.component}
-// 							/>
-// 						);
-// 					})}
-// 				</RootStack.Navigator>
-// 			</RootStackLayout>
-// 		</View>
-// 	);
-// }
-
-// const styles = StyleSheet.create({
-// 	root: {
-// 		flex: 1,
-// 	},
-// });

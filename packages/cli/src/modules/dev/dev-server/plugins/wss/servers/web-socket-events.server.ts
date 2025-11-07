@@ -94,7 +94,7 @@ export class WebSocketEventsServer extends WebSocketServer {
 	 * @param message Message to serialize.
 	 * @returns String representation of a `message` or `undefined` if serialization failed.
 	 */
-	serializeMessage(message: EventMessage) {
+	serializeMessage(message: EventMessage, clientId?: string) {
 		let toSerialize = message;
 		if (message.error && message.error instanceof Error) {
 			toSerialize = {
@@ -123,7 +123,10 @@ export class WebSocketEventsServer extends WebSocketServer {
 			};
 		}
 		try {
-			return JSON.stringify(toSerialize);
+			return JSON.stringify({
+				...toSerialize,
+				clientId,
+			});
 		} catch (error) {
 			this.fastify.log.error({ msg: "Failed to serialize", error });
 			return undefined;
@@ -137,7 +140,6 @@ export class WebSocketEventsServer extends WebSocketServer {
 	 */
 	broadcastEvent(event: EventMessage) {
 		if (!this.clients.size) {
-			console.log("No clients connected");
 			return;
 		}
 
@@ -149,14 +151,11 @@ export class WebSocketEventsServer extends WebSocketServer {
 
 		for (const [clientId, socket] of this.clients.entries()) {
 			try {
-				socket.send(
-					JSON.stringify({
-						version: WebSocketEventsServer.PROTOCOL_VERSION,
-						type: "event",
-						data: serialized,
-						clientId,
-					}),
-				);
+				const clientMessage = this.serializeMessage(event, clientId);
+				if (!clientMessage) {
+					continue;
+				}
+				socket.send(clientMessage);
 			} catch (error) {
 				this.fastify.log.error({
 					msg: "Failed to send broadcast to client",

@@ -104,6 +104,7 @@ export class WebSocketMessageServer extends WebSocketServer {
 		data: string,
 		binary: any,
 	): Partial<ReactNativeMessage> | undefined {
+		console.log("parseMessage", data, binary);
 		if (binary) {
 			this.fastify.log.error({
 				msg: "Failed to parse message - expected text message, got binary",
@@ -138,6 +139,7 @@ export class WebSocketMessageServer extends WebSocketServer {
 	 * @returns WebSocket connection.
 	 */
 	getClientSocket(clientId: string) {
+		console.log("getClientSocket", clientId);
 		const socket = this.clients.get(clientId);
 		if (socket === undefined) {
 			throw new Error(`Could not find client with id "${clientId}"`);
@@ -158,6 +160,7 @@ export class WebSocketMessageServer extends WebSocketServer {
 		message: Partial<ReactNativeMessage>,
 		error: Error,
 	) {
+		console.log("handleError", clientId, message, error);
 		const errorMessage = {
 			id: message.id,
 			method: message.method,
@@ -202,6 +205,7 @@ export class WebSocketMessageServer extends WebSocketServer {
 	 * @param message Message to forward.
 	 */
 	forwardRequest(clientId: string, message: Partial<ReactNativeMessage>) {
+		console.log("forwardRequest", clientId, message);
 		if (!message.target) {
 			this.fastify.log.error({
 				msg: "Failed to forward request - message.target is missing",
@@ -257,6 +261,7 @@ export class WebSocketMessageServer extends WebSocketServer {
 	 * @param message The message to process by the server.
 	 */
 	processServerRequest(clientId: string, message: Partial<ReactNativeMessage>) {
+		console.log("processServerRequest", clientId, message);
 		let result: string | Record<string, Record<string, string>>;
 
 		switch (message.method) {

@@ -27,13 +27,7 @@ export class WebSocketApiServer extends WebSocketServer {
 	 *
 	 * @param event Event string or object to send.
 	 */
-	send(event: any) {
-		this.fastify.log.debug({
-			msg: "Sending message to API clients",
-			data: event,
-			clients: this.clients.size,
-		});
-
+	send(event: unknown) {
 		if (this.clients.size === 0) {
 			this.fastify.log.debug({
 				msg: "No API clients connected, skipping message",
