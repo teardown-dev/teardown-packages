@@ -11,7 +11,8 @@
     "lint": "bunx @biomejs/biome lint --write ./src",
     "bump-packages-version": "bun scripts/bump-packages-version.ts",
     "link-packages": "bun run ./scripts/link-packages.ts",
-    "build-packages": "bun run ./scripts/build-packages.ts"
+    "build-packages": "bun run ./scripts/build-packages.ts",
+    "replace-links": "bun run ./scripts/replace-link-dependencies.ts"
   },
   "workspaces": [
     "examples/*",

@@ -362,11 +362,11 @@ export const npm = {
 };
 
 // Add these functions from update-versions.ts
-export function replaceLinkedDependencies() {
+export async function replaceLinkedDependencies() {
 	const currentVersion = getCurrentVersion();
 	const packageDirs = getPackageDirs();
 
-	packageDirs.forEach((packagePath) => {
+	for (const packagePath of packageDirs) {
 		try {
 			const pkg = readPackageJson(packagePath);
 			let hasChanges = false;
@@ -385,13 +385,13 @@ export function replaceLinkedDependencies() {
 			}
 
 			if (hasChanges) {
-				writePackageJson(packagePath, pkg);
+				await Promise.resolve(writePackageJson(packagePath, pkg));
 				logSuccess(`Replaced link dependencies in ${pkg.name}`);
 			}
 		} catch (error) {
 			logError(`Error updating links in ${packagePath}:`, error);
 		}
-	});
+	}
 }
 
 export async function synchronizePackageVersions(
