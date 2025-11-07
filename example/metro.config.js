@@ -12,4 +12,4 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
   /* your config */
 });
 
-module.exports = withNativeWind(config, {input: './src/global.css'});
+module.exports = withNativeWind(config, {input: './src/theme/global.css'});

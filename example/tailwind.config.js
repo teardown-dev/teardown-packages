@@ -1,13 +1,37 @@
 const {hairlineWidth, platformSelect} = require('nativewind/theme');
+const plugin = require('tailwindcss/plugin');
+const {typographyStyles} = require('./src/theme/typography');
+const {
+  generateTailwindTokensForReactNative,
+  flattenTokens,
+} = require('./src/theme/generate');
+const {tokens} = require('./src/theme/tokens');
+const {colors} = require('./src/theme/colors');
+const flattenedTokens = flattenTokens(tokens.color);
+
+const tokensForReactNative = generateTailwindTokensForReactNative(
+  flattenedTokens,
+  'dark',
+);
+
+const allFlattenedTokens = Object.entries(flattenedTokens).reduce(
+  (acc, [key, {dark}]) => {
+    return {
+      ...acc,
+      [key]: dark,
+    };
+  },
+  {},
+);
+
+console.log(allFlattenedTokens);
+console.log(tokensForReactNative);
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   // NOTE: Update this to include the paths to all of your component files.
-  content: [
-    './src/**/*.{js,jsx,ts,tsx}',
-    './app/**/*.{js,jsx,ts,tsx}',
-    './components/**/*.{js,jsx,ts,tsx}',
-  ],
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
@@ -45,13 +69,25 @@ module.exports = {
           DEFAULT: withOpacity('card'),
           foreground: withOpacity('card-foreground'),
         },
+
+        ...allFlattenedTokens,
+        // ...colors,
       },
+      // ...tokensForReactNative,
       borderWidth: {
         hairline: hairlineWidth(),
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({addUtilities}) => {
+      // addUtilities({
+      //   ...typographyStyles,
+      //   '.icon': 'w-10 h-10 items-center justify-center p-0',
+      //   '.icon-sm': 'w-8 h-8 items-center justify-center p-0',
+      // });
+    }),
+  ],
 };
 
 function withOpacity(variableName) {

@@ -1,9 +1,8 @@
 import {useColorScheme as useNativewindColorScheme} from 'nativewind';
-
-import {COLORS} from './colors';
+import {tokens} from './tokens.ts';
+import {colors} from './colors.ts';
 
 export function useColorScheme() {
-
   const {colorScheme, setColorScheme: setNativeWindColorScheme} =
     useNativewindColorScheme();
 
@@ -20,6 +19,7 @@ export function useColorScheme() {
     isDarkColorScheme: colorScheme === 'dark',
     setColorScheme,
     toggleColorScheme,
-    colors: COLORS[colorScheme ?? 'dark'],
+    colors: colors,
+    tokens: tokens,
   };
 }
