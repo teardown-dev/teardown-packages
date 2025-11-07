@@ -44,6 +44,10 @@ function App(): React.JSX.Element {
 		// };
 	}, []);
 
+	console.log("isOnline", isOnline);
+	console.warn("lastChecked", lastChecked);
+	console.debug("lastChecked", lastChecked);
+
 	return (
 		<SafeAreaProvider style={{ flex: 1 }}>
 			<GestureHandlerRootView style={{ flex: 1, backgroundColor: "pink" }}>
