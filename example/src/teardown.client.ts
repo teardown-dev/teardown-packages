@@ -1,10 +1,17 @@
-import {TeardownClient} from './packages/react-native';
-import {Logging} from './packages/react-native/services/logging.ts';
-import {NetworkingPlugin} from './packages/react-native/services/networking.ts';
+import {
+  HTTPPlugin,
+  LoggingPlugin,
+  TeardownClient,
+} from '@teardown/react-native';
 
-export const teardownClient = new TeardownClient({
-  debugger: {
-    host: '192.168.30.37',
-  },
-  plugins: [new Logging(), new NetworkingPlugin()],
-});
+const plugins = [
+  ['logging', new LoggingPlugin()],
+  [
+    'network',
+    new HTTPPlugin({
+      ignoreURLs: ['http://localhost:8081/__css_interop_update_endpoint'],
+    }),
+  ],
+] as const;
+
+export const teardownClient = new TeardownClient({plugins});

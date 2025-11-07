@@ -1,0 +1,27 @@
+{
+  "name": "@teardown/react-native-ui",
+  "version": "1.0.1",
+  "description": "",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "src/**/*"
+  ],
+  "dependencies": {
+    "@gorhom/bottom-sheet": "^4.6.3",
+    "class-variance-authority": "^0.7.0",
+    "lucide-react-native": "^0.416.0",
+    "nativewind": "^2.0.11",
+    "react-native-safe-area-context": "^4.10.8",
+    "react-native-svg": "^15.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "react": "^18.3.1",
+    "react-native": "^0.74.3"
+  }
+}

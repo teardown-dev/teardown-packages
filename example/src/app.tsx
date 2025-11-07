@@ -1,9 +1,11 @@
-import './reactotron-config.ts';
-import './teardown.client.ts';
+// import './reactotron-config';
 import './theme';
 import type {FunctionComponent} from 'react';
 import React from 'react';
 import {Main} from './main';
+import {NativeModules} from 'react-native';
+
+// console.log('NativeModules', NativeModules.SourceCode);
 
 export const App: FunctionComponent = () => {
   return <Main />;

@@ -58,7 +58,7 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 
     private ws: WebSocket;
     private _status: WebsocketConnectionStatus = 'CONNECTING';
-    emitter = new EventEmitter<WebsocketLocalEvents>();
+    emitter: EventEmitter<WebsocketLocalEvents> = new EventEmitter<WebsocketLocalEvents>();
 
     host = 'localhost';
     port = 20024;

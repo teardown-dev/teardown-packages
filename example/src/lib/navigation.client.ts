@@ -16,7 +16,7 @@ export type NavigationClientOptions = {
 };
 
 export class NavigationClient {
-  id = Util.randomUUID();
+  id = Util.generateUUID();
 
   logger: Logger;
 
