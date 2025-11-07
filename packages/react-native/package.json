@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native",
-  "version": "1.1.4",
+  "version": "1.2.4",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,23 +14,23 @@
     "dist/**/*"
   ],
   "dependencies": {
-    "@teardown/logger": "^1.1.0-beta-04",
-    "@teardown/util": "^1.1.0-beta-04",
-    "@teardown/websocket": "^1.1.0-beta-04"
+    "@teardown/logger": "link:@teardown/logger",
+    "@teardown/util": "link:@teardown/util",
+    "@teardown/websocket": "link:@teardown/websocket"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",
     "@types/react-native": "^0.73.0",
     "metro-config": "^0.81.0",
-    "react": "1.1.4",
-    "react-native": "1.1.4",
+    "react": "^18.3.1",
+    "react-native": "^0.75.4",
     "react-native-device-info": "^14.0.0",
     "react-native-gesture-handler": "^2.20.0",
     "typescript": "^5.6.3"
   },
   "peerDependencies": {
-    "react": "1.1.4",
-    "react-native": "1.1.4",
+    "react": "^18",
+    "react-native": "^0.75",
     "react-native-device-info": "^14",
     "react-native-gesture-handler": "^2"
   }
