@@ -1,10 +1,13 @@
 {
-  "name": "teardown-packages",
-  "version": "1.0.0",
-  "private": true,
+  "name": "teardown",
+  "version": "0.0.1",
   "description": "",
+  "private": true,
   "workspaces": [
     "example",
-    "packages/*"
+    "examples/*",
+    "apps/*",
+    "packages/*",
+    "packages/**/example"
   ]
 }
