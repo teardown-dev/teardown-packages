@@ -44,7 +44,7 @@ export class DevServer {
 	constructor(readonly config: DevServerOptions) {
 		this.terminalReporter = new TeardownTerminalReporter(this);
 		this.instance = Fastify({
-			// disableRequestLogging: false,
+			disableRequestLogging: true,
 			logger: {
 				level: "trace",
 				stream: new Writable({
@@ -86,11 +86,11 @@ export class DevServer {
 	}
 
 	private onMessage(log: Log): void {
-		this.terminalReporter.update({
-			type: "client_log",
-			level: "info",
-			data: [log.msg],
-		});
+		// this.terminalReporter.update({
+		// 	type: "client_log",
+		// 	level: "info",
+		// 	data: [log.msg],
+		// });
 	}
 
 	private onClientConnected(platform: string, clientId: string): void {
@@ -159,7 +159,7 @@ export class DevServer {
 				"/inspector/device":
 					devMiddleware.websocketEndpoints["/inspector/device"],
 				"/inspector/network":
-					devMiddleware.websocketEndpoints["/inspector/debug"], // Uses same endpoint as debugger to handle Network-related CDP events
+					devMiddleware.websocketEndpoints["/inspector/debug"],
 			},
 		});
 		await this.instance.register(multipartPlugin);
@@ -179,21 +179,53 @@ export class DevServer {
 				watchFolders: [this.config.projectRoot],
 			}),
 		);
-		this.instance.use(devMiddleware.middleware);
 
 		// Convert Metro middleware to Fastify middleware format
 		this.instance.use((req, res, next) => {
 			const middleware = serverInstance.middleware as NextHandleFunction;
 			middleware(req, res, next);
 		});
+		this.instance.use(devMiddleware.middleware);
+
+		const DEFAULT_ALLOWED_CORS_HOSTNAMES = [
+			"localhost",
+			"chrome-devtools-frontend.appspot.com", // Support remote Chrome DevTools frontend
+			"devtools", // Support local Chrome DevTools `devtools://devtools`
+		];
+		// this.instance.use((request, reply, done) => {
+		// 	console.log("onRequest", request.url);
+		// 	const origin = request.headers.origin;
+		// 	if (origin && DEFAULT_ALLOWED_CORS_HOSTNAMES.includes(origin)) {
+		// 		reply.setHeader("Access-Control-Allow-Origin", origin);
+		// 	}
+
+		// 	reply.setHeader("Access-Control-Allow-Origin", "*");
+
+		// 	done();
+		// });
+
+		// this.instance.addHook("onSend", async (request, reply, payload) => {
+		// 	console.log("onSend", request.url);
+		// 	reply.header("X-Content-Type-Options", "nosniff");
+		// 	reply.header("X-React-Native-Project-Root", this.config.projectRoot);
+
+		// 	const [pathname] = request.url.split("?");
+		// 	if (pathname.endsWith(".map")) {
+		// 		reply.header("Access-Control-Allow-Origin", "*");
+		// 	}
+
+		// 	return payload;
+		// });
+
 		// console.log("Plugins registered");
 	}
 
 	private registerHooks(): void {
 		// console.log("Registering hooks");
-		this.instance.addHook(
+		this.instance = this.instance.addHook(
 			"onSend",
 			async (request: any, reply: any, payload: any) => {
+				console.log("onSend", request.url);
 				reply.header("X-Content-Type-Options", "nosniff");
 				reply.header("X-React-Native-Project-Root", this.config.projectRoot);
 

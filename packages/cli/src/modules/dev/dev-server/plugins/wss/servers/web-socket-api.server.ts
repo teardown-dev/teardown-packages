@@ -46,7 +46,6 @@ export class WebSocketApiServer extends WebSocketServer {
 	 */
 	onConnection(socket: WebSocket) {
 		const clientId = `client#${this.nextClientId++}`;
-		console.log("WebSocketApiServer onConnection", clientId, socket);
 		this.clients.set(clientId, socket);
 
 		this.fastify.log.debug({ msg: "API client connected", clientId });
