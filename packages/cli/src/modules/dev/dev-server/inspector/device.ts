@@ -52,7 +52,7 @@ export class Device {
 		app: string,
 		socket: WS,
 		projectRoot: string,
-		eventReporter: EventReporter | null = null,
+		eventReporter?: EventReporter,
 	) {
 		this.id = id;
 		this.name = name;
@@ -136,7 +136,7 @@ export class Device {
 		app: string,
 		socket: WS,
 		projectRoot: string,
-		eventReporter: EventReporter | null,
+		eventReporter?: EventReporter,
 	): void {
 		invariant(
 			id === this.id,

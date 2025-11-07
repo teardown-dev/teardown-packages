@@ -15,7 +15,7 @@ interface DeviceConnectionServerConfig {
 	devices: Map<string, Device>;
 	deviceCounter: DeviceCounter;
 	projectRoot: string;
-	eventReporter: EventReporter | null;
+	eventReporter?: EventReporter;
 	customMessageHandler: CreateCustomMessageHandlerFn | null;
 }
 
@@ -23,7 +23,7 @@ export default class DeviceConnectionServer {
 	#devices: Map<string, Device>;
 	#deviceCounter: DeviceCounter;
 	#projectRoot: string;
-	#eventReporter: EventReporter | null;
+	#eventReporter?: EventReporter;
 	#customMessageHandler: CreateCustomMessageHandlerFn | null;
 
 	constructor({

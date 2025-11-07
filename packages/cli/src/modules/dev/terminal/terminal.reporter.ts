@@ -7,6 +7,7 @@ import type { TerminalReportableEvent } from "metro/src/lib/TerminalReporter";
 import { KeyboardHandlerManager } from "../dev-menu/keyboard-handler";
 import type { DevServer } from "../dev-server/dev-server";
 import { BaseTerminalReporter } from "./base.terminal.reporter";
+import { EventReporter, ReportableEvent } from "../dev-server/inspector/types";
 
 class LogRespectingTerminal extends Terminal {
 	constructor(
@@ -34,7 +35,10 @@ class LogRespectingTerminal extends Terminal {
 
 const terminal = new LogRespectingTerminal(process.stdout);
 
-export class TeardownTerminalReporter extends BaseTerminalReporter {
+export class TeardownTerminalReporter
+	extends BaseTerminalReporter
+	implements EventReporter
+{
 	constructor(readonly devServer: DevServer) {
 		super(terminal);
 	}
@@ -86,5 +90,9 @@ export class TeardownTerminalReporter extends BaseTerminalReporter {
 				super.update(event);
 				break;
 		}
+	}
+
+	logEvent(event: ReportableEvent): void {
+		// this.devServer?.reportMetroEvent(event);
 	}
 }

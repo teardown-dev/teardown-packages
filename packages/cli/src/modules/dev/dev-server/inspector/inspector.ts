@@ -20,7 +20,7 @@ const INTERNAL_ERROR_CODE = 1011;
 export interface InspectorOptions {
 	projectRoot: string;
 	serverBaseUrl: string;
-	eventReporter: EventReporter;
+	eventReporter?: EventReporter;
 	cdpAdapter?: CDPAdapter;
 }
 
@@ -29,7 +29,7 @@ export class Inspector {
 	private deviceCounter = 0;
 	private readonly projectRoot: string;
 	private readonly serverBaseUrl: string;
-	private readonly eventReporter: EventReporter;
+	private readonly eventReporter?: EventReporter;
 	private readonly cdpAdapter?: CDPAdapter;
 
 	constructor(options: InspectorOptions) {

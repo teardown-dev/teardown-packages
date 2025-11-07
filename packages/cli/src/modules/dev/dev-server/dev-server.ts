@@ -33,6 +33,7 @@ import {
 	symbolicatePlugin,
 } from "./sybmolicate/sybmolicate.plugin";
 import type { SymbolicatorResults } from "./sybmolicate/types";
+import { Inspector } from "./inspector/inspector";
 
 export type DevServerOptions = {
 	projectRoot: string;
@@ -169,6 +170,14 @@ export class DevServer {
 			onBundleBuilt: this.onBundleBuilt.bind(this),
 		});
 
+		const inspector = new Inspector({
+			projectRoot: this.config.projectRoot,
+			serverBaseUrl: this.getDevServerUrl(),
+			// eventReporter: this.terminalReporter,
+		});
+
+		const websockets = inspector.createWebSocketServers();
+
 		// const devMiddleware = createDevMiddleware({
 		// 	projectRoot: this.config.projectRoot,
 		// 	serverBaseUrl: `http://${this.config.host}:${this.config.port}`,
@@ -214,9 +223,9 @@ export class DevServer {
 			eventsServer: this.eventsServer,
 			apiServer: this.apiServer,
 			endpoints: {
-				"/inspector/debug": {} as any,
-				"/inspector/device": {} as any,
-				"/inspector/network": {} as any,
+				"/inspector/debug": websockets["/inspector/debug"],
+				"/inspector/device": websockets["/inspector/device"],
+				"/inspector/network": websockets["/inspector/debug"],
 			},
 		});
 		await this.instance.register(multipartPlugin);
@@ -241,7 +250,7 @@ export class DevServer {
 		);
 
 		this.instance.use(serverInstance.metroServer.processRequest);
-		// this.instance.use(devMiddleware.middleware);
+		this.instance.use(inspector.handleHttpRequest);
 	}
 
 	private onSymbolicate(request: SymbolicateRequest, reply: SymbolicateReply) {
