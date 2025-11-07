@@ -57,6 +57,7 @@ export class DevServer {
 	public eventsServer: WebSocketEventsServer;
 
 	public keyboardHandler: KeyboardHandlerManager;
+	public inspector: Inspector;
 
 	constructor(readonly config: DevServerOptions) {
 		this.terminalReporter = new TeardownTerminalReporter(this);
@@ -81,6 +82,12 @@ export class DevServer {
 		});
 
 		this.keyboardHandler = new KeyboardHandlerManager(this);
+
+		this.inspector = new Inspector({
+			projectRoot: this.config.projectRoot,
+			serverBaseUrl: this.getDevServerUrl(),
+			// eventReporter: this.terminalReporter,
+		});
 	}
 
 	async onWrite(
@@ -170,13 +177,7 @@ export class DevServer {
 			onBundleBuilt: this.onBundleBuilt.bind(this),
 		});
 
-		const inspector = new Inspector({
-			projectRoot: this.config.projectRoot,
-			serverBaseUrl: this.getDevServerUrl(),
-			// eventReporter: this.terminalReporter,
-		});
-
-		const websockets = inspector.createWebSocketServers();
+		const websockets = this.inspector.createWebSocketServers();
 
 		// const devMiddleware = createDevMiddleware({
 		// 	projectRoot: this.config.projectRoot,
