@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native",
-  "version": "1.1.0-beta-04",
+  "version": "1.1.0-beta-05",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

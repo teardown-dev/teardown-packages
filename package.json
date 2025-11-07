@@ -1,6 +1,6 @@
 {
   "name": "teardown",
-  "version": "1.1.0-beta-04",
+  "version": "1.1.0-beta-05",
   "description": "",
   "private": true,
   "packageManager": "bun@1.1.30",
@@ -8,11 +8,10 @@
     "dev": "turbo run dev",
     "fmt": "bunx @biomejs/biome format --write ./src",
     "lint": "bunx @biomejs/biome lint --write ./src",
-    "version": "VERSION=$npm_config_version bun scripts/update-versions.ts",
-    "version:beta": "VERSION=1.1.0-beta-01 bun scripts/update-versions.ts",
-    "update-deps": "bun scripts/update-dependencies.ts",
-    "publish-packages": "bun scripts/publish-packages.ts",
-    "publish-packages:dry": "DRY_RUN=true bun scripts/publish-packages.ts"
+    "version": "VERSION=$npm_config_version && bun ./scripts/update-versions.ts",
+    "version:beta": "VERSION=1.1.0-beta-05 && bun ./scripts/update-versions.ts",
+    "update-deps": "bun ./scripts/update-dependencies.ts",
+    "publish": "bun ./scripts/publish-packages.ts"
   },
   "workspaces": [
     "examples/*",
