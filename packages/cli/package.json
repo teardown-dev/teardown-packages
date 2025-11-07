@@ -23,8 +23,8 @@
     "@fastify/cors": "^10.0.1",
     "@fastify/middie": "^9.0.2",
     "@fastify/sensible": "^6.0.1",
+    "@isaacs/ttlcache": "^1.4.1",
     "@react-native-community/cli-server-api": "^15.0.1",
-    "@react-native/dev-middleware": "0.76.1",
     "@react-native/metro-config": "0.76.1",
     "@types/bun": "^1.1.13",
     "bun": "1.1.34",
@@ -42,10 +42,10 @@
     "metro": "^0.81.0",
     "metro-config": "^0.81.0",
     "metro-core": "^0.81.0",
-    "metro-runtime": "^0.81.0",
     "pretty-format": "^29.7.0",
     "prompts": "^2.4.2",
-    "source-map": "^0.7.4"
+    "source-map": "^0.7.4",
+    "timers": "^0.1.1"
   },
   "devDependencies": {
     "@types/babel__code-frame": "^7.0.6",

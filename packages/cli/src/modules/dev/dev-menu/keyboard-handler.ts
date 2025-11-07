@@ -119,15 +119,22 @@ export class KeyboardHandlerManager {
 		process.exit();
 	}
 
+	private isRawModeSupported(): boolean {
+		return process.stdin instanceof ReadStream;
+	}
+
 	private setRawMode(enable: boolean): void {
-		invariant(
-			process.stdin instanceof ReadStream,
-			"process.stdin must be a readable stream to modify raw mode",
-		);
+		if (!this.isRawModeSupported()) {
+			return;
+		}
 		process.stdin.setRawMode(enable);
 	}
 
 	private printAvailableCommands(): void {
+		if (!this.isRawModeSupported()) {
+			return;
+		}
+
 		this.devServer.terminalReporter.update({
 			type: "client_log",
 			level: "info",

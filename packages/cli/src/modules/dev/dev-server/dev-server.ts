@@ -6,37 +6,33 @@ import {
 	openStackFrameInEditorMiddleware,
 	openURLMiddleware,
 } from "@react-native-community/cli-server-api";
-import {
-	CustomMessageHandler,
-	CustomMessageHandlerConnection,
-	createDevMiddleware,
-} from "@react-native/dev-middleware";
-import { Writable } from "node:stream";
-// @ts-ignore
-import type { JSONSerializable } from "@react-native/dev-middleware/dist/inspector-proxy/types";
 import { getDefaultConfig, mergeConfig } from "@react-native/metro-config";
 import Fastify, { type FastifyInstance } from "fastify";
 import Metro from "metro";
 import type { ConfigT } from "metro-config";
 import type { TerminalReportableEvent } from "metro/src/lib/TerminalReporter";
+import { Writable } from "node:stream";
 import { KeyboardHandlerManager } from "../dev-menu/keyboard-handler";
 import { TeardownTerminalReporter } from "../terminal/terminal.reporter";
+import type {
+	CustomMessageHandler,
+	CustomMessageHandlerConnection,
+	JSONSerializable,
+} from "./inspector/types";
 import { devtoolsPlugin } from "./plugins/devtools.plugin";
+import { faviconPlugin } from "./plugins/favicon.plugin";
 import { multipartPlugin } from "./plugins/multipart.plugin";
-import {
-	symbolicatePlugin,
-	type SymbolicateReply,
-	type SymbolicateRequest,
-} from "./sybmolicate/sybmolicate.plugin";
 import { systracePlugin } from "./plugins/systrace.plugin";
 import { wssPlugin } from "./plugins/wss";
 import { WebSocketApiServer } from "./plugins/wss/servers/web-socket-api.server";
 import { WebSocketEventsServer } from "./plugins/wss/servers/web-socket-events.server";
 import { WebSocketMessageServer } from "./plugins/wss/servers/web-socket-message.server";
 import {
-	ReactNativeStackFrame,
-	type SymbolicatorResults,
-} from "./sybmolicate/types";
+	type SymbolicateReply,
+	type SymbolicateRequest,
+	symbolicatePlugin,
+} from "./sybmolicate/sybmolicate.plugin";
+import type { SymbolicatorResults } from "./sybmolicate/types";
 
 export type DevServerOptions = {
 	projectRoot: string;
@@ -54,9 +50,11 @@ export class DevServer {
 
 	private stream: Writable;
 	private instance: FastifyInstance;
+
 	public apiServer: WebSocketApiServer;
 	public messageServer: WebSocketMessageServer;
 	public eventsServer: WebSocketEventsServer;
+
 	public keyboardHandler: KeyboardHandlerManager;
 
 	constructor(readonly config: DevServerOptions) {
@@ -171,23 +169,39 @@ export class DevServer {
 			onBundleBuilt: this.onBundleBuilt.bind(this),
 		});
 
-		const devMiddleware = createDevMiddleware({
-			projectRoot: this.config.projectRoot,
-			serverBaseUrl: `http://${this.config.host}:${this.config.port}`,
-			logger: this.instance.log,
-			unstable_customInspectorMessageHandler:
-				this.customInspectorMessageHandler.bind(this),
-			unstable_experiments: {
-				enableNetworkInspector: true,
-			},
-		});
+		// const devMiddleware = createDevMiddleware({
+		// 	projectRoot: this.config.projectRoot,
+		// 	serverBaseUrl: `http://${this.config.host}:${this.config.port}`,
+		// 	logger: this.instance.log,
+		// 	unstable_customInspectorMessageHandler:
+		// 		this.customInspectorMessageHandler.bind(this),
+		// 	unstable_experiments: {
+		// 		enableNetworkInspector: true,
+		// 	},
+		// });
+
+		// const debuggerConnectionServer = new DebuggerConnectionServer({
+		// 	devices: this.devices,
+		// 	eventReporter: this.eventReporter,
+		// 	startHeartbeat: this.startHeartbeat,
+		// });
+		// const deviceConnectionServer = new DeviceConnectionServer(this.instance);
+
 		await this.instance.register(cors, {
-			// hook: "preHandler",
-			// origin: ["localhost:1420", "127.0.0.1:1420"],
+			origin: "*",
+			// 	"localhost",
+			// 	"localhost:8081",
+			// 	"127.0.0.1",
+			// 	"127.0.0.1:8081",
+			// 	/localhost:\d+/,
+			// 	/127\.0\.0\.1:\d+/,
+			// ],
+			// methods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
 			// allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 			// credentials: true,
 			// maxAge: 86400,
-			// preflightContinue: false,
+			// preflight: true,
+			preflightContinue: true,
 		});
 		await this.instance.register(fastifyCompress);
 		await this.instance.register(fastifySensible);
@@ -200,12 +214,9 @@ export class DevServer {
 			eventsServer: this.eventsServer,
 			apiServer: this.apiServer,
 			endpoints: {
-				"/inspector/debug":
-					devMiddleware.websocketEndpoints["/inspector/debug"],
-				"/inspector/device":
-					devMiddleware.websocketEndpoints["/inspector/device"],
-				"/inspector/network":
-					devMiddleware.websocketEndpoints["/inspector/debug"],
+				"/inspector/debug": {} as any,
+				"/inspector/device": {} as any,
+				"/inspector/network": {} as any,
 			},
 		});
 		await this.instance.register(multipartPlugin);
@@ -218,7 +229,7 @@ export class DevServer {
 			onSymbolicate: this.onSymbolicate.bind(this),
 		});
 		await this.instance.register(systracePlugin);
-		// await this.instance.register(faviconPlugin);
+		await this.instance.register(faviconPlugin);
 
 		// Register middleware
 		this.instance.use("/open-url", openURLMiddleware);
@@ -230,7 +241,7 @@ export class DevServer {
 		);
 
 		this.instance.use(serverInstance.metroServer.processRequest);
-		this.instance.use(devMiddleware.middleware);
+		// this.instance.use(devMiddleware.middleware);
 	}
 
 	private onSymbolicate(request: SymbolicateRequest, reply: SymbolicateReply) {
@@ -258,23 +269,23 @@ export class DevServer {
 	private onDeviceMessage(
 		connection: CustomMessageHandlerConnection,
 		message: JSONSerializable,
-	) {
-		console.log("onDeviceMessage", message);
+	): boolean {
 		this.instance.log.info("Device -> Debugger", {
 			message,
 		});
 		connection.debugger.sendMessage(message);
+		return true;
 	}
 
 	private onDebuggerMessage(
 		connection: CustomMessageHandlerConnection,
 		message: JSONSerializable,
-	) {
-		console.log("onDebuggerMessage", message);
+	): boolean {
 		this.instance.log.info("Debugger -> Device", {
 			message,
 		});
 		connection.device.sendMessage(message);
+		return true;
 	}
 
 	private registerHooks(): void {

@@ -38,3 +38,12 @@ export const symbolicatePlugin = fastifyPlugin<SymbolicatePluginOptions>(
 		dependencies: ["@fastify/sensible"],
 	},
 );
+
+export const rawBodyPlugin = fastifyPlugin<{
+	rawBody: string;
+}>((instance, options) => {
+	instance.addHook("preHandler", (request, reply, next) => {
+		// request.rawBody = "";
+		next();
+	});
+});

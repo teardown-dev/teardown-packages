@@ -16,19 +16,13 @@
     "publish-packages": "bun run ./scripts/publish-packages.ts"
   },
   "workspaces": [
-    "examples/*",
     "apps/*",
     "packages/*"
   ],
   "dependencies": {
-    "mime-types": "^2.1.35",
     "turbo": "^2.3.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@types/mime-types": "^2.1.1"
-  },
-  "patchedDependencies": {
-    "@react-native/dev-middleware@0.76.1": "patches/@react-native%2Fdev-middleware@0.76.1.patch"
+    "@biomejs/biome": "^1.9.4"
   }
 }

@@ -10,7 +10,7 @@ const pathToImgDir = path.join(dirname, "../img");
 export const faviconPlugin = fastifyPlugin(
 	async (instance) => {
 		console.log("pathToImgDir", pathToImgDir);
-		instance.register(fastifyFavicon, { path: pathToImgDir });
+		// instance.register(fastifyFavicon, { path: pathToImgDir });
 	},
 	{
 		name: "favicon-plugin",
