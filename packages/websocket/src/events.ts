@@ -53,21 +53,35 @@ export type ConsoleLogWebsocketEvent = BaseWebsocketEvent<
 
 export type Headers = Record<string, string>;
 
-export type HTTPRequestInfo = {
-    id: string;
-    url: string;
-    method: string;
-    headers: Headers;
-    body?: string;
-    timestamp: number;
-};
+export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-export type HTTPResponseInfo = {
+export type HTTPRequestInfo = {
+    // Request properties
     id: string;
-    status: number;
-    headers: Headers;
-    body?: string;
-    timestamp: number;
+    type: string;
+    url: string;
+    method: RequestMethod;
+    requestHeaders: Headers;
+    dataSent?: string;
+    startTime: number;
+
+    // Response properties
+    status?: number;
+    responseContentType?: string;
+    responseSize?: number;
+    responseHeaders?: Headers;
+    response?: string;
+    responseURL?: string;
+    responseType?: string;
+    timeout?: number;
+    endTime?: number;
+
+    // Common properties
+    closeReason?: string;
+    messages?: string;
+    serverClose?: any;
+    serverError?: any;
+    updatedAt: number;
 };
 
 export type WebSocketInfo = {
@@ -98,7 +112,7 @@ export type NetworkHTTPRequestWebsocketEvent = BaseWebsocketEvent<
 
 export type NetworkHTTPResponseWebsocketEvent = BaseWebsocketEvent<
     'NETWORK_HTTP_RESPONSE',
-    HTTPResponseInfo
+    HTTPRequestInfo
 >;
 
 export type NetworkWebSocketOpenEvent = BaseWebsocketEvent<
@@ -131,3 +145,4 @@ export type TeardownWebsocketEvents = WebsocketEvents<{
   CONNECTION_ESTABLISHED: ConnectionEstablishedWebsocketEvent; // RECEIVE
   CLIENT_WEBSOCKET_EVENT: WebsocketEvent; // RECEIVE
 }>;
+

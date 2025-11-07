@@ -44,7 +44,7 @@ interface WebSocketMessageEvent extends Event {
 }
 
 interface WebSocketErrorEvent extends Event {
-    message: string;
+    message?: string;
 }
 
 interface WebSocketCloseEvent extends Event {
@@ -235,7 +235,6 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
         };
 
         if (this._client_id === null || this.getStatus() !== 'CONNECTED') {
-            this.logger.log('Not ready to send, queueing event', event);
             this.eventQueue.push(event);
             return;
         }
