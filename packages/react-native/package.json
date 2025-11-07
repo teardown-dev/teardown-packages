@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
@@ -16,7 +16,7 @@
     "@teardown/logger": "1.0.1",
     "@teardown/react-native-ui": "1.0.1",
     "@teardown/util": "1.0.1",
-    "@teardown/websocket": "1.0.10"
+    "@teardown/websocket": "1.0.11"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

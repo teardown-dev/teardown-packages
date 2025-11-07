@@ -3767,7 +3767,7 @@ __metadata:
     "@teardown/logger": 1.0.1
     "@teardown/react-native-ui": 1.0.1
     "@teardown/util": 1.0.1
-    "@teardown/websocket": 1.0.10
+    "@teardown/websocket": 1.0.11
     "@types/react": ^18.3.3
     react: ^18.3.1
     react-native: ^0.74.3
@@ -3783,6 +3783,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@teardown/websocket@1.0.11, @teardown/websocket@workspace:packages/websocket":
+  version: 0.0.0-use.local
+  resolution: "@teardown/websocket@workspace:packages/websocket"
+  dependencies:
+    "@teardown/event-emitter": 1.0.3
+    "@teardown/logger": 1.0.1
+    "@teardown/util": 1.0.1
+  languageName: unknown
+  linkType: soft
+
 "@teardown/websocket@npm:1.0.10":
   version: 1.0.10
   resolution: "@teardown/websocket@npm:1.0.10"
@@ -3793,16 +3803,6 @@ __metadata:
   checksum: 4c3996a36e220bf87999a6828acffa7f70f7e827151da485045aa4116fdab4d5eceb0ae50cfe24963af6b4969ee6e57866b01f1a0f46b27404edfb44b68230c1
   languageName: node
   linkType: hard
-
-"@teardown/websocket@workspace:packages/websocket":
-  version: 0.0.0-use.local
-  resolution: "@teardown/websocket@workspace:packages/websocket"
-  dependencies:
-    "@teardown/event-emitter": 1.0.3
-    "@teardown/logger": 1.0.1
-    "@teardown/util": 1.0.1
-  languageName: unknown
-  linkType: soft
 
 "@turf/along@npm:6.5.0":
   version: 6.5.0
