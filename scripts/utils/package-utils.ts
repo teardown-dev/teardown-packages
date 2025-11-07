@@ -257,17 +257,14 @@ type PackageInfo = {
 };
 
 export function getPublishOrder(): string[] {
-	const PACKAGES_DIR = "./packages";
 	const packages = new Map<string, PackageInfo>();
 
 	// First pass: collect all package info
-	readdirSync(PACKAGES_DIR, { withFileTypes: true })
-		.filter((dirent) => dirent.isDirectory())
-		.forEach((dirent) => {
-			const packagePath = join(PACKAGES_DIR, dirent.name);
-			const pkgJson = JSON.parse(
-				readFileSync(join(packagePath, "package.json"), "utf-8"),
-			);
+	const packageDirs = getPackageDirs();
+
+	packageDirs.forEach((packagePath) => {
+		try {
+			const pkgJson = readPackageJson(packagePath);
 
 			// Collect all dependency types
 			const allDependencies = [
@@ -276,10 +273,17 @@ export function getPublishOrder(): string[] {
 				...Object.keys(pkgJson.devDependencies || {}),
 			];
 
-			// Filter to only include our internal packages
-			const internalDeps = allDependencies.filter((dep) =>
-				dep.startsWith("@teardown/"),
-			);
+			// Filter to only include our internal packages that exist
+			const internalDeps = allDependencies.filter((dep) => {
+				if (!dep.startsWith("@teardown/")) return false;
+				const depPath = getPackagePath(dep);
+				try {
+					readPackageJson(depPath);
+					return true;
+				} catch {
+					return false;
+				}
+			});
 
 			packages.set(pkgJson.name, {
 				name: pkgJson.name,
@@ -287,7 +291,10 @@ export function getPublishOrder(): string[] {
 				dependencies: internalDeps,
 				allDependencies: allDependencies,
 			});
-		});
+		} catch (error) {
+			logError(`Error reading package at ${packagePath}`, error);
+		}
+	});
 
 	// Topological sort
 	const sorted: string[] = [];
@@ -304,7 +311,9 @@ export function getPublishOrder(): string[] {
 		const pkg = packages.get(pkgName);
 		if (pkg) {
 			for (const dep of pkg.dependencies) {
-				visit(dep);
+				if (packages.has(dep)) {
+					visit(dep);
+				}
 			}
 		}
 		temp.delete(pkgName);
