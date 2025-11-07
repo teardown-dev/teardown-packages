@@ -29,7 +29,9 @@ import { TeardownContainer } from "@teardown/react-native";
 function App(): React.JSX.Element {
 	return (
 		<TeardownContainer client={null}>
-			<></>
+			<View style={{ padding: 40 }}>
+				<Text>test</Text>
+			</View>
 		</TeardownContainer>
 	);
 }

@@ -3,9 +3,16 @@
   "version": "0.0.1",
   "description": "",
   "private": true,
+  "packageManager": "bun@1.1.18",
+  "scripts": {
+    "dev": "turbo run dev"
+  },
   "workspaces": [
     "examples/*",
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "turbo": "^2.1.3"
+  }
 }
