@@ -47,7 +47,7 @@ jobs:
         run: bun run link-packages
 
       - name: Install Dependencies
-        run: bun run install
+        run: bun install
 
       - name: Build Packages
         run: bun run build-packages
