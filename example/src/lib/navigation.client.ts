@@ -1,4 +1,3 @@
-import {v4 as uuid} from 'uuid';
 import * as turf from '@turf/turf';
 import {CameraService} from './modules/camera';
 import {MapboxService} from './modules/mapbox';
@@ -9,6 +8,7 @@ import {BannerService} from './modules/banner';
 import {Logger} from './modules/logger';
 import {ManeuverService} from './modules/maneuver';
 import {RerouteService} from './modules/reroute';
+import {Util} from '@teardown/util';
 
 export type NavigationClientOptions = {
   accessToken: string;
@@ -16,7 +16,7 @@ export type NavigationClientOptions = {
 };
 
 export class NavigationClient {
-  id = uuid();
+  id = Util.randomUUID();
 
   logger: Logger;
 

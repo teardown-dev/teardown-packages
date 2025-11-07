@@ -4,11 +4,13 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import GorhomBottomSheet, {
+  BottomSheetModalProvider,
   BottomSheetFlatList as GorhomBottomSheetFlatList,
   BottomSheetModal as GorhomBottomSheetModal,
   BottomSheetModalProps as GorhomBottomSheetModalProps,
   BottomSheetProps as GorhomBottomSheetProps,
   BottomSheetView as GorhomBottomSheetView,
+  BottomSheetBackdrop,
 } from '@gorhom/bottom-sheet';
 import {cn, useColorScheme} from '../theme';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -18,6 +20,8 @@ import {Text, TextProps, View, ViewProps} from 'react-native';
 import {BottomSheetViewProps} from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetView/types';
 import {BottomSheetFlatListProps} from '@gorhom/bottom-sheet/lib/typescript/components/bottomSheetScrollable/types';
 import {useKeyboard} from '../hooks/use-keyboard.ts';
+
+export {BottomSheetModalProvider};
 
 type BottomSheetContextType<T extends BottomSheet | BottomSheetModal> = {
   bottomSheetRef: React.RefObject<T>;
@@ -64,6 +68,7 @@ export const BottomSheet: FunctionComponent<BottomSheetProps> = props => {
       enableDynamicSizing
       keyboardBehavior="interactive"
       keyboardBlurBehavior={'restore'}
+      backdropComponent={BottomSheetBackdrop}
       handleIndicatorStyle={{
         backgroundColor: tokens.color.foreground.default.dark,
         width: 64,
@@ -107,6 +112,16 @@ export const BottomSheetModal: FunctionComponent<
       keyboardBehavior="interactive"
       keyboardBlurBehavior={'restore'}
       topInset={safeArea.top}
+      backdropComponent={backdropProps => (
+        <BottomSheetBackdrop
+          opacity={0.6}
+          disappearsOnIndex={-1}
+          appearsOnIndex={0}
+          enableTouchThrough={false}
+          // style={tw`bg-black absolute w-full h-full`}
+          {...backdropProps}
+        />
+      )}
       handleIndicatorStyle={{
         backgroundColor: tokens.color.foreground.default.dark,
         width: 64,
@@ -170,7 +185,8 @@ export const BottomSheetCloseIcon: FunctionComponent<{
 
   return (
     <Icon
-      className={'absolute top-0 right-4 z-50'}
+      className={'absolute top-4 right-4 z-50'}
+      size={'sm'}
       onPress={onPress ?? onClosePress}>
       <X />
     </Icon>
@@ -180,7 +196,7 @@ export const BottomSheetCloseIcon: FunctionComponent<{
 export const BottomSheetHeader = ({className, ...props}: ViewProps) => (
   <View
     className={cn(
-      'flex flex-col space-y-2 text-center sm:text-left py-4 px-6',
+      'flex flex-col space-y-2 text-center sm:text-left py-5 px-6',
       className,
     )}
     {...props}

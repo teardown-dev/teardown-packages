@@ -3,14 +3,14 @@ import * as React from 'react';
 import {
   Platform,
   Pressable,
-  PressableProps,
+  PressableProps, TextProps,
   View,
   ViewStyle,
 } from 'react-native';
 
 import * as Slot from '@rn-primitives/slot';
 import {cn} from '../theme/cn';
-import {TextClassContext} from './text.tsx';
+import {Text, TextClassContext} from './text.tsx';
 
 const buttonVariants = cva('flex-row items-center justify-center gap-2', {
   variants: {
@@ -31,7 +31,7 @@ const buttonVariants = cva('flex-row items-center justify-center gap-2', {
     },
   },
   defaultVariants: {
-    type: 'primary',
+    variant: 'primary',
     size: 'md',
   },
 });
@@ -68,7 +68,7 @@ const buttonTextVariants = cva('font-medium', {
     },
   },
   defaultVariants: {
-    type: 'primary',
+    variant: 'primary',
     size: 'md',
   },
 });
@@ -79,7 +79,7 @@ const BORDER_CURVE: ViewStyle = {
 };
 
 type ButtonVariantProps = Omit<VariantProps<typeof buttonVariants>, 'type'> & {
-  variant?: Exclude<VariantProps<typeof buttonVariants>['type'], null>;
+  variant?: Exclude<VariantProps<typeof buttonVariants>['variant'], null>;
 };
 
 type AndroidOnlyButtonProps = {
@@ -112,7 +112,7 @@ const Button = React.forwardRef<
 
     return (
       <TextClassContext.Provider
-        value={buttonTextVariants({variant: type, size})}>
+        value={buttonTextVariants({variant, size})}>
         <Root
           className={Platform.select({
             ios: undefined,
@@ -124,7 +124,7 @@ const Button = React.forwardRef<
           <Pressable
             className={cn(
               props.disabled && 'opacity-50',
-              buttonVariants({variant: type, size, className}),
+              buttonVariants({variant, size, className}),
             )}
             ref={ref}
             style={style}
@@ -137,6 +137,16 @@ const Button = React.forwardRef<
 );
 
 Button.displayName = 'Button';
+
+
+const ButtonText = (props: TextProps) => {
+        return (
+            <Text
+                className={buttonTextVariants({variant, size, className})}
+                {...props}
+            />
+        );
+}
 
 export {Button, buttonTextVariants, buttonVariants};
 export type {ButtonProps};

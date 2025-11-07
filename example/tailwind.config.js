@@ -1,18 +1,8 @@
 const {hairlineWidth, platformSelect} = require('nativewind/theme');
 const plugin = require('tailwindcss/plugin');
-const {typographyStyles} = require('./src/theme/typography');
-const {
-  generateTailwindTokensForReactNative,
-  flattenTokens,
-} = require('./src/theme/generate');
+const {flattenTokens} = require('./src/theme/generate');
 const {tokens} = require('./src/theme/tokens');
-const {colors} = require('./src/theme/colors');
 const flattenedTokens = flattenTokens(tokens.color);
-
-const tokensForReactNative = generateTailwindTokensForReactNative(
-  flattenedTokens,
-  'dark',
-);
 
 const allFlattenedTokens = Object.entries(flattenedTokens).reduce(
   (acc, [key, {dark}]) => {

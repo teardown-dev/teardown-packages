@@ -3997,43 +3997,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@teardown/event-emitter@file:../event-emitter::locator=%40teardown%2Fplugin-networking%40workspace%3Apackages%2Fnetworking-plugin":
+"@teardown/event-emitter@file:../event-emitter::locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D5bedc4%26locator%3Dexample%2540workspace%253Aexample":
   version: 1.0.0
-  resolution: "@teardown/event-emitter@file:../event-emitter#../event-emitter::hash=47b4f7&locator=%40teardown%2Fplugin-networking%40workspace%3Apackages%2Fnetworking-plugin"
+  resolution: "@teardown/event-emitter@file:../event-emitter#../event-emitter::hash=6f3fd0&locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D5bedc4%26locator%3Dexample%2540workspace%253Aexample"
   dependencies:
+    "@teardown/util": "workspace:^"
     react: ^18.3.1
-    uuid: ^10.0.0
-  checksum: d1060e2c4dbeb75dde96b67a9ac42f2083da0312f25c62f0a43fcf236ecc951f48c9b0084db9f6ec222c5a845ae6a2a5de2cd0cd7e4f9969be1ceb17a30a5d49
-  languageName: node
-  linkType: hard
-
-"@teardown/event-emitter@file:../event-emitter::locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D9a7e3a%26locator%3Dexample%2540workspace%253Aexample":
-  version: 1.0.0
-  resolution: "@teardown/event-emitter@file:../event-emitter#../event-emitter::hash=47b4f7&locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D9a7e3a%26locator%3Dexample%2540workspace%253Aexample"
-  dependencies:
-    react: ^18.3.1
-    uuid: ^10.0.0
-  checksum: d1060e2c4dbeb75dde96b67a9ac42f2083da0312f25c62f0a43fcf236ecc951f48c9b0084db9f6ec222c5a845ae6a2a5de2cd0cd7e4f9969be1ceb17a30a5d49
+  checksum: 3fa0238a826a81c28b8e5f935736fbe9bc6e1aa2f0efbb6787b9b84e9c1636e0c6477a5b5ea26a03df7b6018a369a8cdd80e5e10ed76c337af97f2b05648e089
   languageName: node
   linkType: hard
 
 "@teardown/event-emitter@file:../event-emitter::locator=%40teardown%2Freact-native%40workspace%3Apackages%2Freact-native":
   version: 1.0.0
-  resolution: "@teardown/event-emitter@file:../event-emitter#../event-emitter::hash=47b4f7&locator=%40teardown%2Freact-native%40workspace%3Apackages%2Freact-native"
+  resolution: "@teardown/event-emitter@file:../event-emitter#../event-emitter::hash=6f3fd0&locator=%40teardown%2Freact-native%40workspace%3Apackages%2Freact-native"
   dependencies:
+    "@teardown/util": "workspace:^"
     react: ^18.3.1
-    uuid: ^10.0.0
-  checksum: d1060e2c4dbeb75dde96b67a9ac42f2083da0312f25c62f0a43fcf236ecc951f48c9b0084db9f6ec222c5a845ae6a2a5de2cd0cd7e4f9969be1ceb17a30a5d49
+  checksum: 3fa0238a826a81c28b8e5f935736fbe9bc6e1aa2f0efbb6787b9b84e9c1636e0c6477a5b5ea26a03df7b6018a369a8cdd80e5e10ed76c337af97f2b05648e089
   languageName: node
   linkType: hard
 
 "@teardown/event-emitter@file:../packages/event-emitter::locator=example%40workspace%3Aexample":
   version: 1.0.0
-  resolution: "@teardown/event-emitter@file:../packages/event-emitter#../packages/event-emitter::hash=47b4f7&locator=example%40workspace%3Aexample"
+  resolution: "@teardown/event-emitter@file:../packages/event-emitter#../packages/event-emitter::hash=6f3fd0&locator=example%40workspace%3Aexample"
   dependencies:
+    "@teardown/util": "workspace:^"
     react: ^18.3.1
-    uuid: ^10.0.0
-  checksum: d1060e2c4dbeb75dde96b67a9ac42f2083da0312f25c62f0a43fcf236ecc951f48c9b0084db9f6ec222c5a845ae6a2a5de2cd0cd7e4f9969be1ceb17a30a5d49
+  checksum: 3fa0238a826a81c28b8e5f935736fbe9bc6e1aa2f0efbb6787b9b84e9c1636e0c6477a5b5ea26a03df7b6018a369a8cdd80e5e10ed76c337af97f2b05648e089
   languageName: node
   linkType: hard
 
@@ -4041,31 +4031,30 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@teardown/event-emitter@workspace:packages/event-emitter"
   dependencies:
+    "@teardown/util": "workspace:^"
     "@types/react": ^18.3.3
-    "@types/uuid": ^10.0.0
     react: ^18.3.1
-    uuid: ^10.0.0
   languageName: unknown
   linkType: soft
 
-"@teardown/logger@file:../logger::locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D9a7e3a%26locator%3Dexample%2540workspace%253Aexample":
+"@teardown/logger@file:../logger::locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D5bedc4%26locator%3Dexample%2540workspace%253Aexample":
   version: 1.0.0
-  resolution: "@teardown/logger@file:../logger#../logger::hash=0501e7&locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D9a7e3a%26locator%3Dexample%2540workspace%253Aexample"
-  checksum: 8e609ad2756ff9948acacacbd174452038dabbd84f5593c57c43bca8db7ee65cbd830567b0ccc8dbdb536cf581cbb0b7e51f7cf633d05aad7cece3f0d344d92b
+  resolution: "@teardown/logger@file:../logger#../logger::hash=e0f675&locator=%40teardown%2Freact-native%40file%3A..%2Fpackages%2Freact-native%23..%2Fpackages%2Freact-native%3A%3Ahash%3D5bedc4%26locator%3Dexample%2540workspace%253Aexample"
+  checksum: b11934a4f4d256381de196d16cd6304ea5e1f52ecf8380fd6bbe437727b00fee11ae707bc7bfd082d4a4441f6a6a0887f66fcba467549e43b3f964b69478fc51
   languageName: node
   linkType: hard
 
 "@teardown/logger@file:../logger::locator=%40teardown%2Freact-native%40workspace%3Apackages%2Freact-native":
   version: 1.0.0
-  resolution: "@teardown/logger@file:../logger#../logger::hash=0501e7&locator=%40teardown%2Freact-native%40workspace%3Apackages%2Freact-native"
-  checksum: 8e609ad2756ff9948acacacbd174452038dabbd84f5593c57c43bca8db7ee65cbd830567b0ccc8dbdb536cf581cbb0b7e51f7cf633d05aad7cece3f0d344d92b
+  resolution: "@teardown/logger@file:../logger#../logger::hash=e0f675&locator=%40teardown%2Freact-native%40workspace%3Apackages%2Freact-native"
+  checksum: b11934a4f4d256381de196d16cd6304ea5e1f52ecf8380fd6bbe437727b00fee11ae707bc7bfd082d4a4441f6a6a0887f66fcba467549e43b3f964b69478fc51
   languageName: node
   linkType: hard
 
 "@teardown/logger@file:../packages/logger::locator=example%40workspace%3Aexample":
   version: 1.0.0
-  resolution: "@teardown/logger@file:../packages/logger#../packages/logger::hash=0501e7&locator=example%40workspace%3Aexample"
-  checksum: 8e609ad2756ff9948acacacbd174452038dabbd84f5593c57c43bca8db7ee65cbd830567b0ccc8dbdb536cf581cbb0b7e51f7cf633d05aad7cece3f0d344d92b
+  resolution: "@teardown/logger@file:../packages/logger#../packages/logger::hash=e0f675&locator=example%40workspace%3Aexample"
+  checksum: b11934a4f4d256381de196d16cd6304ea5e1f52ecf8380fd6bbe437727b00fee11ae707bc7bfd082d4a4441f6a6a0887f66fcba467549e43b3f964b69478fc51
   languageName: node
   linkType: hard
 
@@ -4075,23 +4064,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@teardown/plugin-networking@workspace:packages/networking-plugin":
-  version: 0.0.0-use.local
-  resolution: "@teardown/plugin-networking@workspace:packages/networking-plugin"
-  dependencies:
-    "@teardown/event-emitter": "file:../event-emitter"
-  languageName: unknown
-  linkType: soft
-
 "@teardown/react-native@file:../packages/react-native::locator=example%40workspace%3Aexample":
   version: 1.0.0
-  resolution: "@teardown/react-native@file:../packages/react-native#../packages/react-native::hash=9a7e3a&locator=example%40workspace%3Aexample"
+  resolution: "@teardown/react-native@file:../packages/react-native#../packages/react-native::hash=5bedc4&locator=example%40workspace%3Aexample"
   dependencies:
     "@teardown/event-emitter": "file:../event-emitter"
     "@teardown/logger": "file:../logger"
+    class-variance-authority: ^0.7.0
+    clsx: ^2.1.1
     react: ^18.3.1
     react-native: ^0.74.3
-  checksum: 1cdb822ab18c3f113b10f0ed260bd1ebbcf2b8e0c8c74d83aa97dafb1cd091cb3fbe396b6dde26c8ffff60990951ceb7ba0487eb2c9a4d7d35f58bf2a3db19c2
+    tailwind-merge: ^2.4.0
+  checksum: 50e8a4b01531cae11869f350cae3ac3637d9a52790bf0d668da35121f30a3c30b18da49c814c96547318f9a6f2c2aa18b8c3106279a49d526ae7d50666444616
   languageName: node
   linkType: hard
 
@@ -4107,6 +4091,12 @@ __metadata:
     react: ^18.3.1
     react-native: ^0.74.3
     tailwind-merge: ^2.4.0
+  languageName: unknown
+  linkType: soft
+
+"@teardown/util@workspace:^, @teardown/util@workspace:packages/util":
+  version: 0.0.0-use.local
+  resolution: "@teardown/util@workspace:packages/util"
   languageName: unknown
   linkType: soft
 
@@ -6027,13 +6017,6 @@ __metadata:
   version: 2.0.3
   resolution: "@types/stack-utils@npm:2.0.3"
   checksum: 72576cc1522090fe497337c2b99d9838e320659ac57fa5560fcbdcbafcf5d0216c6b3a0a8a4ee4fdb3b1f5e3420aa4f6223ab57b82fef3578bec3206425c6cf5
-  languageName: node
-  linkType: hard
-
-"@types/uuid@npm:^10.0.0":
-  version: 10.0.0
-  resolution: "@types/uuid@npm:10.0.0"
-  checksum: e3958f8b0fe551c86c14431f5940c3470127293280830684154b91dc7eb3514aeb79fe3216968833cf79d4d1c67f580f054b5be2cd562bebf4f728913e73e944
   languageName: node
   linkType: hard
 
@@ -9005,6 +8988,7 @@ __metadata:
     "@teardown/event-emitter": "file:../packages/event-emitter"
     "@teardown/logger": "file:../packages/logger"
     "@teardown/react-native": "file:../packages/react-native"
+    "@teardown/util": "workspace:^"
     "@turf/turf": ^7.0.0
     "@types/mapbox__mapbox-sdk": ^0.14.0
     "@types/react": ^18.3.3
@@ -9027,6 +9011,7 @@ __metadata:
     prettier: 2.8.8
     react: ^18.2.0
     react-native: ^0.74.2
+    react-native-device-info: ^11.1.0
     react-native-gesture-handler: ^2.16.2
     react-native-get-random-values: ^1.11.0
     react-native-keyboard-controller: ^1.12.4
@@ -9041,6 +9026,7 @@ __metadata:
     tailwind-merge: ^2.3.0
     tailwindcss: ^3.4.4
     typescript: 5.0.4
+    uuid: ^10.0.0
   languageName: unknown
   linkType: soft
 
@@ -14262,6 +14248,15 @@ __metadata:
     react-native-svg:
       optional: true
   checksum: 7b29bfff2c523da2dc33ad7daaf3d6a69b9814140bf512736fe90005cc98ab130cb816b1d459a3349476f04b012c3d41e0e146ea1f7367a9d33a515adbb1b490
+  languageName: node
+  linkType: hard
+
+"react-native-device-info@npm:^11.1.0":
+  version: 11.1.0
+  resolution: "react-native-device-info@npm:11.1.0"
+  peerDependencies:
+    react-native: "*"
+  checksum: 272cab82573933a1f3a9bc394b82a387ccbdf9fbef131fc1f04b8ff78b36f581931b5c643f5aa278f28577cbc320ef2ac588cafdb73292e9b0cf4427d54c44ce
   languageName: node
   linkType: hard
 

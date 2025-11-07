@@ -1339,7 +1339,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNSVG (15.3.0):
+  - RNSVG (15.4.0):
     - React-Core
   - SocketRocket (0.7.0)
   - SweetSFSymbols (0.7.0):
@@ -1667,7 +1667,7 @@ SPEC CHECKSUMS:
   rnmapbox-maps: 2f6b7ddacd1a454cb9d831bcf5d5cba746952b68
   RNReanimated: f9192536fa8a312c737eaf15c905f78831193ef1
   RNScreens: 5aeecbb09aa7285379b6e9f3c8a3c859bb16401c
-  RNSVG: a48668fd382115bc89761ce291a81c4ca5f2fd2e
+  RNSVG: cb24fb322de8c1ebf59904e7aca0447bb8dbed5a
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   SweetSFSymbols: 75e9d61f69fd934b0a32d87f739360a8eda22f4c
   Turf: 13d1a92d969ca0311bbc26e8356cca178ce95da2
