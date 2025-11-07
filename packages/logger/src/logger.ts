@@ -1,5 +1,13 @@
 
 
+
+const originalConsoleLog = console.log;
+const originalConsoleWarn = console.warn;
+const originalConsoleDebug = console.debug;
+const originalConsoleError = console.error;
+
+
+
 export class Logger {
   private static DEFAULT_PREFIX = 'Teardown';
   private readonly prefix: string;
@@ -7,9 +15,19 @@ export class Logger {
 
   private readonly enabled = true;
 
+  originalConsoleLog: typeof console.log;
+  originalConsoleWarn: typeof console.warn;
+  originalConsoleDebug: typeof console.debug;
+  originalConsoleError: typeof console.error;
+
   constructor(key: string, prefix?: string) {
     this.key = key;
     this.prefix = prefix || Logger.DEFAULT_PREFIX;
+
+    this.originalConsoleLog = originalConsoleLog;
+    this.originalConsoleWarn = originalConsoleWarn;
+    this.originalConsoleDebug = originalConsoleDebug;
+    this.originalConsoleError = originalConsoleError;
   }
 
   buildPrefix() {
