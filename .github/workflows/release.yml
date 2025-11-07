@@ -48,10 +48,6 @@ jobs:
 
       - name: Install Dependencies
         run: bun install
-
-      - name: Build Packages
-        run: bun run build-packages
-
       # First phase: Bump version
       - name: Bump Version
         run: bun run bump-packages ${{ inputs.version_type }}
@@ -62,6 +58,10 @@ jobs:
           git clean -fdx
           # Reset working directory to HEAD
           git reset --hard HEAD
+
+
+      - name: Build Packages
+        run: bun run build-packages
 
       # Second phase: Publish
       - name: Prepare Packages for Publish
