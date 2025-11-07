@@ -14,7 +14,7 @@ const JSON_LIST_PATH = "/json";
 const JSON_LIST_PATH_2 = "/json/list";
 
 const HEARTBEAT_INTERVAL = 10000;
-const MAX_PONG_TIMEOUT = 5000;
+const MAX_PONG_TIMEOUT = 15000;
 const INTERNAL_ERROR_CODE = 1011;
 
 export interface InspectorOptions {
@@ -56,9 +56,6 @@ export class Inspector {
 		next: (error?: Error) => void,
 	) {
 		const pathname = new URL(req.url || "", "http://localhost").pathname;
-
-		console.log("handleHttpRequest", { pathname });
-
 		if (pathname === JSON_LIST_PATH || pathname === JSON_LIST_PATH_2) {
 			this.sendJsonResponse(res, this.getPageDescriptions());
 		} else if (pathname === JSON_VERSION_PATH) {
@@ -175,6 +172,10 @@ export class Inspector {
 			maxPayload: 0,
 		});
 
+		wss.on("open", () => {
+			console.info("open");
+		});
+
 		wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
 			try {
 				const query = new URL(req.url || "", "http://localhost").searchParams;
@@ -182,12 +183,14 @@ export class Inspector {
 				const pageId = query.get("page");
 
 				if (!deviceId || !pageId) {
-					throw new Error("Missing device or page ID");
+					console.info("missing device or page id", deviceId, pageId);
+					return;
 				}
 
 				const device = this.devices.get(deviceId);
 				if (!device) {
-					throw new Error(`Unknown device: ${deviceId}`);
+					console.info("device not found", deviceId);
+					return;
 				}
 
 				this.setupHeartbeat(ws);
@@ -213,7 +216,7 @@ export class Inspector {
 	}
 
 	private setupHeartbeat(ws: WebSocket): void {
-		let pendingPong = false;
+		let pendingHeartbeat = false;
 		let terminateTimeout: ReturnType<typeof setTimeout> | null = null;
 
 		const heartbeat = setInterval(() => {
@@ -221,28 +224,44 @@ export class Inspector {
 				return;
 			}
 
-			pendingPong = true;
-			ws.ping(() => {
-				if (!pendingPong) return;
+			pendingHeartbeat = true;
+			// Send a heartbeat message instead of ping
+			ws.send(JSON.stringify({ method: "_heartbeat" }));
 
-				terminateTimeout = setTimeout(() => {
-					if (ws.readyState === WebSocket.OPEN) {
+			terminateTimeout = setTimeout(() => {
+				if (ws.readyState === WebSocket.OPEN) {
+					try {
 						ws.terminate();
+					} catch (e) {
+						ws.close(INTERNAL_ERROR_CODE, "Termination failed");
 					}
-				}, MAX_PONG_TIMEOUT);
-			});
+				}
+			}, MAX_PONG_TIMEOUT);
 		}, HEARTBEAT_INTERVAL);
 
 		const resetHeartbeat = () => {
-			pendingPong = false;
+			pendingHeartbeat = false;
 			if (terminateTimeout) {
 				clearTimeout(terminateTimeout);
 				terminateTimeout = null;
 			}
 		};
 
-		ws.on("pong", resetHeartbeat);
-		ws.on("message", resetHeartbeat);
+		ws.on("message", (data) => {
+			try {
+				const message = JSON.parse(data.toString());
+				// Check for heartbeat response
+				if (message.method === "_heartbeat_response") {
+					resetHeartbeat();
+					return;
+				}
+			} catch (e) {
+				// If message isn't JSON or doesn't have expected format,
+				// treat it as regular message for heartbeat purposes
+				resetHeartbeat();
+			}
+		});
+
 		ws.on("close", () => {
 			clearInterval(heartbeat);
 			resetHeartbeat();

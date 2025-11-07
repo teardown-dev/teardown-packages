@@ -407,18 +407,24 @@ export class WebSocketMessageServer extends WebSocketServer {
 				return;
 			}
 
+			console.info("message", message);
+
 			try {
 				if (WebSocketMessageServer.isBroadcast(message)) {
+					console.info("broadcast", message);
 					this.sendBroadcast(clientId, message);
 				} else if (WebSocketMessageServer.isRequest(message)) {
+					console.info("request", message);
 					if (message.target === "server") {
 						this.processServerRequest(clientId, message);
 					} else {
 						this.forwardRequest(clientId, message);
 					}
 				} else if (WebSocketMessageServer.isResponse(message)) {
+					console.info("response", message);
 					this.forwardResponse(message);
 				} else {
+					console.info("invalid message", message);
 					throw new Error(
 						`Invalid message, did not match the protocol ${JSON.stringify({
 							clientId,
@@ -427,6 +433,7 @@ export class WebSocketMessageServer extends WebSocketServer {
 					);
 				}
 			} catch (error) {
+				console.info("error", error);
 				this.handleError(clientId, message, error as Error);
 			}
 		});

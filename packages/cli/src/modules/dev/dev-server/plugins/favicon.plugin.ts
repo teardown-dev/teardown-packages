@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 // @ts-ignore
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-console.log("dirname", dirname);
 const pathToImgDir = path.join(dirname, "../../../../../assets");
 
 export const faviconPlugin = fastifyPlugin(

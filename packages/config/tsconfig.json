@@ -12,6 +12,7 @@
 		"strictFunctionTypes": true,
 		"strictBindCallApply": true,
 		"skipLibCheck": true,
-		"declaration": true
+		"declaration": true,
+		"sourceMap": true
 	}
 }

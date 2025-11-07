@@ -28,7 +28,10 @@ export const symbolicatePlugin = fastifyPlugin<SymbolicatePluginOptions>(
 				requestWithBody.rawBody += chunk;
 			});
 			requestWithBody.on("end", () => {
-				options.onSymbolicate(requestWithBody, reply);
+				if (request.url === "/symbolicate") {
+					options.onSymbolicate(requestWithBody, reply);
+				}
+
 				next();
 			});
 		});
@@ -39,11 +42,11 @@ export const symbolicatePlugin = fastifyPlugin<SymbolicatePluginOptions>(
 	},
 );
 
-export const rawBodyPlugin = fastifyPlugin<{
-	rawBody: string;
-}>((instance, options) => {
-	instance.addHook("preHandler", (request, reply, next) => {
-		// request.rawBody = "";
-		next();
-	});
-});
+// export const rawBodyPlugin = fastifyPlugin<{
+// 	rawBody: string;
+// }>((instance, options) => {
+// 	instance.addHook("preHandler", (request, reply, next) => {
+// 		// request.rawBody = "";
+// 		next();
+// 	});
+// });

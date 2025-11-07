@@ -48,6 +48,7 @@ export default class DeviceConnectionServer {
 		});
 
 		wss.on("connection", async (socket, req) => {
+			console.log("device-connection onConnection", req.url);
 			try {
 				const fallbackDeviceId = String(this.#deviceCounter.value++);
 

@@ -40,6 +40,7 @@ export default class DebuggerConnectionServer {
 		});
 
 		wss.on("connection", async (socket, req) => {
+			console.log("debugger-connection onConnection", req.url);
 			try {
 				const query = url.parse(req.url || "", true).query || {};
 				const deviceId = query.device as string | undefined;

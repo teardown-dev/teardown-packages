@@ -81,7 +81,7 @@ export class DevServer {
 		this.inspector = new Inspector({
 			projectRoot: this.config.projectRoot,
 			serverBaseUrl: this.getDevServerUrl(),
-			// eventReporter: this.terminalReporter,
+			eventReporter: this.terminalReporter,
 		});
 	}
 
@@ -95,6 +95,7 @@ export class DevServer {
 		}
 
 		const log = JSON.parse(chunk.toString());
+		// console.log("onWrite", log);
 		this.apiServer.send(log);
 		callback();
 	}
@@ -109,6 +110,8 @@ export class DevServer {
 	}
 
 	public reportMetroEvent(event: TerminalReportableEvent) {
+		// console.log("reportMetroEvent", event);
+
 		this.apiServer.send({
 			type: "metro_event",
 			event,
@@ -122,7 +125,7 @@ export class DevServer {
 	}
 
 	private onBundleBuilt(bundlePath: string): void {
-		// console.log("onBundleBuilt", bundlePath);
+		console.log("onBundleBuilt", bundlePath);
 		// this.messageServer.broadcast("reload");
 	}
 

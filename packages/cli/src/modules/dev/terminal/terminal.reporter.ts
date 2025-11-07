@@ -49,11 +49,14 @@ export class TeardownTerminalReporter
 			case "dep_graph_loading":
 				this.dependencyGraphLoading(event.hasReducedPerformance);
 				return;
+			default:
+				super._log(event);
+				break;
 		}
-		super._log(event);
 	}
 
 	_logInitializing(port: number, hasReducedPerformance: boolean) {
+		// super._logInitializing(port, hasReducedPerformance);
 		this.terminal.log(
 			chalk.dim("Starting Bundler on port"),
 			chalk.dim(`${port}`),
@@ -67,19 +70,23 @@ export class TeardownTerminalReporter
 		);
 	}
 
-	_logWorkerChunk(origin: "stdout" | "stderr", chunk: string): void {
-		const lines = chunk.split("\n");
-		if (lines.length >= 1 && lines[lines.length - 1] === "") {
-			lines.splice(lines.length - 1, 1);
-		}
+	// _logWorkerChunk(origin: "stdout" | "stderr", chunk: string): void {
+	// 	super._logWorkerChunk(origin, chunk);
 
-		const originTag = origin === "stdout" ? chalk.dim("|") : chalk.yellow("|");
-		lines.forEach((line: string) => {
-			this.terminal.log(originTag, line);
-		});
-	}
+	// 	console.log("logWorkerChunk", chunk);
+	// 	const lines = chunk.split("\n");
+	// 	if (lines.length >= 1 && lines[lines.length - 1] === "") {
+	// 		lines.splice(lines.length - 1, 1);
+	// 	}
+
+	// 	const originTag = origin === "stdout" ? chalk.dim("|") : chalk.yellow("|");
+	// 	lines.forEach((line: string) => {
+	// 		this.terminal.log(originTag, line);
+	// 	});
+	// }
 
 	update(event: TerminalReportableEvent): void {
+		super.update(event);
 		this.devServer?.reportMetroEvent(event);
 
 		switch (event.type as string) {
@@ -87,12 +94,12 @@ export class TeardownTerminalReporter
 				this.devServer.onInitializeDone?.();
 				break;
 			default:
-				super.update(event);
 				break;
 		}
 	}
 
 	logEvent(event: ReportableEvent): void {
+		// console.log("logEvent", event);
 		// this.devServer?.reportMetroEvent(event);
 	}
 }
