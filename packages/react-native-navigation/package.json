@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native-navigation",
-  "version": "1.2.16",
+  "version": "1.2.17",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
