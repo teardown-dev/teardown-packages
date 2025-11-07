@@ -67,13 +67,17 @@ export function getRootPackageJson(): PackageJson {
 export const git = {
 	commit: (message: string) => {
 		execSync("git add .");
-		execSync(`git commit -m "${message}"`, { stdio: "inherit" });
+		execSync(`git commit -m "${message}"`, {
+			stdio: "inherit",
+		});
 	},
 	tag: (version: string, message: string) => {
-		execSync(`git tag -a v${version} -m "${message}"`, { stdio: "inherit" });
+		execSync(`git tag -a v${version} -m "${message}"`, {
+			stdio: "inherit",
+		});
 	},
 	push: (tags = false) => {
-		execSync(`git push origin main${tags ? " --tags" : ""}`, {
+		execSync(`git push origin release${tags ? " --tags" : ""}`, {
 			stdio: "inherit",
 		});
 	},

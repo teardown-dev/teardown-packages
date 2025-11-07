@@ -1,9 +1,9 @@
-name: NPM Publish
+name: Publish NPM Packages
 
 on:
   push:
     branches:
-      - main
+      - release/packages
 
 jobs:
   publish:
