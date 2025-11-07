@@ -11,6 +11,7 @@ import {
 	logSuccess,
 	logSkip,
 	logError,
+	readPackageJson,
 } from "./utils/package-utils";
 
 export async function publishPackages() {
@@ -28,7 +29,7 @@ export async function publishPackages() {
 
 		for (const packageName of publishOrder) {
 			const packageDir = getPackagePath(packageName);
-			const pkg = require(`../${packageDir}/package.json`);
+			const pkg = readPackageJson(packageDir);
 
 			if (pkg.private) {
 				logSkip(`Skipping private package ${packageName}`);

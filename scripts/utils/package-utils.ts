@@ -11,6 +11,7 @@ export interface PackageJson {
 	peerDependencies?: Record<string, string>;
 	devDependencies?: Record<string, string>;
 	private?: boolean;
+	scripts?: Record<string, string>;
 	[key: string]: unknown;
 }
 
@@ -101,22 +102,32 @@ export const DEP_TYPES = [
 export const npm = {
 	publish: (packageDir: string) => {
 		try {
-			// Check if version exists
 			const pkg = readPackageJson(packageDir);
-			const versionCheck = execSync(
-				`npm view ${pkg.name}@${pkg.version} version`,
-				{ stdio: "pipe" },
-			)
-				.toString()
-				.trim();
 
-			if (versionCheck === pkg.version) {
-				logSkip(
-					`Version ${pkg.version} of ${pkg.name} already exists, skipping`,
-				);
-				return;
+			try {
+				// Try to check if version exists
+				const versionCheck = execSync(
+					`npm view ${pkg.name}@${pkg.version} version`,
+					{ stdio: "pipe" },
+				)
+					.toString()
+					.trim();
+
+				if (versionCheck === pkg.version) {
+					logSkip(
+						`Version ${pkg.version} of ${pkg.name} already exists, skipping`,
+					);
+					return;
+				}
+			} catch (error) {
+				// If package doesn't exist in registry, that's fine - we'll publish it
+				if (error instanceof Error && !error.message.includes("E404")) {
+					throw error;
+				}
 			}
 
+			// Publish the package
+			logStep(`Publishing ${pkg.name}@${pkg.version}...`);
 			execSync(`cd ${packageDir} && npm publish --access public`, {
 				stdio: "inherit",
 			});
@@ -125,11 +136,12 @@ export const npm = {
 			// If error is not about existing version, rethrow
 			if (
 				error instanceof Error &&
-				!error.message.includes("previously published versions")
+				!error.message.includes("previously published versions") &&
+				!error.message.includes("E404")
 			) {
 				throw error;
 			}
-			logSkip(`Version already exists, skipping`);
+			logError(`Failed to publish ${packageDir}`, error);
 		}
 	},
 	build: (packageDir: string) => {
