@@ -1,6 +1,12 @@
 import type { FastifyInstance } from "fastify";
+import type { TerminalReportableEvent } from "metro/src/lib/TerminalReporter";
 import type WebSocket from "ws";
 import { WebSocketServer } from "../web-socket-server";
+
+export type WebSocketApiEvent = {
+	type: "metro_event";
+	event: TerminalReportableEvent;
+};
 
 /**
  * Class for creating a WebSocket server for API clients.
@@ -27,7 +33,7 @@ export class WebSocketApiServer extends WebSocketServer {
 	 *
 	 * @param event Event string or object to send.
 	 */
-	send(event: unknown) {
+	send(event: unknown | WebSocketApiEvent) {
 		if (this.clients.size === 0) {
 			return;
 		}

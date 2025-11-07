@@ -14,11 +14,7 @@ import type { TerminalReportableEvent } from "metro/src/lib/TerminalReporter";
 import { Writable } from "node:stream";
 import { KeyboardHandlerManager } from "../dev-menu/keyboard-handler";
 import { TeardownTerminalReporter } from "../terminal/terminal.reporter";
-import type {
-	CustomMessageHandler,
-	CustomMessageHandlerConnection,
-	JSONSerializable,
-} from "./inspector/types";
+import { Inspector } from "./inspector/inspector";
 import { devtoolsPlugin } from "./plugins/devtools.plugin";
 import { faviconPlugin } from "./plugins/favicon.plugin";
 import { multipartPlugin } from "./plugins/multipart.plugin";
@@ -33,7 +29,6 @@ import {
 	symbolicatePlugin,
 } from "./sybmolicate/sybmolicate.plugin";
 import type { SymbolicatorResults } from "./sybmolicate/types";
-import { Inspector } from "./inspector/inspector";
 
 export type DevServerOptions = {
 	projectRoot: string;
@@ -100,7 +95,7 @@ export class DevServer {
 		}
 
 		const log = JSON.parse(chunk.toString());
-		this.onMessage(log);
+		this.apiServer.send(log);
 		callback();
 	}
 
@@ -114,6 +109,11 @@ export class DevServer {
 	}
 
 	public reportMetroEvent(event: TerminalReportableEvent) {
+		this.apiServer.send({
+			type: "metro_event",
+			event,
+		});
+
 		switch (event.type) {
 			case "client_log":
 				this.eventsServer.broadcastEvent(event);
@@ -123,17 +123,7 @@ export class DevServer {
 
 	private onBundleBuilt(bundlePath: string): void {
 		// console.log("onBundleBuilt", bundlePath);
-		this.messageServer.broadcast("reload");
-	}
-
-	private onMessage(log: Log): void {
-		this.apiServer.send(log);
-		// console.log(log.msg, log.level);
-		// this.terminalReporter.update({
-		// 	type: "client_log",
-		// 	level: "info",
-		// 	data: [log.msg],
-		// });
+		// this.messageServer.broadcast("reload");
 	}
 
 	private onClientConnected(platform: string, clientId: string): void {
@@ -251,7 +241,9 @@ export class DevServer {
 		);
 
 		this.instance.use(serverInstance.metroServer.processRequest);
-		this.instance.use(inspector.handleHttpRequest);
+		this.instance.use((req, resp, next) =>
+			this.inspector.handleHttpRequest(req, resp, next),
+		);
 	}
 
 	private onSymbolicate(request: SymbolicateRequest, reply: SymbolicateReply) {
@@ -259,43 +251,6 @@ export class DevServer {
 		const { codeFrame, stack } = result;
 
 		this.instance.log.info("onSymbolicate", { codeFrame, stack });
-	}
-
-	private customInspectorMessageHandler(
-		connection: CustomMessageHandlerConnection,
-	): CustomMessageHandler {
-		this.instance.log.info("Creating custom inspector message handler", {
-			connection,
-		});
-
-		return {
-			handleDeviceMessage: (message) =>
-				this.onDeviceMessage(connection, message),
-			handleDebuggerMessage: (message) =>
-				this.onDebuggerMessage(connection, message),
-		};
-	}
-
-	private onDeviceMessage(
-		connection: CustomMessageHandlerConnection,
-		message: JSONSerializable,
-	): boolean {
-		this.instance.log.info("Device -> Debugger", {
-			message,
-		});
-		connection.debugger.sendMessage(message);
-		return true;
-	}
-
-	private onDebuggerMessage(
-		connection: CustomMessageHandlerConnection,
-		message: JSONSerializable,
-	): boolean {
-		this.instance.log.info("Debugger -> Device", {
-			message,
-		});
-		connection.device.sendMessage(message);
-		return true;
 	}
 
 	private registerHooks(): void {

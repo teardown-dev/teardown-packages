@@ -37,9 +37,6 @@ export class Inspector {
 		this.serverBaseUrl = options.serverBaseUrl;
 		this.eventReporter = options.eventReporter;
 		this.cdpAdapter = options.cdpAdapter;
-
-		this.handleHttpRequest = this.handleHttpRequest.bind(this);
-		this.sendJsonResponse = this.sendJsonResponse.bind(this);
 	}
 
 	public getPageDescriptions(): PageDescription[] {
@@ -53,12 +50,14 @@ export class Inspector {
 		return descriptions;
 	}
 
-	public handleHttpRequest = (
+	public handleHttpRequest(
 		req: IncomingMessage,
 		res: ServerResponse,
 		next: (error?: Error) => void,
-	): void => {
+	) {
 		const pathname = new URL(req.url || "", "http://localhost").pathname;
+
+		console.log("handleHttpRequest", { pathname });
 
 		if (pathname === JSON_LIST_PATH || pathname === JSON_LIST_PATH_2) {
 			this.sendJsonResponse(res, this.getPageDescriptions());
@@ -70,7 +69,7 @@ export class Inspector {
 		} else {
 			next();
 		}
-	};
+	}
 
 	public createWebSocketServers(): Record<string, WebSocketServer> {
 		return {
@@ -250,7 +249,7 @@ export class Inspector {
 		});
 	}
 
-	private sendJsonResponse = (res: ServerResponse, data: unknown): void => {
+	private sendJsonResponse(res: ServerResponse, data: unknown) {
 		const json = JSON.stringify(data, null, 2);
 		res.writeHead(200, {
 			"Content-Type": "application/json; charset=UTF-8",
@@ -259,5 +258,5 @@ export class Inspector {
 			Connection: "close",
 		});
 		res.end(json);
-	};
+	}
 }
