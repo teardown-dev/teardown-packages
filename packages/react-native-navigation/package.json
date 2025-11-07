@@ -1,6 +1,6 @@
 {
   "name": "@teardown/react-native-navigation",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "",
   "scripts": {
     "prepublishOnly": "bun run build",
