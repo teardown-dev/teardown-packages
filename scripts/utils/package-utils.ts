@@ -52,15 +52,15 @@ export function logSkip(message: string): void {
 }
 
 export function logStep(message: string) {
-	console.log(clogger.blue("\n→"), message);
+	console.log(clogger.blue("\n🔄"), message);
 }
 
 export function logSuccess(message: string) {
-	console.log(clogger.green("\n✓"), message);
+	console.log(clogger.green("\n✅"), message);
 }
 
 export function logError(message: string, error?: unknown) {
-	console.error(clogger.red("\n✕"), message);
+	console.error(clogger.red("\n❌"), message);
 	if (error) console.error(error);
 }
 
@@ -465,25 +465,3 @@ type PackageInfo = {
 	peerDependencies: string[];
 	devDependencies: string[];
 };
-
-export async function buildPackages() {
-	try {
-		const packages = getPublishOrder();
-		logStep(`Building packages in order: ${packages.join(" -> ")}`);
-
-		for (const packageName of packages) {
-			const packageDir = getPackagePath(packageName);
-			const pkg = readPackageJson(packageDir);
-
-			if (pkg.scripts?.build) {
-				logStep(`Building ${packageName}...`);
-				npm.build(packageDir);
-			}
-		}
-
-		logSuccess("All packages built successfully!");
-	} catch (error) {
-		logError("Build failed", error);
-		process.exit(1);
-	}
-}

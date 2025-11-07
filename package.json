@@ -10,7 +10,8 @@
     "fmt": "bunx @biomejs/biome format --write ./packages/**/*.ts ./apps/**/*.ts ./examples/**/*.ts",
     "lint": "bunx @biomejs/biome lint --write ./src",
     "bump-packages-version": "bun scripts/bump-packages-version.ts",
-    "link-packages": "bun run ./scripts/link-packages.ts"
+    "link-packages": "bun run ./scripts/link-packages.ts",
+    "build-packages": "bun run ./scripts/build-packages.ts"
   },
   "workspaces": [
     "examples/*",
@@ -18,7 +19,7 @@
     "packages/*"
   ],
   "dependencies": {
-    "turbo": "^2.1.3"
+    "turbo": "^2.2.3"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.3",

@@ -9,7 +9,7 @@ import {
 } from "./utils/package-utils";
 import type { VersionType } from "./utils/package-utils";
 
-async function bumpPackagesVersion(versionType: VersionType) {
+async function bumpPackages(versionType: VersionType) {
 	logStep("🚀 Starting version bump process...");
 	const newVersion = await getNewVersion(versionType);
 	logSuccess(`📦 New version will be: ${newVersion}`);
@@ -29,7 +29,7 @@ async function bumpPackagesVersion(versionType: VersionType) {
 
 if (require.main === module) {
 	const versionType = (process.argv[2] || "patch") as VersionType;
-	bumpPackagesVersion(versionType).catch((error) => {
+	bumpPackages(versionType).catch((error) => {
 		logError("💥 Unhandled error", error);
 		process.exit(1);
 	});
