@@ -1,18 +1,19 @@
 {
   "name": "@teardown/event-emitter",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "",
   "main": "./src/index.ts",
   "module": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "publish": "npm publish --access public"
   },
   "files": [
     "src/**/*"
   ],
   "dependencies": {
-    "@teardown/util": "workspace:^",
+    "@teardown/util": "1.0.1",
     "react": "^18.3.1"
   },
   "devDependencies": {

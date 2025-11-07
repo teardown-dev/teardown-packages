@@ -1,1 +1,1 @@
-export * from './use-emitter-value.ts';
+export * from './use-emitter-value';
