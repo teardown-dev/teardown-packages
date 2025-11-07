@@ -25,13 +25,11 @@ jobs:
       - name: Install Dependencies
         run: bun install
 
-    
-
       - name: Build Packages
         run: bun run build-packages
 
       - name: Prepare Release
-        run: bun run prepare-release ${{ steps.bump.outputs.type }}
+        run: bun run prepare-release patch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -65,4 +63,4 @@ jobs:
       - name: Notify on Failure
         if: failure()
         run: |
-          echo "::error::Release process failed. Please check the logs for more details." 
+          echo "::error::Release process failed. Please check the logs for more details."
