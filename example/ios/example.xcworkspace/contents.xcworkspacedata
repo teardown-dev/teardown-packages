@@ -5,6 +5,9 @@
       location = "group:/Users/chris/Documents/teardown/teardown-packages/example/ios/orcahrd-lane-test.gpx">
    </FileRef>
    <FileRef
+      location = "group:/Users/chris/Documents/teardown/teardown-packages/example/ios/orchard-lane-static.gpx">
+   </FileRef>
+   <FileRef
       location = "group:example.xcodeproj">
    </FileRef>
    <FileRef

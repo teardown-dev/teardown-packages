@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Position } from "@turf/turf";
 
-import { MapboxService } from "../services/mapbox.service";
+import { MapboxService } from "../modules/mapbox/services/mapbox.service.ts";
 
 const QueryKeys = {
   root: ["routes"],

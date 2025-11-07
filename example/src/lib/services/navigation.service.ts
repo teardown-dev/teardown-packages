@@ -1,28 +1,41 @@
-import {v4 as uuid} from 'uuid';
+import {useContext, createContext, useMemo} from 'react';
+import {NavigationClient} from '../navigation.client.ts';
 
-import {NavigationBlackbox} from './blackbox';
-import {CameraService} from './camera.service';
-import {MapboxService} from './mapbox.service';
-import {RouteService} from './route.service';
+export type NavigationServiceContextType = {
+  navigationClient: NavigationClient;
+};
 
-export class NavigationService {
-  id = uuid();
+const Context = createContext<NavigationServiceContextType | null>(null);
 
-  mapbox: MapboxService;
-  blackbox: NavigationBlackbox;
-  route: RouteService;
-  camera: CameraService;
+export type NavigationOptions = {
+  waypoints: GeoJSON.Position[];
+};
 
-  constructor(waypoints: GeoJSON.Position[]) {
-    this.mapbox = new MapboxService();
-    this.blackbox = new NavigationBlackbox();
-    this.camera = new CameraService(this.blackbox);
-    this.route = new RouteService(this.mapbox, this.blackbox, this.camera);
+export const NavigationService = {
+  Context,
+  Provider: Context.Provider,
 
-    this.blackbox.setWaypoints(waypoints);
-  }
+  useState() {
+    const state = useContext(Context);
+    if (state == null) {
+      throw new Error('NavigationService not found');
+    }
+    return state;
+  },
 
-  shutdown() {
-    this.blackbox.shutdown();
-  }
-}
+  useProvidedState(options: NavigationOptions): NavigationServiceContextType {
+    const {waypoints} = options;
+
+    const navigationClient = useMemo(() => {
+      return new NavigationClient({
+        accessToken:
+          'pk.eyJ1IjoidXJiYW5jaHJpc3kiLCJhIjoiY2xzbGo5cnhwMGVoazJqcDY0N3RqeG92OSJ9.C9sIOo45b61JpdvgbMhtVw',
+        waypoints,
+      });
+    }, [waypoints]);
+
+    return {
+      navigationClient,
+    };
+  },
+};

@@ -18,13 +18,11 @@
   },
   "devDependencies": {
     "@rnmapbox/maps": "^10.1.27",
-    "@types/mapbox__mapbox-sdk": "^0.14.0",
     "@types/react-native": "^0.73.0",
     "react": "^18.2.0",
     "react-native": "^0.74.2"
   },
   "dependencies": {
-    "@mapbox/mapbox-sdk": "^0.16.0",
     "@tanstack/react-query": "^5.45.0",
     "@turf/helpers": "^7.0.0",
     "@turf/turf": "^7.0.0",
