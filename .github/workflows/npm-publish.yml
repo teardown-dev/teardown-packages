@@ -40,10 +40,15 @@ jobs:
           fi
 
       - name: Build Packages
-        run: bun run build
+        run: bun run build-packages
 
-      - name: Update Version and Publish
-        run: bun run release ${{ steps.bump.outputs.type }}
+      - name: Prepare Release
+        run: bun run prepare-release ${{ steps.bump.outputs.type }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Packages
+        run: bun run publish-packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
