@@ -450,3 +450,12 @@ type PackageInfo = {
 	peerDependencies: string[];
 	devDependencies: string[];
 };
+
+export function execCommand(command: string) {
+	try {
+		return execSync(command, { stdio: "inherit" });
+	} catch (error) {
+		console.error(`Error executing command: ${command}`);
+		throw error;
+	}
+}

@@ -18,7 +18,7 @@ async function linkPackages() {
 				logStep(`Linking ${pkg.name}...`);
 
 				// Run bun link in the package directory
-				execCommand(`cd ${packageDir} && bun link`);
+				await execCommand(`cd ${packageDir} && bun link`);
 
 				logSuccess(`Linked ${pkg.name}`);
 			} catch (error) {

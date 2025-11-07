@@ -1,4 +1,4 @@
-name: Release Packages
+name: Bump Packages Version
 
 on:
     workflow_dispatch:
@@ -14,7 +14,7 @@ on:
           default: 'patch'
 
 jobs:
-  release:
+  bump:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,23 +32,12 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Setup NPM Auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-
       - name: Link Packages
         run: bun run link-packages
 
       - name: Install Dependencies
         run: bun install
 
-      - name: Build Packages
-        run: bun run build-packages
-
-      - name: Prepare Packages for Publish
-        run: bun run packages-pre-publish
-
-      - name: Publish Packages
-        run: bun run publish-packages
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Bump Version
+        if: success()
+        run: bun run bump-packages ${{ inputs.version_type }} 
