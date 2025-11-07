@@ -1,0 +1,74 @@
+name: Release Packages
+
+on:
+    workflow_dispatch:
+      inputs:
+        version_type:
+          description: 'Version bump type'
+          required: true
+          type: choice
+          options:
+            - patch
+            - minor
+            - major
+          default: 'patch'
+    
+    workflow_call:
+      inputs:
+        version_type:
+          description: 'Version bump type'
+          required: true
+          type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Setup NPM Authentication
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          echo "always-auth=true" >> ~/.npmrc
+          npm whoami
+
+      - name: Link Packages
+        run: bun run link-packages
+
+      - name: Install Dependencies
+        run: bun run install
+
+      - name: Build Packages
+        run: bun run build-packages
+
+      # First phase: Bump version
+      - name: Bump Version
+        run: bun run bump-packages ${{ inputs.version_type }}
+
+      - name: Clean Working Directory
+        run: |
+          # Remove all untracked files and directories (-f force, -d directories, -x ignore .gitignore)
+          git clean -fdx
+          # Reset working directory to HEAD
+          git reset --hard HEAD
+
+      # Second phase: Publish
+      - name: Prepare Packages for Publish
+        run: bun run packages-pre-publish
+
+      - name: Publish Packages
+        run: bun run publish-packages 
