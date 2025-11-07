@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "@teardown/logger",
-  "version": "1.2.36",
+  "version": "1.2.37",
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
