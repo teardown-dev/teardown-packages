@@ -12,7 +12,7 @@ export async function buildPackages() {
 
 			if (pkg.scripts?.build) {
 				console.log(`\n🔨 Building ${packageName}...`);
-				execSync(`cd ${packageDir} && npm run build`, { stdio: "inherit" });
+				execSync(`cd ${packageDir} && bun run build`, { stdio: "inherit" });
 			}
 		}
 

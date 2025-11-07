@@ -23,7 +23,7 @@ async function prepareRelease() {
 		git.push();
 
 		console.log(`\n✅ Version bumped to ${newVersion}`);
-		console.log(`Run 'npm run publish-packages' when ready to publish`);
+		console.log(`Run 'bun run publish-packages' when ready to publish`);
 	} catch (error) {
 		console.error("\n❌ Version bump failed:", error);
 		process.exit(1);
