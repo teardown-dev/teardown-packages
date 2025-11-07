@@ -23,7 +23,7 @@ async function release() {
 
 		// 3. Run publish script
 		console.log("\n🚀 Publishing packages...");
-		execSync("bun run ./scripts/publish-packages.ts", { stdio: "inherit" });
+		execSync("bun run publish-packages", { stdio: "inherit" });
 
 		// 4. Push changes and tags
 		console.log("\n📤 Pushing changes and tags...");
