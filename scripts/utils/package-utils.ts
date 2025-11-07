@@ -329,7 +329,7 @@ export function getPublishOrder(): string[] {
 		}
 	}
 
-	return sorted; // Reverse the final array to get dependencies first
+	return sorted.reverse();
 }
 
 export async function buildPackages() {
