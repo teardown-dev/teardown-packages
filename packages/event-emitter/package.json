@@ -1,6 +1,6 @@
 {
   "name": "@teardown/event-emitter",
-  "version": "1.1.0-beta-05",
+  "version": "1.1.1",
   "description": "",
   "scripts": {
     "prepublishOnly": "bun run build",
@@ -18,7 +18,7 @@
   "dependencies": {
     "@teardown/config": "^1.1.0-beta-04",
     "@teardown/util": "^1.1.0-beta-04",
-    "react": "^18.3.1"
+    "react": "1.1.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.1"
