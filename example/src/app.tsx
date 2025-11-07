@@ -12,11 +12,14 @@ import {BottomSheetModalProvider} from '@gorhom/bottom-sheet';
 import {Main} from './main';
 import {QueryClientProvider} from '@tanstack/react-query';
 import {queryClient} from './modules/queries/query.client.ts';
+import {MapboxContainer} from './modules/mapbox/containers/mapbox.container.tsx';
 
 export const App: FunctionComponent = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <Visual />
+      <MapboxContainer>
+        <Visual />
+      </MapboxContainer>
     </QueryClientProvider>
   );
 };

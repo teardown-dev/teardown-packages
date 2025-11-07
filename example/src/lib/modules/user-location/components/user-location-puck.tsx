@@ -48,15 +48,6 @@ export const UserLocationPuck: FunctionComponent<
               circlePitchAlignment: 'map',
             }}
           />
-          {/*<Mapbox.CircleLayer*/}
-          {/*  id="user-location-puck-circle-1"*/}
-          {/*  layerIndex={131}*/}
-          {/*  style={{*/}
-          {/*    circleColor: 'white',*/}
-          {/*    circleRadius: 10,*/}
-          {/*    circlePitchAlignment: 'map',*/}
-          {/*  }}*/}
-          {/*/>*/}
         </Mapbox.ShapeSource>
       )}
     </>

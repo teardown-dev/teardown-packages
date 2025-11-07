@@ -7716,6 +7716,7 @@ __metadata:
     custompatch: ^1.0.27
     eslint: ^8.19.0
     expo-haptics: ^13.0.1
+    geojson: ^0.5.0
     jest: ^29.6.3
     lucide-react-native: ^0.397.0
     moti: ^0.29.0

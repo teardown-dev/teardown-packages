@@ -17,7 +17,7 @@ export type Input = TextInput;
 
 const inputVariants = cva('text-body-md text-foreground py-5 w-full', {
   variants: {
-    variant: {
+    type: {
       default: 'rounded-2xl',
     },
     size: {
@@ -28,7 +28,7 @@ const inputVariants = cva('text-body-md text-foreground py-5 w-full', {
     },
   },
   defaultVariants: {
-    variant: 'default',
+    type: 'default',
     size: 'md',
   },
 });
@@ -43,7 +43,7 @@ export type InputProps = TextInputProps & {
 
 export const Input = forwardRef<TextInput, InputProps>((props, ref) => {
   const {
-    variant,
+    type,
     style,
     leftIcon,
     rightIcon,
@@ -58,7 +58,7 @@ export const Input = forwardRef<TextInput, InputProps>((props, ref) => {
     ...otherProps
   } = props;
   const Component = inBottomSheet ? BottomSheetTextInput : TextInput;
-  const variantClassName = inputVariants({variant});
+  const variantClassName = inputVariants({variant: type});
 
   const inputRef = useRef<TextInput>(null);
   useImperativeHandle(ref, () => inputRef.current!);

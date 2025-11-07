@@ -228,6 +228,8 @@ export class RouteService {
       ...waypoints,
     ];
 
+    console.log('routeWaypoints', routeWaypoints);
+
     try {
       this.logger.log('Generating route', routeWaypoints);
       const directions = await this.mapbox.getRoute(routeWaypoints, {

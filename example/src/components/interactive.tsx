@@ -1,8 +1,7 @@
 import type {FunctionComponent, PropsWithChildren} from 'react';
 import React from 'react';
-import {Pressable, PressableProps, View, ViewProps} from 'react-native';
+import {Pressable, PressableProps} from 'react-native';
 import {cva, type VariantProps} from 'class-variance-authority';
-import {buttonVariants} from './button.tsx';
 import {cn} from '../theme';
 
 const interactiveVariants = cva('', {
@@ -12,6 +11,8 @@ const interactiveVariants = cva('', {
         'bg-interactive-default-surface active:bg-interactive-default-surface-hover',
       subtle:
         'bg-interactive-subtle-surface active:bg-interactive-subtle-surface-hover',
+      selected:
+        'bg-interactive-selected-surface active:bg-interactive-selected-surface-hover',
     },
   },
   defaultVariants: {

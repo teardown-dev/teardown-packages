@@ -7,13 +7,25 @@ import {
 } from '@mapbox/mapbox-sdk/lib/classes/mapi-request';
 // @ts-ignore
 import MapboxDirectionsClient from '@mapbox/mapbox-sdk/services/directions';
+// @ts-ignore
+import MapboxGeocodingClient from '@mapbox/mapbox-sdk/services/geocoding';
 import MapiClient, {
   SdkConfig,
   // @ts-ignore
 } from '@mapbox/mapbox-sdk/lib/classes/mapi-client';
+import {LngLatLike} from 'mapbox-gl';
 
-export default function DirectionsClient(config: SdkConfig | MapiClient) {
+export function DirectionsClient(config: SdkConfig | MapiClient) {
   return new MapboxDirectionsClient(config) as DirectionsService;
+}
+
+export function GeocodingClient(config: SdkConfig | MapiClient) {
+  return new MapboxGeocodingClient(config) as GeocodeService;
+}
+
+export interface GeocodeService {
+  forwardGeocode(request: GeocodeRequest): MapiRequest<GeocodeResponse>;
+  reverseGeocode(request: GeocodeRequest): MapiRequest<GeocodeResponse>;
 }
 
 export interface DirectionsService {
@@ -582,4 +594,206 @@ export interface Lane {
    * Array of signs for each turn lane. There can be multiple signs. For example, a turning lane can have a sign with an arrow pointing left and another sign with an arrow pointing straight.
    */
   indications: string[];
+}
+
+export type BoundingBox = [number, number, number, number];
+
+export type GeocodeMode = 'mapbox.places' | 'mapbox.places-permanent';
+
+export type GeocodeQueryType =
+  | 'country'
+  | 'region'
+  | 'postcode'
+  | 'district'
+  | 'place'
+  | 'locality'
+  | 'neighborhood'
+  | 'address'
+  | 'poi'
+  | 'poi.landmark';
+
+export interface GeocodeRequest {
+  /**
+   * A location. This will be a place name for forward geocoding or a coordinate pair (longitude, latitude) for reverse geocoding.
+   */
+  query: string | LngLatLike;
+  /**
+   * Either  mapbox.places for ephemeral geocoding, or  mapbox.places-permanent for storing results and batch geocoding.
+   */
+  mode?: GeocodeMode;
+  /**
+   * Limit results to one or more countries. Options are ISO 3166 alpha 2 country codes
+   */
+  countries?: string[] | undefined;
+  /**
+   * Bias local results based on a provided location. Options are longitude,latitude coordinates or the user's ip.
+   */
+  proximity?: Coordinates | 'ip' | undefined;
+  /**
+   * Filter results by one or more feature types
+   */
+  types?: GeocodeQueryType[] | undefined;
+  /**
+   * Forward geocoding only. Return autocomplete results or not. Options are  true or  false and the default is  true .
+   */
+  autocomplete?: boolean | undefined;
+  /**
+   * Forward geocoding only. Limit results to a bounding box. Options are in the format  minLongitude,minLatitude,maxLongitude,maxLatitude.
+   */
+  bbox?: BoundingBox | undefined;
+  /**
+   * Limit the number of results returned. The default is  5 for forward geocoding and  1 for reverse geocoding.
+   */
+  limit?: number | undefined;
+  /**
+   * Specify the language to use for response text and, for forward geocoding, query result weighting.
+   * Options are IETF language tags comprised of a mandatory ISO 639-1 language code and optionally one or more
+   * IETF subtags for country or script.
+   */
+  language?: string[] | undefined;
+  /**
+   * Specify whether to request additional etadat about the recommended navigation destination. Only applicable for address features.
+   */
+  routing?: boolean | undefined;
+}
+
+interface GeocodeResponse {
+  /**
+   * "Feature Collection" , a GeoJSON type from the GeoJSON specification.
+   */
+  type: 'FeatureCollection';
+  /**
+   * An array of space and punctuation-separated strings from the original query.
+   */
+  query: string[];
+  /**
+   * An array of feature objects.
+   */
+  features: GeocodeFeature[];
+  /**
+   * A string attributing the results of the Mapbox Geocoding API to Mapbox and links to Mapbox's terms of service and data sources.
+   */
+  attribution: string;
+}
+
+export interface GeocodeFeature {
+  /**
+   * A string feature id in the form  {type}.{id} where  {type} is the lowest hierarchy feature in the  place_type field.
+   * The  {id} suffix of the feature id is unstable and may change within versions.
+   */
+  id: string;
+  /**
+   * "Feature", a GeoJSON type from the GeoJSON specification.
+   */
+  type: 'Feature';
+  /**
+   * An array of feature types describing the feature. Options are  country ,  region ,  postcode ,  district ,  place , locality ,  neighborhood ,
+   * address ,  poi , and  poi.landmark . Most features have only one type, but if the feature has multiple types,
+   * all applicable types will be listed in the array. (For example, Vatican City is a  country , region , and  place .)
+   */
+  place_type: string[];
+  /**
+   * A numerical score from 0 (least relevant) to 0.99 (most relevant) measuring how well each returned feature matches the query.
+   * You can use the  relevance property to remove results that don't fully match the query.
+   */
+  relevance: number;
+  /**
+   * A string of the house number for the returned  address feature. Note that unlike the
+   * address property for  poi features, this property is outside the  properties object.
+   */
+  address?: string | undefined;
+  /**
+   * An object describing the feature. The property object is unstable and only Carmen GeoJSON properties are guaranteed.
+   * Your implementation should check for the presence of these values in a response before it attempts to use them.
+   */
+  properties: GeocodeProperties;
+  /**
+   * A string representing the feature in the requested language, if specified.
+   */
+  text: string;
+  /**
+   * The ISO 3166-1 country and ISO 3166-2 region code for the feature.
+   */
+  short_code?: string;
+  /**
+   * A string representing the feature in the requested language, if specified, and its full result hierarchy.
+   */
+  place_name: string;
+  /**
+   * A string analogous to the  text field that more closely matches the query than results in the specified language.
+   * For example, querying "Köln, Germany" with language set to English might return a feature with the
+   * text "Cologne" and the  matching_text "Köln".
+   */
+  matching_text: string;
+  /**
+   * A string analogous to the  place_name field that more closely matches the query than results in the specified language.
+   * For example, querying "Köln, Germany" with language set to English might return a feature with the place_name "Cologne, Germany"
+   * and a  matching_place_name of "Köln, North Rhine-Westphalia, Germany".
+   */
+  matching_place_name: string;
+  /**
+   * A string of the IETF language tag of the query's primary language.
+   * Can be used to identity text and place_name properties on this object
+   * in the format text_{language}, place_name_{language} and language_{language}
+   */
+  language: string;
+  /**
+   * An array bounding box in the form [ minX,minY,maxX,maxY ] .
+   */
+  bbox?: number[] | undefined;
+  /**
+   * An array in the form [ longitude,latitude ] at the center of the specified  bbox .
+   */
+  center: number[];
+  /**
+   * An object describing the spatial geometry of the returned feature
+   */
+  geometry: Geometry;
+  /**
+   * An array representing the hierarchy of encompassing parent features. Each parent feature may include any of the above properties
+   */
+  context: GeocodeFeature[];
+}
+
+export interface Geometry {
+  /**
+   * Point, a GeoJSON type from the GeoJSON specification .
+   */
+  type: 'Point';
+  /**
+   * An array in the format [ longitude,latitude ] at the center of the specified  bbox .
+   */
+  coordinates: number[];
+  /**
+   * A boolean value indicating if an  address is interpolated along a road network. This field is only present when the feature is interpolated.
+   */
+  interpolated: boolean;
+}
+
+export interface GeocodeProperties extends GeocodeFeature {
+  /**
+   * The Wikidata identifier for the returned feature.
+   */
+  wikidata?: string | undefined;
+  /**
+   * A string of comma-separated categories for the returned  poi feature.
+   */
+  category?: string | undefined;
+  /**
+   * A formatted string of the telephone number for the returned  poi feature.
+   */
+  tel?: string | undefined;
+  /**
+   * The name of a suggested Maki icon to visualize a  poi feature based on its  category .
+   */
+  maki?: string | undefined;
+  /**
+   * A boolean value indicating whether a  poi feature is a landmark. Landmarks are
+   * particularly notable or long-lived features like schools, parks, museums and places of worship.
+   */
+  landmark?: boolean | undefined;
+  /**
+   * The ISO 3166-1 country and ISO 3166-2 region code for the returned feature.
+   */
+  short_code: string;
 }

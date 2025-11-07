@@ -14,7 +14,7 @@ import {TextClassContext} from './text.tsx';
 
 const buttonVariants = cva('flex-row items-center justify-center gap-2', {
   variants: {
-    variant: {
+    type: {
       primary: 'ios:active:opacity-80 bg-primary',
       secondary:
         'ios:border-primary ios:active:bg-primary/5 border border-foreground/40',
@@ -31,7 +31,7 @@ const buttonVariants = cva('flex-row items-center justify-center gap-2', {
     },
   },
   defaultVariants: {
-    variant: 'primary',
+    type: 'primary',
     size: 'md',
   },
 });
@@ -53,7 +53,7 @@ const androidRootVariants = cva('overflow-hidden', {
 
 const buttonTextVariants = cva('font-medium', {
   variants: {
-    variant: {
+    type: {
       primary: 'text-white',
       secondary: 'ios:text-primary text-foreground',
       tonal: 'ios:text-primary text-foreground',
@@ -68,7 +68,7 @@ const buttonTextVariants = cva('font-medium', {
     },
   },
   defaultVariants: {
-    variant: 'primary',
+    type: 'primary',
     size: 'md',
   },
 });
@@ -78,11 +78,8 @@ const BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
 };
 
-type ButtonVariantProps = Omit<
-  VariantProps<typeof buttonVariants>,
-  'variant'
-> & {
-  variant?: Exclude<VariantProps<typeof buttonVariants>['variant'], null>;
+type ButtonVariantProps = Omit<VariantProps<typeof buttonVariants>, 'type'> & {
+  variant?: Exclude<VariantProps<typeof buttonVariants>['type'], null>;
 };
 
 type AndroidOnlyButtonProps = {
@@ -114,7 +111,8 @@ const Button = React.forwardRef<
     // const {colorScheme} = useColorScheme();
 
     return (
-      <TextClassContext.Provider value={buttonTextVariants({variant, size})}>
+      <TextClassContext.Provider
+        value={buttonTextVariants({variant: type, size})}>
         <Root
           className={Platform.select({
             ios: undefined,
@@ -126,7 +124,7 @@ const Button = React.forwardRef<
           <Pressable
             className={cn(
               props.disabled && 'opacity-50',
-              buttonVariants({variant, size, className}),
+              buttonVariants({variant: type, size, className}),
             )}
             ref={ref}
             style={style}

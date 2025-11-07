@@ -6,7 +6,7 @@ import {cn} from '../theme';
 
 const iconVariants = cva('', {
   variants: {
-    variant: {
+    type: {
       default: 'p-4 rounded-2xl',
     },
     size: {
@@ -17,7 +17,7 @@ const iconVariants = cva('', {
     },
   },
   defaultVariants: {
-    variant: 'default',
+    type: 'default',
     size: 'md',
   },
 });
@@ -25,20 +25,20 @@ const iconVariants = cva('', {
 export type IconProps = PropsWithChildren<InteractiveProps> &
   VariantProps<typeof iconVariants>;
 export const Icon: FunctionComponent<IconProps> = props => {
-  const {className, variant, ...otherProps} = props;
+  const {className, type, ...otherProps} = props;
 
   const child = React.Children.map(props.children, child => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, {
-        ...child.props,
         size: '100%',
         color: 'white',
+        ...child.props,
       });
     }
     return child;
   });
 
-  const iconVariantClassName = iconVariants({variant});
+  const iconVariantClassName = iconVariants({type});
 
   return (
     <Interactive

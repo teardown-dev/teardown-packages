@@ -1,8 +1,11 @@
-import DirectionsClient, {
+import {
+  DirectionsClient,
   type DirectionsRequest,
   type DirectionsResponse,
   type DirectionsService,
   type DirectionsWaypoint,
+  GeocodingClient,
+  GeocodeService,
   type Route,
 } from '../mapbox.ts';
 
@@ -13,11 +16,16 @@ export type {Directions, DirectionsWaypoint, Route};
 export class MapboxService {
   private readonly accessToken: string;
   private directionsClient: DirectionsService;
+  private geocodingClient: GeocodeService;
 
   constructor(accessToken: string) {
     this.accessToken = accessToken;
 
     this.directionsClient = DirectionsClient({
+      accessToken: this.accessToken,
+    });
+
+    this.geocodingClient = GeocodingClient({
       accessToken: this.accessToken,
     });
   }
@@ -45,5 +53,11 @@ export class MapboxService {
 
     // TODO: This cast could cause problems if it returns a multi-line string
     return data.body as DirectionsResponse<GeoJSON.LineString>;
+  }
+
+  searchForLocation(query: string) {
+    return this.geocodingClient.forwardGeocode({
+      query,
+    });
   }
 }

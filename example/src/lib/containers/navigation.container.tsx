@@ -18,7 +18,7 @@ import {UserLocationPuck} from '../modules/user-location';
 import {FullPath} from '../modules/route';
 import {CameraLockButton} from '../modules/camera';
 import {ManeuverLocations} from '../modules/maneuver';
-import {UserLocationButton} from "../modules/user-location/components/user-location-button.tsx";
+import {UserLocationButton} from '../modules/user-location/components/user-location-button.tsx';
 
 export type NavigationContainerProps = PropsWithChildren<{
   options: NavigationOptions;
@@ -66,7 +66,9 @@ export const NavigationContainer: FunctionComponent<
               }>
               <SafeAreaView className={'flex-1 pointer-events-box-none'}>
                 <View className={'flex-1 p-4 gap-4 pointer-events-box-none'}>
-                  <BannerInstructions />
+                  <View className={'border'}>
+                    <BannerInstructions />
+                  </View>
 
                   <View className={'flex-1 flex-row pointer-events-box-none'}>
                     <View className={'p-4 pointer-events-box-none'} />
