@@ -2,16 +2,6 @@ name: Release Packages
 
 on:
     workflow_dispatch:
-      # inputs:
-      #   version_type:
-      #     description: 'Version bump type'
-      #     required: true
-      #     type: choice
-      #     options:
-      #       - patch
-      #       - minor
-      #       - major
-      #     default: 'patch'
 
 jobs:
   release:
@@ -32,6 +22,13 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
+      - name: Setup NPM Authentication
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+          echo "always-auth=true" >> ~/.npmrc
+          npm whoami
+
       - name: Link Packages
         run: bun run link-packages
 
@@ -46,5 +43,3 @@ jobs:
 
       - name: Publish Packages
         run: bun run publish-packages
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
