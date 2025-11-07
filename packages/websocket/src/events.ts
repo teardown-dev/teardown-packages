@@ -34,6 +34,7 @@ export type ReactNativeVersion = PlatformConstants["reactNativeVersion"];
 export type ClientConnectionEstablishedWebsocketEvent = BaseWebsocketEvent<
 	"CLIENT_CONNECTION_ESTABLISHED",
 	{
+		deviceId: string;
 		deviceName: string;
 		platform: string;
 		platformVersion: string | number;
