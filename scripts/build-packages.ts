@@ -1,10 +1,10 @@
-import { getPublishOrder } from "./get-package-order";
 import {
 	npm,
 	getPackagePath,
 	logStep,
 	logSuccess,
 	logError,
+	getPublishOrder,
 } from "./utils/package-utils";
 
 export async function buildPackages() {

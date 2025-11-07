@@ -323,7 +323,7 @@ export function getPublishOrder(): string[] {
 		}
 		temp.delete(pkgName);
 		visited.add(pkgName);
-		sorted.unshift(pkgName); // Changed from push to unshift
+		sorted.unshift(pkgName);
 	}
 
 	// Visit all packages
@@ -333,7 +333,7 @@ export function getPublishOrder(): string[] {
 		}
 	}
 
-	return sorted.reverse();
+	return sorted;
 }
 
 export async function buildPackages() {
