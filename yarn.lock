@@ -3749,44 +3749,19 @@ __metadata:
     react-native: ^0.74.3
     react-native-gesture-handler: ^2.17.1
     react-native-reanimated: ^3.14.0
-    react-native-safe-area-context: ^4.10.8
-    react-native-svg: ^15.4.0
     tailwindcss: ^3.4.7
   languageName: unknown
   linkType: soft
 
-"@teardown/react-native-ui@npm:1.0.0":
-  version: 1.0.0
-  resolution: "@teardown/react-native-ui@npm:1.0.0"
-  dependencies:
-    "@gorhom/bottom-sheet": ^4.6.3
-    class-variance-authority: ^0.7.0
-    lucide-react-native: ^0.416.0
-    nativewind: ^2.0.11
-    react-native-safe-area-context: ^4.10.8
-    react-native-svg: ^15.4.0
-  peerDependencies:
-    react: ^18.3
-    react-native: ^0.74
-  checksum: 0e3d413be339a5c314de18ee5d8b8387a9aa23d71e01339d0a4c9201f1ca7be02b6bc16b5ce4fdbf562a82a7efccc1f8698c52b532f854c012641d84d70d3062
-  languageName: node
-  linkType: hard
-
-"@teardown/react-native@npm:1.0.0":
-  version: 1.0.0
-  resolution: "@teardown/react-native@npm:1.0.0"
+"@teardown/react-native@npm:1.0.7":
+  version: 1.0.7
+  resolution: "@teardown/react-native@npm:1.0.7"
   dependencies:
     "@teardown/logger": 1.0.0
-    "@teardown/react-native-ui": 1.0.0
+    "@teardown/react-native-ui": 1.0.1
     "@teardown/util": 1.0.1
     "@teardown/websocket": 1.0.4
-    react-native: ^0.74.3
-    react-native-gesture-handler: ^2.17.1
-    react-native-safe-area-context: ^4.10.8
-    react-native-svg: ^15.4.0
-  peerDependencies:
-    react: ^18.3
-  checksum: d6e3b860bd7397e8cb198c0fff18d5b596fcbfdfb60336a13c24f294914c4abdc81ba596940dec0768105214624f623e0552064ebd2aca49e698d6984c4679df
+  checksum: 5cb5e20e01ed0d7a478e23510186017c4242298e8eb40007f104f77cda0d9e539e5443a4f951a8332791f26fa5c6839bf9022d0465b4b0d8636c9d485c35c429
   languageName: node
   linkType: hard
 
@@ -3797,7 +3772,7 @@ __metadata:
     "@teardown/logger": 1.0.0
     "@teardown/react-native-ui": 1.0.1
     "@teardown/util": 1.0.1
-    "@teardown/websocket": 1.0.4
+    "@teardown/websocket": 1.0.10
     "@types/react": ^18.3.3
     react: ^18.3.1
     react-native: ^0.74.3
@@ -3813,6 +3788,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@teardown/websocket@1.0.10, @teardown/websocket@workspace:packages/websocket":
+  version: 0.0.0-use.local
+  resolution: "@teardown/websocket@workspace:packages/websocket"
+  dependencies:
+    "@teardown/event-emitter": 1.0.3
+    "@teardown/logger": 1.0.0
+    "@teardown/util": 1.0.1
+  languageName: unknown
+  linkType: soft
+
 "@teardown/websocket@npm:1.0.4":
   version: 1.0.4
   resolution: "@teardown/websocket@npm:1.0.4"
@@ -3823,16 +3808,6 @@ __metadata:
   checksum: c8c2d47c9c503ad1b2e89defd3479e5602cd2f48246657d07a6e9269d54fe7356fb9a51b4f1664d5b83f8149f44444a5b85d39ecc94854b5a4edbef237c7ac42
   languageName: node
   linkType: hard
-
-"@teardown/websocket@workspace:packages/websocket":
-  version: 0.0.0-use.local
-  resolution: "@teardown/websocket@workspace:packages/websocket"
-  dependencies:
-    "@teardown/event-emitter": 1.0.3
-    "@teardown/logger": 1.0.0
-    "@teardown/util": 1.0.1
-  languageName: unknown
-  linkType: soft
 
 "@turf/along@npm:6.5.0":
   version: 6.5.0
@@ -6462,6 +6437,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"axios@npm:^1.7.2":
+  version: 1.7.2
+  resolution: "axios@npm:1.7.2"
+  dependencies:
+    follow-redirects: ^1.15.6
+    form-data: ^4.0.0
+    proxy-from-env: ^1.1.0
+  checksum: e457e2b0ab748504621f6fa6609074ac08c824bf0881592209dfa15098ece7e88495300e02cd22ba50b3468fd712fe687e629dcb03d6a3f6a51989727405aedf
+  languageName: node
+  linkType: hard
+
 "babel-core@npm:^7.0.0-bridge.0":
   version: 7.0.0-bridge.0
   resolution: "babel-core@npm:7.0.0-bridge.0"
@@ -8734,15 +8720,16 @@ __metadata:
     "@tanstack/react-query": ^5.48.0
     "@teardown/event-emitter": 1.0.3
     "@teardown/logger": 1.0.0
-    "@teardown/react-native": 1.0.0
+    "@teardown/react-native": 1.0.7
     "@teardown/util": 1.0.1
-    "@teardown/websocket": 1.0.4
+    "@teardown/websocket": 1.0.10
     "@turf/turf": ^7.0.0
     "@types/mapbox__mapbox-sdk": ^0.14.0
     "@types/react": ^18.3.3
     "@types/react-native": ^0.73.0
     "@types/react-test-renderer": ^18.0.0
     async-mutex: ^0.5.0
+    axios: ^1.7.2
     babel-jest: ^29.6.3
     class-variance-authority: ^0.7.0
     custompatch: ^1.0.27
@@ -9225,6 +9212,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"follow-redirects@npm:^1.15.6":
+  version: 1.15.6
+  resolution: "follow-redirects@npm:1.15.6"
+  peerDependenciesMeta:
+    debug:
+      optional: true
+  checksum: a62c378dfc8c00f60b9c80cab158ba54e99ba0239a5dd7c81245e5a5b39d10f0c35e249c3379eae719ff0285fff88c365dd446fab19dee771f1d76252df1bbf5
+  languageName: node
+  linkType: hard
+
 "fontfaceobserver@npm:^2.1.0":
   version: 2.3.0
   resolution: "fontfaceobserver@npm:2.3.0"
@@ -9259,6 +9256,17 @@ __metadata:
     combined-stream: ^1.0.8
     mime-types: ^2.1.12
   checksum: b019e8d35c8afc14a2bd8a7a92fa4f525a4726b6d5a9740e8d2623c30e308fbb58dc8469f90415a856698933c8479b01646a9dff33c87cc4e76d72aedbbf860d
+  languageName: node
+  linkType: hard
+
+"form-data@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "form-data@npm:4.0.0"
+  dependencies:
+    asynckit: ^0.4.0
+    combined-stream: ^1.0.8
+    mime-types: ^2.1.12
+  checksum: 01135bf8675f9d5c61ff18e2e2932f719ca4de964e3be90ef4c36aacfc7b9cb2fceb5eca0b7e0190e3383fe51c5b37f4cb80b62ca06a99aaabfcfd6ac7c9328c
   languageName: node
   linkType: hard
 
@@ -13854,6 +13862,13 @@ __metadata:
   dependencies:
     genfun: ^5.0.0
   checksum: 1e2d0a82d0bc48ea1fb9a370e8f72636098cb41ecc1963c2d7c50cd5a62ab227db273c5d512481b60fba3165433a2778d486859ba9383c2f9e57767f7eb8975c
+  languageName: node
+  linkType: hard
+
+"proxy-from-env@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "proxy-from-env@npm:1.1.0"
+  checksum: ed7fcc2ba0a33404958e34d95d18638249a68c430e30fcb6c478497d72739ba64ce9810a24f53a7d921d0c065e5b78e3822759800698167256b04659366ca4d4
   languageName: node
   linkType: hard
 
