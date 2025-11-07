@@ -112,7 +112,6 @@ const version = {
 	},
 } as const;
 
-// Update functions that used semver
 export async function getNewVersion(versionType: VersionType): Promise<string> {
 	const currentVersion = getCurrentVersion();
 	return version.inc(currentVersion, versionType) || currentVersion;
