@@ -14,8 +14,7 @@
     "assets/**/*"
   ],
   "scripts": {
-    "build": "tsc && npm run copy-assets",
-    "copy-assets": "copyfiles -u 1 \"src/**/*.{png,jpg,jpeg,gif,svg,html,css,ico}\" dist/",
+    "build": "tsc",
     "dev": "tsc --watch",
     "start": "bun run ./bin/teardown.js"
   },
