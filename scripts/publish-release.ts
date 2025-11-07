@@ -1,37 +1,35 @@
-import { execSync } from "node:child_process";
-import { replaceLinkedDependencies } from "./update-versions";
+import { replaceLinkedDependencies, updateVersions } from "./update-versions";
 import { publishPackages } from "./publish-packages";
-import { readFileSync } from "node:fs";
+import { getCurrentVersion, git } from "./utils/package-utils";
 
 async function publishRelease() {
 	try {
-		// Get current version from package.json
-		const { version } = JSON.parse(readFileSync("./package.json", "utf-8"));
+		const version = getCurrentVersion();
 
-		// 1. Replace all link: dependencies with actual versions
 		console.log("\n🔗 Replacing linked dependencies...");
 		replaceLinkedDependencies();
 
-		// 2. Publish packages
 		console.log("\n🚀 Publishing packages...");
 		await publishPackages();
 
-		// 3. Create and push release tag
 		console.log("\n📌 Creating release tag...");
-		execSync(`git tag -a v${version} -m "Release v${version}"`, {
-			stdio: "inherit",
-		});
-		execSync("git push origin --tags", { stdio: "inherit" });
+		git.tag(version, `Release v${version}`);
+		git.push(true);
 
-		// 4. Create a release commit
 		console.log("\n📝 Creating release commit...");
-		execSync("git add .");
-		execSync(`git commit -m "chore: release v${version}"`, {
-			stdio: "inherit",
-		});
-		execSync("git push origin main", { stdio: "inherit" });
+		git.commit(`chore: release v${version}`);
+		git.push();
 
-		console.log("\n✨ Release published successfully!");
+		console.log("\n📈 Incrementing to next patch version...");
+		const nextVersion = updateVersions("patch");
+
+		console.log("\n📝 Committing next version...");
+		git.commit(`chore: prepare next version v${nextVersion}`);
+		git.push();
+
+		console.log(
+			`\n✨ Release published successfully and bumped to v${nextVersion}!`,
+		);
 	} catch (error) {
 		console.error("\n❌ Release publishing failed:", error);
 		process.exit(1);
