@@ -1,18 +1,18 @@
 {
-  "name": "@teardown/websocket",
-  "version": "1.0.11",
-  "description": "",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --declaration",
-    "dev": "tsc --declaration --watch"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["README.md", "./dist/**/*"],
-  "dependencies": {
-    "@teardown/event-emitter": "link:@teardown/event-emitter",
-    "@teardown/logger": "link:@teardown/logger",
-    "@teardown/util": "link:@teardown/util"
-  }
+	"name": "@teardown/websocket",
+	"version": "1.0.11",
+	"description": "",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsc --declaration",
+		"dev": "tsc --declaration --watch"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": ["README.md", "./dist/**/*"],
+	"dependencies": {
+		"@teardown/event-emitter": "link:@teardown/event-emitter",
+		"@teardown/logger": "link:@teardown/logger",
+		"@teardown/util": "link:@teardown/util"
+	}
 }

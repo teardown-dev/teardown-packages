@@ -1,29 +1,29 @@
 {
-  "name": "@teardown/react-native-ui",
-  "version": "1.0.12",
-  "description": "",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --declaration",
-    "dev": "tsc --declaration --watch"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["README.md", "./dist/**/*"],
-  "dependencies": {
-    "@gorhom/bottom-sheet": "^4.6.3",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "lucide-react-native": "^0.416.0",
-    "tailwind-merge": "^2.4.0"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.1",
-    "nativewind": "^2.0.11",
-    "react": "^18.3.1",
-    "react-native": "^0.74.3",
-    "react-native-gesture-handler": "^2.17.1",
-    "react-native-reanimated": "^3.14.0",
-    "tailwindcss": "^3.4.7"
-  }
+	"name": "@teardown/react-native-ui",
+	"version": "1.0.12",
+	"description": "",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsc --declaration",
+		"dev": "tsc --declaration --watch"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": ["README.md", "./dist/**/*"],
+	"dependencies": {
+		"@gorhom/bottom-sheet": "^4.6.3",
+		"class-variance-authority": "^0.7.0",
+		"clsx": "^2.1.1",
+		"lucide-react-native": "^0.416.0",
+		"tailwind-merge": "^2.4.0"
+	},
+	"devDependencies": {
+		"@types/react": "^18.3.1",
+		"nativewind": "^2.0.11",
+		"react": "^18.3.1",
+		"react-native": "^0.74.3",
+		"react-native-gesture-handler": "^2.17.1",
+		"react-native-reanimated": "^3.14.0",
+		"tailwindcss": "^3.4.7"
+	}
 }

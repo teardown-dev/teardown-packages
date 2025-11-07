@@ -1,21 +1,21 @@
 {
-  "name": "@teardown/event-emitter",
-  "version": "1.0.4",
-  "description": "",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --declaration",
-    "dev": "tsc --declaration --watch"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["README.md", "./dist/**/*"],
-  "dependencies": {
-    "@teardown/config": "link:@teardown/config",
-    "@teardown/util": "link:@teardown/util",
-    "react": "^18.3.1"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.1"
-  }
+	"name": "@teardown/event-emitter",
+	"version": "1.0.4",
+	"description": "",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsc --declaration",
+		"dev": "tsc --declaration --watch"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": ["README.md", "./dist/**/*"],
+	"dependencies": {
+		"@teardown/config": "link:@teardown/config",
+		"@teardown/util": "link:@teardown/util",
+		"react": "^18.3.1"
+	},
+	"devDependencies": {
+		"@types/react": "^18.3.1"
+	}
 }

@@ -1,13 +1,13 @@
 {
-  "name": "@teardown/logger",
-  "version": "1.0.2",
-  "description": "",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --declaration",
-    "dev": "tsc --declaration --watch"
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": ["README.md", "./dist/**/*"]
+	"name": "@teardown/logger",
+	"version": "1.0.2",
+	"description": "",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build": "tsc --declaration",
+		"dev": "tsc --declaration --watch"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": ["README.md", "./dist/**/*"]
 }
