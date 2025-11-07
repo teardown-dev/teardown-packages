@@ -38,6 +38,7 @@ export type WebsocketClientOptions = {
 	port?: number;
 	reconnectInterval?: number;
 	maxReconnectAttempts?: number;
+	autoConnect?: boolean;
 };
 
 interface WebSocketMessageEvent extends Event {
@@ -63,8 +64,9 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 	emitter: EventEmitter<WebsocketLocalEvents> =
 		new EventEmitter<WebsocketLocalEvents>();
 
-	host = "localhost";
-	port = 20024;
+	private wss: boolean;
+	private host: string;
+	private port: number;
 	private reconnectInterval: number;
 	private maxReconnectAttempts: number;
 	private reconnectAttempts = 0;
@@ -81,12 +83,14 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 		const {
 			wss = false,
 			port = 20024,
-			reconnectInterval = 5000,
-			maxReconnectAttempts = 5,
+			reconnectInterval = 2000,
+			maxReconnectAttempts = 10,
+			autoConnect = true,
 		} = options ?? {};
 
 		this.logger = options?.logger ?? new Logger("Websocket");
 
+		this.wss = wss;
 		this.host = options?.host ?? this.getHost();
 		this.port = port;
 		this.reconnectInterval = reconnectInterval;
@@ -98,12 +102,23 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 			wss,
 		});
 
-		this.connect(wss);
+		this.connect();
 	}
 
-	private connect(wss: boolean) {
-		const protocol = wss ? "wss" : "ws";
-		const url = `${protocol}://${this.host}:${this.port}`;
+	public getHost() {
+		return "localhost";
+	}
+
+	public getProtocol() {
+		return this.wss ? "wss" : "ws";
+	}
+
+	public getUrl() {
+		return `${this.getProtocol()}://${this.host}:${this.port}`;
+	}
+
+	private connect() {
+		const url = this.getUrl();
 
 		this.logger.log("Connecting to websocket", {
 			host: this.host,
@@ -116,10 +131,6 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 		this.ws.onclose = this.onWebsocketDisconnect.bind(this);
 		this.ws.onerror = this.onWebsocketConnectFailed.bind(this);
 		this.ws.onmessage = this.onMessage.bind(this);
-	}
-
-	public getHost() {
-		return "localhost";
 	}
 
 	private setStatus(status: WebsocketConnectionStatus) {
@@ -161,7 +172,7 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 			this.logger.log(
 				`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
 			);
-			setTimeout(() => this.connect(this.port === 443), this.reconnectInterval);
+			setTimeout(() => this.connect(), this.reconnectInterval);
 		} else {
 			this.setStatus("FAILED");
 			this.logger.error("Max reconnection attempts reached");
@@ -298,7 +309,15 @@ export class WebsocketClient<Events extends WebsocketEvents<any>> {
 			return;
 		}
 
-		this.ws.send(JSON.stringify(event));
+		this.sendRaw(JSON.stringify(event));
+	}
+
+	public sendRaw(data: string) {
+		if (this.ws == null) {
+			return;
+		}
+
+		this.ws.send(data);
 	}
 
 	private async processEventQueue() {
