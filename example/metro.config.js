@@ -17,8 +17,7 @@ const config = mergeConfig(getDefaultConfig(__dirname), {
   watchFolders,
 });
 
-module.exports = config;
-// withNativeWind(config, {
-//   input: './src/modules/theme/globals.css',
-//   watchFolders,
-// });
+module.exports = withNativeWind(config, {
+  input: './src/modules/theme/globals.css',
+  watchFolders,
+});
