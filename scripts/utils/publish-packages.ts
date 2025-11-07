@@ -6,7 +6,7 @@ import {
 	logSuccess,
 	logError,
 	npm,
-} from "./utils/package-utils";
+} from "./package-utils";
 
 async function publishPackages(dryRun = false) {
 	try {

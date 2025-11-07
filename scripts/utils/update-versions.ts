@@ -7,7 +7,7 @@ import {
 	incrementVersion,
 	DEP_TYPES,
 	getCurrentVersion,
-} from "./utils/package-utils";
+} from "./package-utils";
 
 // Function to replace link: dependencies with actual versions
 export function replaceLinkedDependencies() {

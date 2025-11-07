@@ -9,13 +9,8 @@
     "build": "turbo run build",
     "fmt": "bunx @biomejs/biome format --write ./packages/**/*.ts ./apps/**/*.ts ./examples/**/*.ts",
     "lint": "bunx @biomejs/biome lint --write ./src",
-    "link-packages": "bun run ./scripts/link-packages.ts",
-    "asd": "",
-    "prepare-release": "bun run ./scripts/prepare-release.ts",
-    "build-packages": "bun run ./scripts/build-packages.ts",
-    "publish-packages": "bun run ./scripts/publish-packages.ts",
-    "prepare-version": "bun run scripts/prepare-version.ts",
-    "bump-version": "bun scripts/bump-version.ts"
+    "bump-packages-version": "bun scripts/bump-packages-version.ts",
+    "link-packages": "bun run ./scripts/link-packages.ts"
   },
   "workspaces": [
     "examples/*",

@@ -6,8 +6,8 @@ import {
 	logStep,
 	logSuccess,
 	logError,
-} from "./utils/package-utils";
-import type { VersionType } from "./utils/package-utils";
+} from "./package-utils";
+import type { VersionType } from "./package-utils";
 
 const versionType = process.argv[2] as VersionType;
 

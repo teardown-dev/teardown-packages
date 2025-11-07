@@ -5,7 +5,7 @@ import {
 	logSuccess,
 	logError,
 	getPublishOrder,
-} from "./utils/package-utils";
+} from "./package-utils";
 
 export async function buildPackages() {
 	try {

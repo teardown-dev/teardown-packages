@@ -359,12 +359,11 @@ export function replaceLinkedDependencies() {
 	});
 }
 
-export function updateVersions(
-	releaseType?: "major" | "minor" | "patch",
-): string {
-	const NEW_VERSION = releaseType
-		? version.inc(getCurrentVersion(), releaseType) || getCurrentVersion()
-		: process.env.VERSION || getCurrentVersion();
+export async function synchronizePackageVersions(
+	releaseType?: VersionType,
+	dryRun = false,
+): Promise<string> {
+	const NEW_VERSION = await getNewVersion(releaseType ?? "patch");
 
 	if (!version.valid(NEW_VERSION)) {
 		throw new Error(`Invalid version format: ${NEW_VERSION}`);
@@ -373,27 +372,53 @@ export function updateVersions(
 	// Update root package.json
 	try {
 		const rootPkg = getRootPackageJson();
-		rootPkg.version = NEW_VERSION;
-		writePackageJson(".", rootPkg);
-		logSuccess(`Updated root package.json to ${NEW_VERSION}`);
+		const oldRootVersion = rootPkg.version;
+
+		if (dryRun) {
+			logStep(
+				`[DRY RUN] Would update root package.json from ${oldRootVersion} to ${NEW_VERSION}`,
+			);
+		} else {
+			rootPkg.version = NEW_VERSION;
+			writePackageJson(".", rootPkg);
+			logSuccess(
+				`Updated root package.json from ${oldRootVersion} to ${NEW_VERSION}`,
+			);
+		}
 	} catch (error) {
 		logStep("No root package.json found or error updating it");
 	}
 
 	// Update all package versions
-	getPackageDirs().forEach((packagePath) => {
+	const packageDirs = getPackageDirs();
+	for (const packagePath of packageDirs) {
 		try {
 			const pkg = readPackageJson(packagePath);
 			const oldVersion = pkg.version;
-			pkg.version = NEW_VERSION;
-			writePackageJson(packagePath, pkg);
-			logSuccess(`Updated ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`);
-		} catch (error) {
-			logError(`Error updating ${packagePath}:`, error);
-		}
-	});
 
-	logSuccess("Version update complete!");
+			if (dryRun) {
+				logStep(
+					`[DRY RUN] Would update ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`,
+				);
+			} else {
+				pkg.version = NEW_VERSION;
+				writePackageJson(packagePath, pkg);
+				logSuccess(`Updated ${pkg.name} from ${oldVersion} to ${NEW_VERSION}`);
+			}
+		} catch (error) {
+			logError(
+				`Error ${dryRun ? "checking" : "updating"} ${packagePath}:`,
+				error,
+			);
+		}
+	}
+
+	if (dryRun) {
+		logSuccess("[DRY RUN] Version update simulation complete!");
+	} else {
+		logSuccess("Version update complete!");
+	}
+
 	return NEW_VERSION;
 }
 

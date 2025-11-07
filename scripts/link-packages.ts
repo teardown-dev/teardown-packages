@@ -1,12 +1,11 @@
+import { execSync } from "node:child_process";
 import {
 	getPackageDirs,
+	logError,
 	logStep,
 	logSuccess,
-	logError,
 	readPackageJson,
-	buildPackages,
 } from "./utils/package-utils";
-import { execSync } from "node:child_process";
 
 async function linkPackages() {
 	try {
@@ -38,5 +37,8 @@ async function linkPackages() {
 }
 
 if (require.main === module) {
-	linkPackages();
+	linkPackages().catch((error) => {
+		logError("Unhandled error", error);
+		process.exit(1);
+	});
 }

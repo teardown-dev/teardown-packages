@@ -2,9 +2,9 @@ import {
 	logError,
 	replaceLinkedDependencies,
 	updateVersions,
-} from "./utils/package-utils";
+} from "./package-utils";
 import { publishPackages } from "./publish-packages";
-import { getCurrentVersion, git } from "./utils/package-utils";
+import { getCurrentVersion, git } from "./package-utils";
 
 async function publishRelease() {
 	try {
@@ -38,11 +38,4 @@ async function publishRelease() {
 		console.error("\n❌ Release publishing failed:", error);
 		process.exit(1);
 	}
-}
-
-if (require.main === module) {
-	publishRelease().catch((error) => {
-		logError("Unhandled error", error);
-		process.exit(1);
-	});
 }
