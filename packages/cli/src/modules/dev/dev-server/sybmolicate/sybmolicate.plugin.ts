@@ -12,7 +12,7 @@ type SymbolicatePluginOptions = {
 
 export const symbolicatePlugin = fastifyPlugin<SymbolicatePluginOptions>(
 	async (instance, options) => {
-		console.log("Symbolicate plugin registered");
+		instance.log.info("Symbolicate plugin registered");
 
 		instance.use((request, reply, next) => {
 			if (request.url !== "/symbolicate") {
@@ -20,7 +20,7 @@ export const symbolicatePlugin = fastifyPlugin<SymbolicatePluginOptions>(
 				return;
 			}
 
-			console.log("symbolicate onRequest", request.url);
+			instance.log.info("symbolicate onRequest", request.url);
 			const requestWithBody = request as SymbolicateRequest;
 			requestWithBody.rawBody = "";
 			requestWithBody.setEncoding("utf8");

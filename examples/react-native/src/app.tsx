@@ -13,6 +13,8 @@ function App(): React.JSX.Element {
 
 	useEffect(() => {
 		const checkConnectivity = async () => {
+			console.log("Checking connectivity...");
+
 			try {
 				const start = Date.now();
 				const response = await fetch("https://8.8.8.8", {
@@ -22,21 +24,24 @@ function App(): React.JSX.Element {
 				const pingTime = Date.now() - start;
 				setIsOnline(true);
 				setLastChecked(`Online (ping: ${pingTime}ms)`);
+				console.log("Online (ping: ${pingTime}ms)");
 			} catch (error) {
 				setIsOnline(false);
 				setLastChecked("Offline");
+			} finally {
+				console.log("Done checking connectivity");
 			}
 		};
 
 		// Initial check
-		checkConnectivity();
+		// checkConnectivity();
 
-		// Set up interval for periodic checks
-		const intervalId = setInterval(checkConnectivity, 15000);
+		// // Set up interval for periodic checks
+		// const intervalId = setInterval(checkConnectivity, 5000);
 
-		return () => {
-			clearInterval(intervalId);
-		};
+		// return () => {
+		// 	clearInterval(intervalId);
+		// };
 	}, []);
 
 	return (
@@ -57,6 +62,7 @@ function App(): React.JSX.Element {
 
 					<Pressable
 						onPress={() => {
+							console.log("Checking...");
 							setIsOnline(null);
 							setLastChecked("Checking...");
 						}}
