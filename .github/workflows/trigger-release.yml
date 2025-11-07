@@ -11,12 +11,15 @@ on:
           - patch
           - minor
           - major
+  push:
+    branches:
+      - main
 
 jobs:
   bump:
     uses: ./.github/workflows/bump-packages.yml
     with:
-      version_type: ${{ inputs.releaseType }}
+      version_type: ${{ inputs.releaseType || 'patch' }}
     secrets: inherit 
 
   publish:
