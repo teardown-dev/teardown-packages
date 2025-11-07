@@ -2,8 +2,8 @@
   "version": "1.2.17",
   "name": "@teardown/cli",
   "scripts": {
-    "build": "tsc --declaration",
-    "dev": "tsc --declaration --watch"
+    "build": "tsc ",
+    "dev": "tsc --watch"
   },
   "bin": {
     "td": "./dist/index.js",

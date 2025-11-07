@@ -5,8 +5,8 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --declaration",
-    "dev": "tsc --declaration --watch"
+    "build": "tsc ",
+    "dev": "tsc --watch"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
