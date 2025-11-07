@@ -1,8 +1,6 @@
-import chalk from "chalk";
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import semver from "semver";
 
 export interface PackageJson {
 	name: string;
@@ -41,20 +39,28 @@ export function delay(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Add color utility object
+const clogger = {
+	wrap: (code: number, text: string) => `\x1b[${code}m${text}\x1b[0m`,
+	blue: (text: string) => clogger.wrap(34, text),
+	green: (text: string) => clogger.wrap(32, text),
+	red: (text: string) => clogger.wrap(31, text),
+} as const;
+
 export function logSkip(message: string): void {
 	console.log(`\n⏭️  ${message}`);
 }
 
 export function logStep(message: string) {
-	console.log(chalk.blue("\n→"), message);
+	console.log(clogger.blue("\n→"), message);
 }
 
 export function logSuccess(message: string) {
-	console.log(chalk.green("\n✓"), message);
+	console.log(clogger.green("\n✓"), message);
 }
 
 export function logError(message: string, error?: unknown) {
-	console.error(chalk.red("\n✕"), message);
+	console.error(clogger.red("\n✕"), message);
 	if (error) console.error(error);
 }
 
@@ -84,13 +90,51 @@ export function getCurrentVersion(): string {
 	return getRootPackageJson().version;
 }
 
+// Add version utilities
+const version = {
+	parse: (v: string) => {
+		const match = v.match(
+			/^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-.]+))?(?:\+([0-9A-Za-z-]+))?$/,
+		);
+		if (!match) return null;
+
+		const [, major, minor, patch, prerelease] = match;
+		return {
+			major: Number.parseInt(major),
+			minor: Number.parseInt(minor),
+			patch: Number.parseInt(patch),
+			prerelease: prerelease || "",
+		};
+	},
+
+	valid: (v: string): boolean => {
+		return version.parse(v) !== null;
+	},
+
+	inc: (v: string, release: VersionType): string | null => {
+		const parsed = version.parse(v);
+		if (!parsed) return null;
+
+		const { major, minor, patch } = parsed;
+		switch (release) {
+			case "major":
+				return `${major + 1}.0.0`;
+			case "minor":
+				return `${major}.${minor + 1}.0`;
+			case "patch":
+				return `${major}.${minor}.${patch + 1}`;
+		}
+	},
+} as const;
+
+// Update functions that used semver
 export async function getNewVersion(versionType: VersionType): Promise<string> {
 	const currentVersion = getCurrentVersion();
-	return semver.inc(currentVersion, versionType) || currentVersion;
+	return version.inc(currentVersion, versionType) || currentVersion;
 }
 
-export function isValidVersion(version: string): boolean {
-	return Boolean(semver.valid(version));
+export function isValidVersion(v: string): boolean {
+	return version.valid(v);
 }
 
 export function getPackageDirs(): string[] {
@@ -188,28 +232,6 @@ export function getPublishOrder(): string[] {
 	}
 
 	return sorted.reverse();
-}
-
-// Helper to increment version based on release type
-export function incrementVersion(
-	currentVersion: string,
-	releaseType: "major" | "minor" | "patch",
-): string {
-	const [major, minor, patch] = currentVersion
-		.split("-")[0]
-		.split(".")
-		.map(Number);
-
-	switch (releaseType) {
-		case "major":
-			return `${major + 1}.0.0`;
-		case "minor":
-			return `${major}.${minor + 1}.0`;
-		case "patch":
-			return `${major}.${minor}.${patch + 1}`;
-		default:
-			return currentVersion;
-	}
 }
 
 // Git utilities
@@ -331,10 +353,10 @@ export function updateVersions(
 	releaseType?: "major" | "minor" | "patch",
 ): string {
 	const NEW_VERSION = releaseType
-		? incrementVersion(getCurrentVersion(), releaseType)
+		? version.inc(getCurrentVersion(), releaseType) || getCurrentVersion()
 		: process.env.VERSION || getCurrentVersion();
 
-	if (!isValidVersion(NEW_VERSION)) {
+	if (!version.valid(NEW_VERSION)) {
 		throw new Error(`Invalid version format: ${NEW_VERSION}`);
 	}
 
