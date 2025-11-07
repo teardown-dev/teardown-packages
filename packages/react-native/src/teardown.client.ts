@@ -1,5 +1,4 @@
 import { Logger } from "@teardown/logger";
-import { Debugger, type DebuggerOptions } from "./debugger";
 
 export interface IPlugin {
 	install?(client: TeardownClient<any>): void;
@@ -43,13 +42,11 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
 
 export type TeardownClientOptions<T extends readonly PluginTuple[]> = {
 	plugins?: T;
-	debuggerEnabled?: boolean;
 	loggingEnabled?: boolean;
-} & DebuggerOptions;
+};
 
 export class TeardownClient<T extends readonly PluginTuple[]> {
 	public logger: Logger;
-	public debugger: Debugger | null;
 
 	private readonly plugins: Map<string, IPlugin> = new Map();
 	public api: InferPluginsFromArray<T> = {} as InferPluginsFromArray<T>;
@@ -59,12 +56,10 @@ export class TeardownClient<T extends readonly PluginTuple[]> {
 			"TeardownClient",
 			options?.loggingEnabled ?? false,
 		);
-		const debuggerEnabled = options?.debuggerEnabled ?? __DEV__;
-		this.debugger = debuggerEnabled ? new Debugger(options) : null;
 
-		options?.plugins?.forEach(([key, plugin]) => {
-			this.plugins.set(key, plugin);
-		});
+		// options?.plugins?.forEach(([key, plugin]) => {
+		// 	this.plugins.set(key, plugin);
+		// });
 
 		this.installPlugin();
 	}
@@ -98,7 +93,6 @@ export class TeardownClient<T extends readonly PluginTuple[]> {
 
 	public shutdown() {
 		this.uninstallAllPlugins();
-		this.debugger?.shutdown();
 	}
 }
 
@@ -107,7 +101,6 @@ export const createTeardownClient = <Plugins extends readonly PluginTuple[]>(
 ) => {
 	return new TeardownClient({
 		loggingEnabled: true,
-		debuggerEnabled: true,
 		plugins,
 	});
 };

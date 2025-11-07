@@ -13,10 +13,10 @@ export class LoggingPlugin implements IPlugin {
 		return new Proxy(original, {
 			apply: (target, thisArg, args) => {
 				target.apply(thisArg, args);
-				this.client?.debugger?.send("CONSOLE_LOG", {
-					type: method,
-					args,
-				});
+				// this.client?.debugger?.send("CONSOLE_LOG", {
+				// 	type: method,
+				// 	args,
+				// });
 			},
 		});
 	}

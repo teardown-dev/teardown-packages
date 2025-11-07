@@ -1,5 +1,4 @@
 import { Util } from "@teardown/util";
-import type { HTTPRequestInfo, RequestMethod } from "@teardown/websocket";
 // @ts-ignore
 import XHRInterceptor from "react-native/Libraries/Network/XHRInterceptor";
 import type { PluginOptions, TeardownClient } from "../teardown.client";
@@ -15,7 +14,7 @@ export type HTTPPluginOptions = DefaultPluginOptions<{
 
 export class HTTPPlugin extends Plugin {
 	private client: TeardownClient<any> | null = null;
-	private requests: Map<number, HTTPRequestInfo> = new Map();
+	private requests: Map<number, any> = new Map();
 	private ignoreURLs: RegExp[];
 
 	constructor(options: HTTPPluginOptions = {}) {
@@ -80,11 +79,11 @@ export class HTTPPlugin extends Plugin {
 
 		const requestId = Util.generateUUID();
 
-		const HTTPRequestInfo: HTTPRequestInfo = {
+		const HTTPRequestInfo: any = {
 			id: requestId,
 			type: "XMLHttpRequest",
 			url,
-			method: method as RequestMethod,
+			method: method as any,
 			requestHeaders: { "TD-Request-ID": requestId },
 			startTime: performance.now(),
 			updatedAt: performance.now(),
@@ -180,9 +179,9 @@ export class HTTPPlugin extends Plugin {
 		return response;
 	}
 
-	private sendHTTPEvent(httpRequestInfo: HTTPRequestInfo): void {
-		if (this.client?.debugger) {
-			this.client.debugger.send("NETWORK_HTTP_REQUEST", httpRequestInfo);
-		}
+	private sendHTTPEvent(httpRequestInfo: any): void {
+		// if (this.client?.debugger) {
+		// 	this.client.debugger.send("NETWORK_HTTP_REQUEST", httpRequestInfo);
+		// }
 	}
 }

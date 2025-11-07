@@ -1,14 +1,11 @@
 import type { FunctionComponent, PropsWithChildren } from "react";
 import React from "react";
 import type { PluginTuple, TeardownClient } from "../teardown.client";
-import type { DebuggerUiOptions } from "../components";
 import { TeardownService } from "../services";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-export type TeardownContainerOptions = {
-	debugger: DebuggerUiOptions;
-};
+export type TeardownContainerOptions = {};
 
 export type TeardownContainerProps<T extends readonly PluginTuple[]> =
 	PropsWithChildren<{

@@ -50,7 +50,7 @@ interface WebSocketCloseEvent extends Event {
 	message?: string | undefined;
 }
 
-export class WebsocketClient<Events extends Record<string, any>> {
+export class WebsocketClient {
 	readonly instanceId = Util.generateUUID();
 	public logger: Logger;
 
@@ -64,7 +64,7 @@ export class WebsocketClient<Events extends Record<string, any>> {
 	private reconnectInterval: number;
 	private maxReconnectAttempts: number;
 	private reconnectAttempts = 0;
-	private eventQueue: Array<Events[keyof Events]> = [];
+	private eventQueue: Array<string> = [];
 
 	_client_id: string | null = null;
 
@@ -175,10 +175,6 @@ export class WebsocketClient<Events extends Record<string, any>> {
 	}
 
 	public onMessage(event: WebSocketMessageEvent) {}
-
-	protected onEvent(event: Events[keyof Events]) {
-		this.logger.log("onEvent", event);
-	}
 
 	public async send(data: string) {
 		if (
