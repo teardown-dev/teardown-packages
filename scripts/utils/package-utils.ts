@@ -234,6 +234,9 @@ export const git = {
 			stdio: "inherit",
 		});
 	},
+	pull: () => {
+		execSync("git pull origin main", { stdio: "inherit" });
+	},
 	push: (tags = false) => {
 		// Get current branch name
 		const currentBranch = execSync("git rev-parse --abbrev-ref HEAD")
