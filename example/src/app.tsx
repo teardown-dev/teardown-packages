@@ -2,6 +2,7 @@ import './theme';
 import type {FunctionComponent} from 'react';
 import React from 'react';
 import {Main} from './main';
+import './teardown.client';
 
 export const App: FunctionComponent = () => {
   return <Main />;

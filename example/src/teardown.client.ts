@@ -2,16 +2,20 @@ import {
   HTTPPlugin,
   LoggingPlugin,
   TeardownClient,
-} from '@teardown/react-native';
+} from './packages/react-native/src';
 
 const plugins = [
   ['logging', new LoggingPlugin()],
   [
     'network',
     new HTTPPlugin({
-      ignoreURLs: ['http://localhost:8081/__css_interop_update_endpoint'],
+      ignoreURLs: [new RegExp('.*/__css_interop_update_endpoint.*')],
     }),
   ],
 ] as const;
 
-export const teardownClient = new TeardownClient({plugins});
+export const teardownClient = new TeardownClient({
+  plugins,
+  host: '0.tcp.au.ngrok.io',
+  port: 13301,
+});
