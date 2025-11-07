@@ -82,8 +82,6 @@ export class TeardownTerminalReporter extends BaseTerminalReporter {
 			case "initialize_done":
 				this.devServer.onInitializeDone?.();
 				break;
-			case "client_log":
-				break;
 			default:
 				super.update(event);
 				break;

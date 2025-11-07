@@ -28,7 +28,7 @@ export class KeyboardHandlerManager {
 		});
 	}
 
-	public initialize(): void {
+	public async initialize() {
 		if (!this.isTTYSupported()) {
 			this.devServer.terminalReporter.update({
 				type: "client_log",
@@ -133,9 +133,13 @@ export class KeyboardHandlerManager {
 			level: "info",
 			data: [
 				"Key commands available:",
+				"\n",
+				"\n",
 				`${chalk.bold.inverse(" r ")} - reload app(s)`,
+				"\n",
 				`${chalk.bold.inverse(" d ")} - open Dev Menu`,
-				`${chalk.bold.inverse(" j ")} - open DevTools`,
+				// "\n",
+				// `${chalk.bold.inverse(" j ")} - open DevTools`,
 			],
 		});
 	}

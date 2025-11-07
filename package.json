@@ -21,8 +21,8 @@
     "packages/*"
   ],
   "dependencies": {
-    "turbo": "^2.2.3",
-    "mime-types": "^2.1.35"
+    "mime-types": "^2.1.35",
+    "turbo": "^2.3.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

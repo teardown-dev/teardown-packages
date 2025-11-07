@@ -6,9 +6,11 @@ import {
 	openStackFrameInEditorMiddleware,
 	openURLMiddleware,
 } from "@react-native-community/cli-server-api";
-import { 	CustomMessageHandler,
+import {
+	CustomMessageHandler,
 	CustomMessageHandlerConnection,
-	createDevMiddleware } from "@react-native/dev-middleware";
+	createDevMiddleware,
+} from "@react-native/dev-middleware";
 import { Writable } from "node:stream";
 // @ts-ignore
 import type { JSONSerializable } from "@react-native/dev-middleware/dist/inspector-proxy/types";
