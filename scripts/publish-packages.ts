@@ -147,11 +147,11 @@ async function publishPackage(
 	if (result.status === 0) {
 		log(`Successfully published ${name}`, "success");
 		return true;
-	} else {
-		log(`Failed to publish ${name} (exit code: ${result.status})`, "error");
-		if (result.stderr) log(`Error output: ${result.stderr}`, "error");
-		return false;
 	}
+
+	log(`Failed to publish ${name} (exit code: ${result.status})`, "error");
+	if (result.stderr) log(`Error output: ${result.stderr}`, "error");
+	return false;
 }
 
 function getPublishOrder(): string[] {
@@ -194,7 +194,12 @@ async function main() {
 	// Verify versions before publishing
 	log("Verifying package versions...", "step");
 	for (const name of publishOrder) {
-		const { pkg } = packages.get(name)!;
+		const p = packages.get(name);
+		if (p == null) {
+			log(`Package ${name} not found - skipping`, "error");
+			continue;
+		}
+		const { pkg } = p;
 		const exists = await packageExists(pkg.name, pkg.version);
 
 		if (exists) {
@@ -215,7 +220,12 @@ async function main() {
 
 	for (const name of publishOrder) {
 		if (packages.has(name)) {
-			const { path } = packages.get(name)!;
+			const p = packages.get(name);
+			if (p == null) {
+				log(`Package ${name} not found - skipping`, "error");
+				continue;
+			}
+			const { path } = p;
 
 			success = await publishPackage(name, path);
 
