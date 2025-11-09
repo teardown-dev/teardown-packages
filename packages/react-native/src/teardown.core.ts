@@ -1,5 +1,6 @@
 import { ApiClient, type ApiClientOptions } from "./clients/api";
-import { DeviceClient } from "./clients/device";
+import { DeviceClient, type DeviceClientOptions } from "./clients/device";
+import { IdentityClient, type IdentityClientOptions } from "./clients/identity";
 import { LoggingClient } from "./clients/logging";
 import { StorageClient, type StorageClientOptions } from "./clients/storage";
 import { UtilsClient } from "./clients/utils/utils.client";
@@ -7,6 +8,8 @@ import { UtilsClient } from "./clients/utils/utils.client";
 export type TeardownCoreOptions = {
 	api: ApiClientOptions;
 	storage: StorageClientOptions;
+	identity: IdentityClientOptions;
+	device: DeviceClientOptions;
 };
 
 export class TeardownCore {
@@ -15,6 +18,7 @@ export class TeardownCore {
 	public readonly api: ApiClient;
 	private readonly storage: StorageClient;
 	public readonly device: DeviceClient;
+	public readonly identity: IdentityClient;
 
 	constructor(private readonly options: TeardownCoreOptions) {
 		this.options = options;
@@ -23,7 +27,14 @@ export class TeardownCore {
 		this.utils = new UtilsClient(this.logging);
 		this.storage = new StorageClient(this.logging, this.options.storage);
 		this.api = new ApiClient(this.logging, this.storage, this.options.api);
-		this.device = new DeviceClient(this.logging, this.utils, this.storage);
+		this.device = new DeviceClient(this.logging, this.utils, this.storage, this.options.device);
+		this.identity = new IdentityClient(
+			this.logging,
+			this.utils,
+			this.storage,
+			this.api,
+			this.device,
+			this.options.identity
+		);
 	}
-
 }

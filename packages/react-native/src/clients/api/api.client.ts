@@ -38,19 +38,25 @@ export class ApiClient {
 		});
 	}
 
-	generateBaseHeaders(): Record<string, string> {
+	private generateBaseHeaders(): Record<string, string> {
 		const headersOut: Record<string, string> = {};
 
 		if (this.options.apiKey == null || this.options.apiKey.trim() === "") {
 			this.logger.error("Teardown API key is required");
+		} else {
+			headersOut[TEARDOWN_API_KEY_HEADER] = `Bearer ${this.options.apiKey}`;
 		}
 
 		if (this.options.orgId == null || this.options.orgId.trim() === "") {
 			this.logger.error("Teardown org ID is required");
+		} else {
+			headersOut[TEARDOWN_ORG_ID_HEADER] = this.options.orgId;
 		}
 
 		if (this.options.projectId == null || this.options.projectId.trim() === "") {
 			this.logger.error("Teardown project ID is required");
+		} else {
+			headersOut[TEARDOWN_PROJECT_ID_HEADER] = this.options.projectId;
 		}
 
 		return headersOut;

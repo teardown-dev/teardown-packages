@@ -5,28 +5,35 @@
 		"access": "public"
 	},
 	"files": [
-		"out/src/**/*"
+		"dist/src/**/*"
 	],
-	"main": "./out/src/index.js",
-	"module": "./out/src/index.js",
-	"types": "./out/src/index.d.ts",
+	"main": "./dist/src/index.js",
+	"module": "./dist/src/index.js",
+	"types": "./dist/src/index.d.ts",
 	"scripts": {
 		"build": "tsc --project ./tsconfig.json",
-		"dev": "tsc --watch --project ./tsconfig.json",
+		"dev": "bun run build && tsc --watch --project ./tsconfig.json",
 		"typecheck": "tsc --noEmit --project ./tsconfig.json",
-		"prepublishOnly": "bun run build"
+		"prepublishOnly": "bun run build",
+		"nuke": "cd ../../ && bun run nuke"
 	},
 	"dependencies": {
-		"@teardown/ingest-api": "^0.0.4"
+		"@teardown/ingest-api": "^0.0.18"
+	},
+	"devDependencies": {
+		"@elysiajs/eden": "^1.4.4",
+		"@teardown/tsconfig": "workspace:*",
+		"@types/bun": "latest",
+		"@types/react": "*",
+		"expo-updates": "^29.0.12"
 	},
 	"peerDependencies": {
 		"react": "*",
 		"react-native": "*",
-		"typescript": "*"
-	},
-	"devDependencies": {
-		"@types/react": "*",
-		"@types/bun": "latest",
-		"@teardown/tsconfig": "workspace:*"
+		"typescript": "*",
+		"react-native-device-info": "^14.1",
+		"expo-application": "^7.0",
+		"expo-device": "^8.0",
+		"zod": "^4"
 	}
 }

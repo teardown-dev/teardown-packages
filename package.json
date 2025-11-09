@@ -19,7 +19,7 @@
 		"typecheck": "bun x turbo typecheck",
 		"build": "bun x turbo build",
 		"dev": "bun x turbo dev --ui=tui",
-		"nuke": "rm -rf node_modules ./apps/**/node_modules ./packages/**/node_modules && bun install"
+		"nuke": "rm -rf node_modules ./apps/**/node_modules ./packages/**/node_modules && bun install --no-cache"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
