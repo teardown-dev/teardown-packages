@@ -1,14 +1,33 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { teardown } from "../lib/teardown";
+import { useState } from "react";
+import { IdentityUser } from "@teardown/react-native/src/clients/identity";
 
 export default function MainScreen() {
 	const insets = useSafeAreaInsets();
+
+
+	const [user, setUser] = useState<IdentityUser | null>(null);
+
 	const onIdentifyUser = async () => {
-		// const identityUser = await teardown.identity.identify({
-		// 	email: "test@test.com",
-		// 	name: "Test",
-		// });
-		// setIdentityUser(identityUser);
+		try {
+
+			const result = await teardown.identity.identify({
+				email: "test@test.com",
+				name: "Test",
+			});
+
+			if (result.success) {
+
+				console.log("User identified", result);
+				setUser(result.data);
+			} else {
+				console.error("Error identifying user 111", result.error);
+			}
+		} catch (error) {
+			console.error("Error identifying user 222", error);
+		}
 	};
 
 	const onIdentifyDevice = async () => {
@@ -19,16 +38,16 @@ export default function MainScreen() {
 	return (
 		<View
 			style={[
-				styles.container,
 				{ paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right },
 			]}
+			className="flex-1 h-full justify-center items-center bg-[black] relative"
 		>
-			<View style={styles.buttonsContainer}>
-				<Button onPress={onIdentifyDevice}>
-					<Text style={styles.text}>Identify Device</Text>
-				</Button>
+
+			<TextInput placeholder="Enter your name" className="text-[white]" />
+
+			<View className="flex-1 flex-row p-4 gap-4 relative">
 				<Button onPress={onIdentifyUser}>
-					<Text style={styles.text}>Identify User</Text>
+					<Text className="text-[white]">Identify User</Text>
 				</Button>
 			</View>
 		</View>
@@ -37,41 +56,11 @@ export default function MainScreen() {
 
 function Button({ children, onPress }: { children: React.ReactNode; onPress: () => void }) {
 	return (
-		<Pressable style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} onPress={onPress}>
+		<Pressable
+			className="flex-1 max-h-20 justify-center items-center p-2.5 rounded-lg border border-[white]"
+			onPress={onPress}
+		>
 			{children}
 		</Pressable>
 	);
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-		backgroundColor: "black",
-		position: "relative",
-	},
-	buttonsContainer: {
-		flex: 1,
-		flexDirection: "row",
-		padding: 16,
-		gap: 16,
-		position: "relative",
-	},
-	text: {
-		color: "white",
-	},
-	button: {
-		flex: 1,
-		maxHeight: 100,
-		justifyContent: "center",
-		alignItems: "center",
-		padding: 10,
-		borderRadius: 10,
-		borderWidth: 1,
-		borderColor: "white",
-	},
-	buttonPressed: {
-		transform: [{ scale: 0.98 }],
-	},
-});

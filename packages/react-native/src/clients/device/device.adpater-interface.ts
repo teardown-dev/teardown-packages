@@ -1,11 +1,10 @@
-import {
-	type ApplicationInfo,
-	type HardwareInfo,
-	type OSInfo,
-	OSType,
-	type UpdateInfo,
+import type {
+	ApplicationInfo,
+	HardwareInfo,
+	NotificationsInfo,
+	OSInfo,
+	UpdateInfo,
 } from "@teardown/ingest-api/schemas";
-import { Platform } from "react-native";
 
 /**
  * An interface for a device adapter.
@@ -37,4 +36,9 @@ export abstract class DeviceInfoAdapter {
 	 * The information about the operating system of the device.
 	 */
 	abstract get osInfo(): OSInfo;
+
+	/**
+	 * The information about the notifications of the device.
+	 */
+	abstract get notificationsInfo(): NotificationsInfo;
 }

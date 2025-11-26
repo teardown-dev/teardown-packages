@@ -30,20 +30,13 @@
 		"typescript.tsserver.watchOptions": {
 			"excludeDirectories": ["**/node_modules", "**/dist", "**/build", "**/.git", "**/target", "**/bun.lockb"]
 		},
-		"files.readonlyExclude": {
-			"**/node_modules": true,
-			"**/bun.lockb": true,
-			"**/.git": true,
-			"**/target": true,
-			"**/build": true,
-			"**/.tsbuildinfo": true
-		},
 		"files.exclude": {
 			"**/node_modules": true,
 			"**/bun.lockb": true,
 			"**/.git": true,
 			"**/target": true,
 			"**/build": true,
+			"**/dist": true,
 			"**/.tsbuildinfo": true,
 			"**/.next": true,
 			"**/.vercel": true,
