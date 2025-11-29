@@ -3,7 +3,7 @@ import { DeviceClient, type DeviceClientOptions } from "./clients/device";
 import { IdentityClient, type IdentityClientOptions } from "./clients/identity";
 import { type Logger, type LoggingClientOptions, LoggingClient } from "./clients/logging";
 import { StorageClient, type StorageClientOptions } from "./clients/storage";
-import { UpdateClient } from "./clients/updates/update.client";
+import { ForceUpdateClient } from "./clients/force-update";
 import { UtilsClient } from "./clients/utils/utils.client";
 
 export type TeardownCoreOptions = {
@@ -22,7 +22,7 @@ export class TeardownCore {
 	private readonly storage: StorageClient;
 	public readonly device: DeviceClient;
 	public readonly identity: IdentityClient;
-	public readonly update: UpdateClient;
+	public readonly forceUpdate: ForceUpdateClient;
 
 	constructor(private readonly options: TeardownCoreOptions) {
 		this.options = options;
@@ -43,7 +43,7 @@ export class TeardownCore {
 			this.device,
 			this.options.identity
 		);
-		this.update = new UpdateClient(this.logging)
+		this.forceUpdate = new ForceUpdateClient(this.logging, this.storage, this.identity)
 	}
 
 

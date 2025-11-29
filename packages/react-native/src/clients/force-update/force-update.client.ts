@@ -31,7 +31,7 @@ export type VersionStatusChangeEvents = {
 
 export const VERSION_STATUS_STORAGE_KEY = "VERSION_STATUS";
 
-export class UpdateClient {
+export class ForceUpdateClient {
 	private emitter = new EventEmitter<VersionStatusChangeEvents>();
 	private versionStatus: VersionStatus = { type: "unknown" };
 	private unsubscribe: (() => void) | null = null;
@@ -44,7 +44,7 @@ export class UpdateClient {
 		storage: StorageClient,
 		private readonly identity: IdentityClient
 	) {
-		this.logger = logging.createLogger({ name: "UpdateClient" });
+		this.logger = logging.createLogger({ name: "ForceUpdateClient" });
 		this.storage = storage.createStorage("version");
 		this.versionStatus = this.getVersionStatusFromStorage();
 		this.subscribeToIdentity();
