@@ -1,12 +1,13 @@
 import { ApiClient, type ApiClientOptions } from "./clients/api";
 import { DeviceClient, type DeviceClientOptions } from "./clients/device";
 import { IdentityClient, type IdentityClientOptions } from "./clients/identity";
-import { type Logger, LoggingClient } from "./clients/logging";
+import { type Logger, type LoggingClientOptions, LoggingClient } from "./clients/logging";
 import { StorageClient, type StorageClientOptions } from "./clients/storage";
 import { UpdateClient } from "./clients/updates/update.client";
 import { UtilsClient } from "./clients/utils/utils.client";
 
 export type TeardownCoreOptions = {
+	logging?: LoggingClientOptions;
 	api: ApiClientOptions;
 	storage: StorageClientOptions;
 	identity: IdentityClientOptions;
@@ -26,7 +27,7 @@ export class TeardownCore {
 	constructor(private readonly options: TeardownCoreOptions) {
 		this.options = options;
 
-		this.logging = new LoggingClient();
+		this.logging = new LoggingClient(this.options.logging);
 		this.logger = this.logging.createLogger({
 			name: "TeardownCore",
 		});

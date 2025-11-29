@@ -1,17 +1,40 @@
-export class LoggingClient {
-	/** Global debug mode state */
-	private debugEnabled = false;
+export type LogLevel = "none" | "error" | "warn" | "info" | "verbose";
 
-	/**
-	 * Create a named logger instance with optional debug mode.
-	 *
-	 * @param options - Logger configuration options
-	 * @returns Configured logger instance
-	 */
-	createLogger(options: LoggerOptions): Logger {
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+	none: 0,
+	error: 1,
+	warn: 2,
+	info: 3,
+	verbose: 4,
+};
+
+export type LoggingClientOptions = {
+	logLevel?: LogLevel;
+};
+
+export class LoggingClient {
+	private logLevel: LogLevel;
+
+	constructor(options?: LoggingClientOptions) {
+		this.logLevel = options?.logLevel ?? "none";
+	}
+
+	setLogLevel(level: LogLevel) {
+		this.logLevel = level;
+	}
+
+	getLogLevel(): LogLevel {
+		return this.logLevel;
+	}
+
+	shouldLog(level: LogLevel): boolean {
+		return LOG_LEVEL_PRIORITY[this.logLevel] >= LOG_LEVEL_PRIORITY[level];
+	}
+
+	createLogger(options: Omit<LoggerOptions, "loggingClient">): Logger {
 		return new Logger({
 			...options,
-			debugEnabled: options.debugEnabled ?? this.debugEnabled,
+			loggingClient: this,
 		});
 	}
 }
@@ -22,14 +45,11 @@ export class LoggingClient {
 export type LoggerOptions = {
 	/** Logger name used in log prefixes */
 	name: string;
-	/** Enable debug-level logging */
-	debugEnabled?: boolean;
+	/** Reference to parent LoggingClient for log level checks */
+	loggingClient: LoggingClient;
 };
 
 export class Logger {
-	/** Debug mode state for this logger */
-	private debugEnabled = false;
-
 	/** Bound console methods to preserve call site */
 	private boundConsole = {
 		log: console.log.bind(console),
@@ -39,86 +59,34 @@ export class Logger {
 		trace: console.trace.bind(console),
 	};
 
-	/**
-	 * Initialize logger with configuration options.
-	 *
-	 * @param options - Logger configuration
-	 */
-	constructor(private readonly options: LoggerOptions) {}
-
-	/**
-	 * Enable or disable debug logging for this logger.
-	 *
-	 * @param debugEnabled - Whether to enable debug logs
-	 */
-	setDebugEnabled(debugEnabled: boolean) {
-		this.debugEnabled = debugEnabled;
-	}
-
-	/**
-	 * Check if debug logging is enabled.
-	 *
-	 * @returns True if debug logging is enabled
-	 */
-	isDebugEnabled() {
-		return this.debugEnabled;
-	}
+	constructor(private readonly options: LoggerOptions) { }
 
 	get prefix() {
-		return `[${this.options.name}]`;
+		return `[Teardown:${this.options.name}]`;
 	}
 
-	/**
-	 * Log informational message.
-	 *
-	 * @param message - Log message
-	 * @param args - Additional arguments to log
-	 */
 	info(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("info")) return;
 		this.boundConsole.log(`${this.prefix} ${message}`, ...args);
 	}
 
-	/**
-	 * Log error message.
-	 *
-	 * @param message - Error message
-	 * @param args - Additional arguments (e.g., error objects)
-	 */
 	error(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("error")) return;
 		this.boundConsole.error(`${this.prefix} ${message}`, ...args);
 	}
 
-	/**
-	 * Log debug message. Only outputs if debug mode is enabled.
-	 *
-	 * @param message - Debug message
-	 * @param args - Additional debug information
-	 */
 	debug(message: string, ...args: unknown[]) {
-		if (!this.debugEnabled) {
-			return;
-		}
-
+		if (!this.options.loggingClient.shouldLog("verbose")) return;
 		this.boundConsole.debug(`${this.prefix} ${message}`, ...args);
 	}
 
-	/**
-	 * Log warning message.
-	 *
-	 * @param message - Warning message
-	 * @param args - Additional warning context
-	 */
 	warn(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("warn")) return;
 		this.boundConsole.warn(`${this.prefix} ${message}`, ...args);
 	}
 
-	/**
-	 * Log trace message with stack trace.
-	 *
-	 * @param message - Trace message
-	 * @param args - Additional trace information
-	 */
 	trace(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("verbose")) return;
 		this.boundConsole.trace(`${this.prefix} ${message}`, ...args);
 	}
 }

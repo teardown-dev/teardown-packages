@@ -6,6 +6,7 @@ import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils";
 import { EventEmitter } from "eventemitter3";
+import { z } from "zod";
 
 
 export { eden };
@@ -27,9 +28,25 @@ export type IdentityUser = {
 	token: string;
 };
 
-export type UnidentifiedPersonaState = { type: "unidentified" };
-export type IdentifyingPersonaState = { type: "identifying" };
-export type IdentifiedPersonaState = { type: "identified"; persona: Persona };
+
+export const UnidentifiedPersonaStateSchema = z.object({
+	type: z.literal("unidentified"),
+});
+export const IdentifyingPersonaStateSchema = z.object({
+	type: z.literal("identifying"),
+});
+export const IdentifiedPersonaStateSchema = z.object({
+	type: z.literal("identified"),
+	persona: z.object({
+		name: z.string().optional(),
+		user_id: z.string().optional(),
+		email: z.string().optional(),
+	}),
+});
+
+export type UnidentifiedPersonaState = z.infer<typeof UnidentifiedPersonaStateSchema>;
+export type IdentifyingPersonaState = z.infer<typeof IdentifyingPersonaStateSchema>;
+export type IdentifiedPersonaState = z.infer<typeof IdentifiedPersonaStateSchema>;
 
 export type PersonaState =
 	| UnidentifiedPersonaState
@@ -39,6 +56,9 @@ export type PersonaState =
 export type PersonaStateChangeEvents = {
 	PERSONA_STATE_CHANGED: (state: PersonaState) => void;
 };
+
+
+export const PERSONA_STORAGE_KEY = "PERSONA_STATE";
 
 export class IdentityClient {
 	private emitter = new EventEmitter<PersonaStateChangeEvents>();
@@ -63,6 +83,20 @@ export class IdentityClient {
 		});
 		this.storage = storage.createStorage("identity");
 		this.utils = utils;
+		this.personaState = this.getPersonaStateFromStorage();
+	}
+
+	private getPersonaStateFromStorage(): PersonaState {
+		const stored = this.storage.getItem(PERSONA_STORAGE_KEY);
+		if (stored == null) {
+			return UnidentifiedPersonaStateSchema.parse({ type: "unidentified" });
+		}
+
+		return IdentifiedPersonaStateSchema.parse(JSON.parse(stored));
+	}
+
+	private savePersonaStateToStorage(personaState: PersonaState): void {
+		this.storage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(personaState));
 	}
 
 	private getPersona(): Persona | null {
@@ -82,13 +116,8 @@ export class IdentityClient {
 
 	private setPersona(newState: PersonaState): void {
 		this.logger.info(`Persona state: ${this.personaState.type} -> ${newState.type}`);
-
-		if (newState.type === "identified") {
-			this._persona = newState.persona;
-			this.storage.setItem("persona", JSON.stringify(newState.persona));
-		}
-
 		this.personaState = newState;
+		this.savePersonaStateToStorage(newState);
 		this.emitter.emit("PERSONA_STATE_CHANGED", newState);
 	}
 
@@ -156,7 +185,7 @@ export class IdentityClient {
 				this.setPersona(previousState);
 
 				if (response.error.status === 422) {
-					console.warn("422 Error identifying user", response.error.value);
+					this.logger.warn("422 Error identifying user", response.error.value);
 					return {
 						success: false,
 						error: response.error.value.message ?? "Unknown error",
