@@ -5,7 +5,7 @@ import type { DeviceClient } from "../device";
 import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils";
-import type { EventEmitter } from "eventemitter3";
+import { EventEmitter } from "eventemitter3";
 
 
 export { eden };
@@ -27,13 +27,26 @@ export type IdentityUser = {
 	token: string;
 };
 
+export type UnidentifiedPersonaState = { type: "unidentified" };
+export type IdentifyingPersonaState = { type: "identifying" };
+export type IdentifiedPersonaState = { type: "identified"; persona: Persona };
+
+export type PersonaState =
+	| UnidentifiedPersonaState
+	| IdentifyingPersonaState
+	| IdentifiedPersonaState;
+
+export type PersonaStateChangeEvents = {
+	PERSONA_STATE_CHANGED: (state: PersonaState) => void;
+};
+
 export class IdentityClient {
+	private emitter = new EventEmitter<PersonaStateChangeEvents>();
+	private personaState: PersonaState = { type: "unidentified" };
 
 	public readonly logger: Logger;
 	public readonly utils: UtilsClient;
 	public readonly storage: SupportedStorage;
-
-
 
 	private _persona: Persona | null = null;
 
@@ -67,6 +80,33 @@ export class IdentityClient {
 		await this.storage.setItem("persona", persona);
 	}
 
+	public onPersonaStateChange(listener: (state: PersonaState) => void) {
+		this.emitter.addListener("PERSONA_STATE_CHANGED", listener);
+		return () => {
+			this.emitter.removeListener("PERSONA_STATE_CHANGED", listener);
+		};
+	}
+
+	public getPersonaState(): PersonaState {
+		return this.personaState;
+	}
+
+	private setPersonaState(newState: PersonaState) {
+		this.logger.info(`Persona state: ${this.personaState.type} -> ${newState.type}`);
+		this.personaState = newState;
+		this.emitter.emit("PERSONA_STATE_CHANGED", newState);
+	}
+
+	public shutdown() {
+		this.emitter.removeAllListeners("PERSONA_STATE_CHANGED");
+	}
+
+	public async reset() {
+		this._persona = null;
+		await this.storage.removeItem("persona");
+		this.setPersonaState({ type: "unidentified" });
+	}
+
 	/**
 	 * Catches all errors and returns an AsyncResult
 	 * @param fn - The function to try
@@ -85,6 +125,9 @@ export class IdentityClient {
 	}
 
 	async identify(persona: Persona): AsyncResult<IdentityUser> {
+		const previousState = this.personaState;
+		this.setPersonaState({ type: "identifying" });
+
 		return this.tryCatch(async () => {
 			const deviceId = await this.device.getDeviceId();
 			const deviceInfo = await this.device.getDeviceInfo();
@@ -104,6 +147,8 @@ export class IdentityClient {
 			});
 
 			if (response.error != null) {
+				this.setPersonaState(previousState);
+
 				if (response.error.status === 422) {
 					console.warn("422 Error identifying user", response.error.value);
 					return {
@@ -118,6 +163,9 @@ export class IdentityClient {
 					error: value?.error?.message ?? "Unknown error",
 				};
 			}
+
+			await this.setPersona(persona);
+			this.setPersonaState({ type: "identified", persona });
 
 			return {
 				success: true,
