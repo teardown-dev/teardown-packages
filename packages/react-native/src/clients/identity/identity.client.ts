@@ -65,19 +65,24 @@ export class IdentityClient {
 		this.utils = utils;
 	}
 
-	private async getPersona(): Promise<Persona> {
+	private getPersona(): Persona | null {
 		if (this._persona != null) {
 			return this._persona;
 		}
 
-		const persona = await this.storage.getItem("persona");
+		const stored = this.storage.getItem("persona");
+		if (stored == null) {
+			return null;
+		}
+
+		const persona = JSON.parse(stored) as Persona;
 		this._persona = persona;
 		return persona;
 	}
 
-	private async setPersona(persona: Persona): Promise<void> {
+	private setPersona(persona: Persona): void {
 		this._persona = persona;
-		await this.storage.setItem("persona", persona);
+		this.storage.setItem("persona", JSON.stringify(persona));
 	}
 
 	public onPersonaStateChange(listener: (state: PersonaState) => void) {
@@ -101,9 +106,9 @@ export class IdentityClient {
 		this.emitter.removeAllListeners("PERSONA_STATE_CHANGED");
 	}
 
-	public async reset() {
+	public reset() {
 		this._persona = null;
-		await this.storage.removeItem("persona");
+		this.storage.removeItem("persona");
 		this.setPersonaState({ type: "unidentified" });
 	}
 
@@ -164,7 +169,7 @@ export class IdentityClient {
 				};
 			}
 
-			await this.setPersona(persona);
+			this.setPersona(persona);
 			this.setPersonaState({ type: "identified", persona });
 
 			return {
