@@ -80,9 +80,16 @@ export class IdentityClient {
 		return persona;
 	}
 
-	private setPersona(persona: Persona): void {
-		this._persona = persona;
-		this.storage.setItem("persona", JSON.stringify(persona));
+	private setPersona(newState: PersonaState): void {
+		this.logger.info(`Persona state: ${this.personaState.type} -> ${newState.type}`);
+
+		if (newState.type === "identified") {
+			this._persona = newState.persona;
+			this.storage.setItem("persona", JSON.stringify(newState.persona));
+		}
+
+		this.personaState = newState;
+		this.emitter.emit("PERSONA_STATE_CHANGED", newState);
 	}
 
 	public onPersonaStateChange(listener: (state: PersonaState) => void) {
@@ -96,12 +103,6 @@ export class IdentityClient {
 		return this.personaState;
 	}
 
-	private setPersonaState(newState: PersonaState) {
-		this.logger.info(`Persona state: ${this.personaState.type} -> ${newState.type}`);
-		this.personaState = newState;
-		this.emitter.emit("PERSONA_STATE_CHANGED", newState);
-	}
-
 	public shutdown() {
 		this.emitter.removeAllListeners("PERSONA_STATE_CHANGED");
 	}
@@ -109,7 +110,7 @@ export class IdentityClient {
 	public reset() {
 		this._persona = null;
 		this.storage.removeItem("persona");
-		this.setPersonaState({ type: "unidentified" });
+		this.setPersona({ type: "unidentified" });
 	}
 
 	/**
@@ -131,7 +132,7 @@ export class IdentityClient {
 
 	async identify(persona: Persona): AsyncResult<IdentityUser> {
 		const previousState = this.personaState;
-		this.setPersonaState({ type: "identifying" });
+		this.setPersona({ type: "identifying" });
 
 		return this.tryCatch(async () => {
 			const deviceId = await this.device.getDeviceId();
@@ -152,7 +153,7 @@ export class IdentityClient {
 			});
 
 			if (response.error != null) {
-				this.setPersonaState(previousState);
+				this.setPersona(previousState);
 
 				if (response.error.status === 422) {
 					console.warn("422 Error identifying user", response.error.value);
@@ -169,8 +170,7 @@ export class IdentityClient {
 				};
 			}
 
-			this.setPersona(persona);
-			this.setPersonaState({ type: "identified", persona });
+			this.setPersona({ type: "identified", persona });
 
 			return {
 				success: true,
