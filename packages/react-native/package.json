@@ -18,14 +18,17 @@
 		"nuke": "cd ../../ && bun run nuke"
 	},
 	"dependencies": {
-		"@teardown/ingest-api": "0.0.21-alpha.10",
-		"@teardown/types": "0.0.2"
+		"@teardown/ingest-api": "0.0.21-alpha.12",
+		"@teardown/types": "0.0.2",
+		"eventemitter3": "^5.0.1",
+		"uuid": "^13.0.0"
 	},
 	"devDependencies": {
 		"@elysiajs/eden": "^1.4.5",
 		"@teardown/tsconfig": "workspace:*",
 		"@types/bun": "latest",
 		"@types/react": "*",
+		"@types/uuid": "^11.0.0",
 		"expo-updates": "^29.0.12"
 	},
 	"peerDependencies": {

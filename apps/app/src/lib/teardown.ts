@@ -1,4 +1,4 @@
-import { TeardownCore, SupportedStorageFactory } from "@teardown/react-native";
+import { type SupportedStorageFactory, TeardownCore } from "@teardown/react-native";
 import * as MMKV from "react-native-mmkv";
 
 const createStorage: SupportedStorageFactory = (storageKey: string) => {
@@ -30,9 +30,9 @@ const createStorage: SupportedStorageFactory = (storageKey: string) => {
 
 export const teardown = new TeardownCore({
 	api: {
-		orgId: "5bd67d0d-d2f8-4aa2-bf6b-a0b5e05f82b9",
-		projectId: "ae090978-4034-4f77-9ff6-316b28513b8d",
-		apiKey: "3c0f0f23-560d-4f09-88c0-3462e8ee82e9",
+		org_id: "5bd67d0d-d2f8-4aa2-bf6b-a0b5e05f82b9",
+		project_id: "ae090978-4034-4f77-9ff6-316b28513b8d",
+		api_key: "3c0f0f23-560d-4f09-88c0-3462e8ee82e9",
 	},
 	storage: {
 		createStorage,

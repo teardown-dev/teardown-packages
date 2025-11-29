@@ -2,8 +2,7 @@ import type {
 	ApplicationInfo,
 	HardwareInfo,
 	NotificationsInfo,
-	OSInfo,
-	UpdateInfo,
+	OSInfo
 } from "@teardown/ingest-api/schemas";
 
 /**
@@ -25,7 +24,7 @@ export abstract class DeviceInfoAdapter {
 	/**
 	 * The information about the update running.
 	 */
-	abstract get updateInfo(): UpdateInfo | null;
+	// abstract get updateInfo(): UpdateInfo | null;
 	// -- Hardware Information --
 	/**
 	 * The information about the hardware of the device.

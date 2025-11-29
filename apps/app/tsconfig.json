@@ -1,14 +1,25 @@
 {
 	"extends": "expo/tsconfig.base",
 	"compilerOptions": {
+		"composite": true,
+		"incremental": true,
 		"strict": true,
 		"baseUrl": ".",
 		"rootDir": ".",
 		"outDir": "dist",
 		"module": "esnext",
+		"noEmitOnError": true,
+		"noEmit": false,
 		"paths": {
-			"@/*": ["./*"]
+			"@/*": [
+				"./*"
+			]
 		}
 	},
-	"include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+	"include": [
+		"**/*.ts",
+		"**/*.tsx",
+		".expo/types/**/*.ts",
+		"expo-env.d.ts"
+	]
 }

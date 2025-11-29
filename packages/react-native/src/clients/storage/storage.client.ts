@@ -50,10 +50,26 @@ export class StorageClient {
     this.logger.debug(`Creating new storage for ${fullStorageKey}`);
     const newStorage = this.options.createStorage(fullStorageKey);
     newStorage.preload();
-    this.storage.set(fullStorageKey, newStorage);
+
+
+    const remappedStorage = {
+      ...newStorage,
+      clear: () => {
+        this.logger.debug(`Clearing storage for ${fullStorageKey}`);
+        this.storage.delete(fullStorageKey);
+      },
+    }
+
+    this.storage.set(fullStorageKey, remappedStorage);
     this.logger.info(`Storage created for ${fullStorageKey}`);
 
-    return newStorage;
+    return remappedStorage;
   }
 
+  shutdown(): void {
+    this.storage.forEach((storage) => {
+      storage.clear();
+    });
+    this.storage.clear();
+  }
 }

@@ -2,7 +2,7 @@
 	"extends": "@teardown/tsconfig/tsconfig.base.json",
 	"references": [
 		{
-			"path": "./apps/example-app"
+			"path": "./apps/app"
 		},
 		{
 			"path": "./packages/react-native"

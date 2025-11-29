@@ -1,10 +1,12 @@
 import * as eden from "@elysiajs/eden";
+import type { AsyncResult } from "@teardown/types";
 import type { ApiClient } from "../api";
 import type { DeviceClient } from "../device";
 import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils";
-import type { AsyncResult } from "@teardown/types";
+import type { EventEmitter } from "eventemitter3";
+
 
 export { eden };
 
@@ -26,9 +28,14 @@ export type IdentityUser = {
 };
 
 export class IdentityClient {
+
 	public readonly logger: Logger;
 	public readonly utils: UtilsClient;
 	public readonly storage: SupportedStorage;
+
+
+
+	private _persona: Persona | null = null;
 
 	constructor(
 		logging: LoggingClient,
@@ -43,6 +50,21 @@ export class IdentityClient {
 		});
 		this.storage = storage.createStorage("identity");
 		this.utils = utils;
+	}
+
+	private async getPersona(): Promise<Persona> {
+		if (this._persona != null) {
+			return this._persona;
+		}
+
+		const persona = await this.storage.getItem("persona");
+		this._persona = persona;
+		return persona;
+	}
+
+	private async setPersona(persona: Persona): Promise<void> {
+		this._persona = persona;
+		await this.storage.setItem("persona", persona);
 	}
 
 	/**
@@ -64,18 +86,20 @@ export class IdentityClient {
 
 	async identify(persona: Persona): AsyncResult<IdentityUser> {
 		return this.tryCatch(async () => {
-			const device = await this.device.getDeviceInfo();
+			const deviceId = await this.device.getDeviceId();
+			const deviceInfo = await this.device.getDeviceInfo();
 			const response = await this.api.client("/v1/identify", {
 				method: "POST",
 				headers: {
+					"td-api-key": this.api.apiKey,
 					"td-org-id": this.api.orgId,
 					"td-project-id": this.api.projectId,
 					"td-environment-slug": "production",
-					"authorization": `Bearer 3c0f0f23-560d-4f09-88c0-3462e8ee82e9`,
+					"td-device-id": deviceId,
 				},
 				body: {
 					persona,
-					device,
+					device: deviceInfo,
 				},
 			});
 
@@ -85,20 +109,20 @@ export class IdentityClient {
 					return {
 						success: false,
 						error: response.error.value.message ?? "Unknown error",
-					}
+					};
 				}
 
 				const value = response.error.value;
 				return {
 					success: false,
 					error: value?.error?.message ?? "Unknown error",
-				}
+				};
 			}
 
 			return {
 				success: true,
-				data: response.data
-			}
+				data: response.data.data,
+			};
 		});
 	}
 }
