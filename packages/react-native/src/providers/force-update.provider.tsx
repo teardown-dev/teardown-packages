@@ -1,29 +1,18 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import type { VersionStatus } from "../clients/force-update";
-import { useTeardown } from "./teardown.provider";
+import { ForceUpdateContext } from "../contexts/force-update.context";
+import { useTeardown } from "../contexts/teardown.context";
 
-export type ForceUpdateContextType = {
-  versionStatus: VersionStatus;
-  isUpdateRequired: boolean;
-  isUpdateAvailable: boolean;
-};
-
-const ForceUpdateContext = createContext<ForceUpdateContextType | null>(null);
-
-export const useForceUpdate = () => {
-  const context = useContext(ForceUpdateContext);
-  if (!context) {
-    throw new Error("useForceUpdate must be used within a ForceUpdateProvider");
-  }
-  return context;
-};
+export { useForceUpdate } from "../contexts/force-update.context";
 
 export type ForceUpdateProviderProps = {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 };
 
 export const ForceUpdateProvider = (props: ForceUpdateProviderProps) => {
-  const { children } = props;
+  const { children, fallback } = props;
   const { core } = useTeardown();
 
   const [versionStatus, setVersionStatus] = useState<VersionStatus>(
@@ -35,18 +24,20 @@ export const ForceUpdateProvider = (props: ForceUpdateProviderProps) => {
     return unsubscribe;
   }, [core.forceUpdate]);
 
+  const isUpdateRequired = versionStatus.type === "update_required";
+
   const context = useMemo(
     () => ({
       versionStatus,
-      isUpdateRequired: versionStatus.type === "update_required",
+      isUpdateRequired,
       isUpdateAvailable: versionStatus.type === "update_available",
     }),
-    [versionStatus]
+    [versionStatus, isUpdateRequired]
   );
 
   return (
     <ForceUpdateContext.Provider value={context}>
-      {children}
+      {isUpdateRequired && fallback ? fallback : children}
     </ForceUpdateContext.Provider>
   );
 };

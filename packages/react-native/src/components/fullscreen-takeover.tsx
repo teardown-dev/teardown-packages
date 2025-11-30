@@ -1,10 +1,26 @@
+import { StyleSheet, Text, View } from "react-native";
 
+import { useForceUpdate } from "../contexts/force-update.context";
 
+export const FullscreenTakeover = () => {
+  const { isUpdateRequired } = useForceUpdate();
 
-// export const FullscreenTakeover = () => {
-//   return (
-//     <View className="flex-1 justify-center items-center bg-black">
-//       <Text>FullscreenTakeover</Text>
-//     </View>
-//   );
-// }
+  if (!isUpdateRequired) {
+    return null;
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text>FullscreenTakeover</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+  },
+});

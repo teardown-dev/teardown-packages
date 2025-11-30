@@ -1,28 +1,19 @@
-import type { TeardownCore } from "@/teardown.core";
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
+
+import type { TeardownCore } from "../teardown.core";
+import { TeardownContext } from "../contexts/teardown.context";
 import { ForceUpdateProvider } from "./force-update.provider";
 
-export type TeardownContextType = {
-	core: TeardownCore;
-};
-
-const TeardownContext = createContext<TeardownContextType | null>(null);
-
-export const useTeardown = () => {
-	const context = useContext(TeardownContext);
-	if (!context) {
-		throw new Error("useTeardown must be used within a TeardownProvider");
-	}
-	return context;
-};
+export { useTeardown } from "../contexts/teardown.context";
 
 export type TeardownProviderProps = {
 	children: React.ReactNode;
 	core: TeardownCore;
+	forceUpdateFallback?: React.ReactNode;
 };
 
 export const TeardownProvider = (props: TeardownProviderProps) => {
-	const { children, core } = props;
+	const { children, core, forceUpdateFallback } = props;
 	const context = useMemo(() => ({ core }), [core]);
 
 	useEffect(() => {
@@ -33,20 +24,23 @@ export const TeardownProvider = (props: TeardownProviderProps) => {
 
 	return (
 		<TeardownContext.Provider value={context}>
-			<InternalProvider>{children}</InternalProvider>
+			<InternalProvider forceUpdateFallback={forceUpdateFallback}>
+				{children}
+			</InternalProvider>
 		</TeardownContext.Provider>
 	);
 };
 
 export type InternalProviderProps = {
 	children: React.ReactNode;
+	forceUpdateFallback?: React.ReactNode;
 };
 
 const InternalProvider = (props: InternalProviderProps) => {
-
-	const { children } = props;
+	const { children, forceUpdateFallback } = props;
 	return (
-		<ForceUpdateProvider>{children}</ForceUpdateProvider>
-	)
-
-}
+		<ForceUpdateProvider fallback={forceUpdateFallback}>
+			{children}
+		</ForceUpdateProvider>
+	);
+};
