@@ -103,7 +103,7 @@ export class IdentityClient {
 		this.sessionState = this.getSessionStateFromStorage();
 
 		if (this.options.identifyOnLoad && this.sessionState.type === "unidentified") {
-			this.identify({});
+			this.identify({}).then((result) => console.log("result", result));
 		}
 	}
 

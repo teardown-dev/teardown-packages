@@ -105,6 +105,7 @@ export class ForceUpdateClient {
 	}
 
 	private updateFromVersionStatus(versionStatus?: VersionStatusResponse) {
+		console.log("updateFromVersionStatus", versionStatus);
 		if (!versionStatus) {
 			this.setVersionStatus({ type: "up_to_date" });
 			return;
