@@ -18,7 +18,7 @@
 		"nuke": "cd ../../ && bun run nuke"
 	},
 	"dependencies": {
-		"@teardown/ingest-api": "0.0.21-alpha.12",
+		"@teardown/ingest-api": "0.0.21-alpha.14",
 		"@teardown/types": "0.0.2",
 		"eventemitter3": "^5.0.1",
 		"uuid": "^13.0.0"

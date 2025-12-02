@@ -45,7 +45,7 @@
         "react-native-gesture-handler": "~2.28.0",
         "react-native-mmkv": "^4.0.0",
         "react-native-reanimated": "~4.1.1",
-        "react-native-safe-area-context": "~5.6.0",
+        "react-native-safe-area-context": "^5.6.2",
         "react-native-screens": "~4.16.0",
         "react-native-web": "~0.21.0",
         "react-native-worklets": "0.5.1",
@@ -65,7 +65,7 @@
     "packages/react-native": {
       "name": "@teardown/react-native",
       "dependencies": {
-        "@teardown/ingest-api": "0.0.21-alpha.12",
+        "@teardown/ingest-api": "0.0.21-alpha.14",
         "@teardown/types": "0.0.2",
         "eventemitter3": "^5.0.1",
         "uuid": "^13.0.0",
@@ -2042,7 +2042,7 @@
 
     "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
-    "@teardown/react-native/@teardown/ingest-api": ["@teardown/ingest-api@0.0.21-alpha.12", "", { "dependencies": { "@elysiajs/eden": "1.4.5" }, "peerDependencies": { "elysia": ">= 1.4.0", "typescript": "^5.9.3", "zod": "^4" } }, "sha512-5BQc9djh8jVONF+XIlO+AZHmNaFeQZlTRJneJfxAlFyhs8kLijpUcMUh1ygbU6HYPsDBtiYrHKsnN8dmGfU9Tw=="],
+    "@teardown/react-native/@teardown/ingest-api": ["@teardown/ingest-api@0.0.21-alpha.14", "", { "dependencies": { "@elysiajs/eden": "1.4.5" }, "peerDependencies": { "elysia": ">= 1.4.0", "typescript": "^5.9.3", "zod": "^4" } }, "sha512-OV3qVh41+Wv/gjoAHd4dW6FFytHc8+XmFa+jCVPBYoD5kB4A2rjXs165GH5iaDepB4nQGTBGTmuKiHOetNV54Q=="],
 
     "@teardown/react-native/@types/react": ["@types/react@19.2.6", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-p/jUvulfgU7oKtj6Xpk8cA2Y1xKTtICGpJYeJXz2YVO2UcvjQgeRMLDGfDeqeRW2Ta+0QNFwcc8X3GH8SxZz6w=="],
 

@@ -8,7 +8,6 @@ import type { UtilsClient } from "../utils";
 import { EventEmitter } from "eventemitter3";
 import { z } from "zod";
 
-
 export { eden };
 
 export type Persona = {
@@ -18,7 +17,13 @@ export type Persona = {
 };
 
 export type IdentityClientOptions = {
-	storage: StorageClient;
+	/** If true, automatically identify anonymous device on load when not already identified (default: false) */
+	identifyOnLoad?: boolean;
+};
+
+export type VersionStatusResponse = {
+	status: "UPDATE_AVAILABLE" | "UPDATE_REQUIRED" | "UP_TO_DATE";
+	latest_version?: string;
 };
 
 export type IdentityUser = {
@@ -26,49 +31,61 @@ export type IdentityUser = {
 	device_id: string;
 	persona_id: string;
 	token: string;
+	version_status?: VersionStatusResponse;
 };
 
-
-export const UnidentifiedPersonaStateSchema = z.object({
+export const UnidentifiedSessionStateSchema = z.object({
 	type: z.literal("unidentified"),
 });
-export const IdentifyingPersonaStateSchema = z.object({
+export const IdentifyingSessionStateSchema = z.object({
 	type: z.literal("identifying"),
 });
-export const IdentifiedPersonaStateSchema = z.object({
-	type: z.literal("identified"),
-	persona: z.object({
-		name: z.string().optional(),
-		user_id: z.string().optional(),
-		email: z.string().optional(),
-	}),
+
+
+export const UpdateVersionStatusBodySchema = z.object({
+	version: z.string(),
 });
 
-export type UnidentifiedPersonaState = z.infer<typeof UnidentifiedPersonaStateSchema>;
-export type IdentifyingPersonaState = z.infer<typeof IdentifyingPersonaStateSchema>;
-export type IdentifiedPersonaState = z.infer<typeof IdentifiedPersonaStateSchema>;
+export const SessionSchema = z.object({
+	session_id: z.string(),
+	device_id: z.string(),
+	persona_id: z.string(),
+	token: z.string(),
+});
+export type Session = z.infer<typeof SessionSchema>;
 
-export type PersonaState =
-	| UnidentifiedPersonaState
-	| IdentifyingPersonaState
-	| IdentifiedPersonaState;
+export const VersionStatusResponseSchema = z.object({
+	status: z.enum(["UPDATE_AVAILABLE", "UPDATE_REQUIRED", "UP_TO_DATE"]),
+	latest_version: z.string().optional(),
+});
 
-export type PersonaStateChangeEvents = {
-	PERSONA_STATE_CHANGED: (state: PersonaState) => void;
+export const IdentifiedSessionStateSchema = z.object({
+	type: z.literal("identified"),
+	session: SessionSchema,
+	version_status: VersionStatusResponseSchema.optional(),
+});
+
+export const SessionStateSchema = z.discriminatedUnion("type", [UnidentifiedSessionStateSchema, IdentifyingSessionStateSchema, IdentifiedSessionStateSchema]);
+export type SessionState = z.infer<typeof SessionStateSchema>;
+
+export type UnidentifiedSessionState = z.infer<typeof UnidentifiedSessionStateSchema>;
+export type IdentifyingSessionState = z.infer<typeof IdentifyingSessionStateSchema>;
+export type IdentifiedSessionState = z.infer<typeof IdentifiedSessionStateSchema>;
+
+export type SessionStateChangeEvents = {
+	SESSION_STATE_CHANGED: (state: SessionState) => void;
 };
 
 
-export const PERSONA_STORAGE_KEY = "PERSONA_STATE";
+export const SESSION_STORAGE_KEY = "SESSION_STATE";
 
 export class IdentityClient {
-	private emitter = new EventEmitter<PersonaStateChangeEvents>();
-	private personaState: PersonaState = { type: "unidentified" };
+	private emitter = new EventEmitter<SessionStateChangeEvents>();
+	private sessionState: SessionState = { type: "unidentified" };
 
 	public readonly logger: Logger;
 	public readonly utils: UtilsClient;
 	public readonly storage: SupportedStorage;
-
-	private _persona: Persona | null = null;
 
 	constructor(
 		logging: LoggingClient,
@@ -76,70 +93,69 @@ export class IdentityClient {
 		storage: StorageClient,
 		private readonly api: ApiClient,
 		private readonly device: DeviceClient,
-		_options: IdentityClientOptions
+		private readonly options: IdentityClientOptions
 	) {
 		this.logger = logging.createLogger({
 			name: "IdentityClient",
 		});
 		this.storage = storage.createStorage("identity");
 		this.utils = utils;
-		this.personaState = this.getPersonaStateFromStorage();
+		this.sessionState = this.getSessionStateFromStorage();
+
+		if (this.options.identifyOnLoad && this.sessionState.type === "unidentified") {
+			this.identify({});
+		}
 	}
 
-	private getPersonaStateFromStorage(): PersonaState {
-		const stored = this.storage.getItem(PERSONA_STORAGE_KEY);
+	private getSessionStateFromStorage(): SessionState {
+		const stored = this.storage.getItem(SESSION_STORAGE_KEY);
 		if (stored == null) {
-			return UnidentifiedPersonaStateSchema.parse({ type: "unidentified" });
+			return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
 		}
 
-		return IdentifiedPersonaStateSchema.parse(JSON.parse(stored));
+		return SessionStateSchema.parse(JSON.parse(stored));
 	}
 
-	private savePersonaStateToStorage(personaState: PersonaState): void {
-		this.storage.setItem(PERSONA_STORAGE_KEY, JSON.stringify(personaState));
+	private saveSessionStateToStorage(sessionState: SessionState): void {
+		this.storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionState));
 	}
 
-	private getPersona(): Persona | null {
-		if (this._persona != null) {
-			return this._persona;
-		}
-
-		const stored = this.storage.getItem("persona");
-		if (stored == null) {
-			return null;
-		}
-
-		const persona = JSON.parse(stored) as Persona;
-		this._persona = persona;
-		return persona;
+	private setSessionState(newState: SessionState): void {
+		this.logger.info(`Session state: ${this.sessionState.type} -> ${newState.type}`);
+		this.sessionState = newState;
+		this.saveSessionStateToStorage(newState);
+		this.emitter.emit("SESSION_STATE_CHANGED", newState);
 	}
 
-	private setPersona(newState: PersonaState): void {
-		this.logger.info(`Persona state: ${this.personaState.type} -> ${newState.type}`);
-		this.personaState = newState;
-		this.savePersonaStateToStorage(newState);
-		this.emitter.emit("PERSONA_STATE_CHANGED", newState);
-	}
-
-	public onPersonaStateChange(listener: (state: PersonaState) => void) {
-		this.emitter.addListener("PERSONA_STATE_CHANGED", listener);
+	public onSessionStateChange(listener: (state: SessionState) => void) {
+		this.emitter.addListener("SESSION_STATE_CHANGED", listener);
 		return () => {
-			this.emitter.removeListener("PERSONA_STATE_CHANGED", listener);
+			this.emitter.removeListener("SESSION_STATE_CHANGED", listener);
 		};
 	}
 
-	public getPersonaState(): PersonaState {
-		return this.personaState;
+	public getSessionState(): SessionState {
+		return this.sessionState;
 	}
 
 	public shutdown() {
-		this.emitter.removeAllListeners("PERSONA_STATE_CHANGED");
+		this.emitter.removeAllListeners("SESSION_STATE_CHANGED");
 	}
 
 	public reset() {
-		this._persona = null;
-		this.storage.removeItem("persona");
-		this.setPersona({ type: "unidentified" });
+		this.storage.removeItem(SESSION_STORAGE_KEY);
+		this.setSessionState({ type: "unidentified" });
+	}
+
+	/**
+	 * Re-identify the current persona to refresh session data.
+	 * Only works if already identified.
+	 */
+	async refresh(): AsyncResult<IdentityUser> {
+		if (this.sessionState.type !== "identified") {
+			return { success: false, error: "Not identified" };
+		}
+		return this.identify();
 	}
 
 	/**
@@ -159,9 +175,9 @@ export class IdentityClient {
 		}
 	}
 
-	async identify(persona: Persona): AsyncResult<IdentityUser> {
-		const previousState = this.personaState;
-		this.setPersona({ type: "identifying" });
+	async identify(persona?: Persona): AsyncResult<IdentityUser> {
+		const previousState = this.sessionState;
+		this.setSessionState({ type: "identifying" });
 
 		return this.tryCatch(async () => {
 			const deviceId = await this.device.getDeviceId();
@@ -177,12 +193,20 @@ export class IdentityClient {
 				},
 				body: {
 					persona,
-					device: deviceInfo,
+					device: {
+						...deviceInfo,
+						update: deviceInfo.update
+							? {
+								...deviceInfo.update,
+								created_at: deviceInfo.update.created_at,
+							}
+							: null,
+					},
 				},
 			});
 
 			if (response.error != null) {
-				this.setPersona(previousState);
+				this.setSessionState(previousState);
 
 				if (response.error.status === 422) {
 					this.logger.warn("422 Error identifying user", response.error.value);
@@ -199,7 +223,11 @@ export class IdentityClient {
 				};
 			}
 
-			this.setPersona({ type: "identified", persona });
+			this.setSessionState({
+				type: "identified",
+				session: response.data.data,
+				version_status: response.data.data.version_status,
+			});
 
 			return {
 				success: true,

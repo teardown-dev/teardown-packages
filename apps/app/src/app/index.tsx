@@ -1,30 +1,35 @@
-import { IdentityUser } from "@teardown/react-native/src/clients/identity";
+import type { IdentityUser } from "@teardown/react-native/src/clients/identity";
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { teardown } from "../lib/teardown";
+import { global_storage, teardown } from "../lib/teardown";
+
+
 
 export default function MainScreen() {
-
-
-
 	const insets = useSafeAreaInsets();
 	const [userId, setUserId] = useState<string>("");
 	const [email, setEmail] = useState<string>("");
 	const [name, setName] = useState<string>("");
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [user, setUser] = useState<IdentityUser | null>(null);
+	const [identifyOnLoad, setIdentifyOnLoad] = useState<boolean>(() => {
+		try {
+			return global_storage.getBoolean("identify_on_load") ?? false;
+		} catch {
+			return false;
+		}
+	});
 
 	const onIdentifyUser = async () => {
 		try {
-
+			setIsLoading(true);
 			const result = await teardown.identity.identify({
 				email,
 				name,
 			});
 
 			if (result.success) {
-
 				console.log("User identified", result);
 				setUser(result.data);
 			} else {
@@ -32,42 +37,42 @@ export default function MainScreen() {
 			}
 		} catch (error) {
 			console.error("Error identifying user 222", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
-	const onIdentifyDevice = async () => {
-		// const identityDevice = await teardown.identity.identifyDevice();
-		// setIdentityDevice(identityDevice);
+	const onValueChangeIdentifyOnLoad = (value: boolean) => {
+		setIdentifyOnLoad(value);
+		global_storage.set("identify_on_load", value);
 	};
 
 	return (
 		<View
 			style={[
+				styles.container,
 				{ paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right },
 			]}
-			className="flex-1 h-full justify-center items-center bg-[black] relative"
 		>
-			<View
-				className="flex-1 h-full justify-center items-center bg-[black] relative w-full p-4 gap-4"
-			>
+			<View style={styles.content}>
 				<TextInput
 					placeholder="Enter your user ID"
-					className=" bg-white p-4 rounded-lg w-full"
-					placeholderTextColorClassName="text-black"
+					style={styles.input}
+					placeholderTextColor="#666666"
 					value={userId}
 					onChangeText={setUserId}
 				/>
 				<TextInput
 					placeholder="Enter your name"
-					className=" bg-white p-4 rounded-lg w-full"
-					placeholderTextColorClassName="text-black"
+					style={styles.input}
+					placeholderTextColor="#666666"
 					value={name}
 					onChangeText={setName}
 				/>
 				<TextInput
 					placeholder="Enter your email"
-					className=" bg-white p-4 rounded-lg w-full"
-					placeholderTextColorClassName="text-black"
+					style={styles.input}
+					placeholderTextColor="#666666"
 					keyboardType="email-address"
 					autoCapitalize="none"
 					autoComplete="email"
@@ -76,17 +81,26 @@ export default function MainScreen() {
 					onChangeText={setEmail}
 				/>
 
-				<View className="flex-1 flex-row p-4 gap-4 relative">
+				<View style={styles.buttonContainer}>
 					<Button onPress={onIdentifyUser}>
-						<Text className="text-[white]">Identify User</Text>
+						<Text style={styles.buttonText}>{isLoading ? "Identifying..." : "Identify User"}</Text>
 					</Button>
 				</View>
 
-				<View className="flex-1 p-4 gap-4 relative">
-					<Text className="text-[white]">Session ID: {user?.session_id ?? "No user"}</Text>
-					<Text className="text-[white]">Device ID: {user?.device_id ?? "No device"}</Text>
-					<Text className="text-[white]">Persona ID: {user?.persona_id ?? "No persona"}</Text>
-					<Text className="text-[white]">Token: {`${user?.token?.slice(0, 10)}...` ?? "No token"}</Text>
+				<View style={{ flexDirection: "row", alignItems: "center", marginTop: 12 }}>
+					<Switch
+						value={identifyOnLoad}
+						onValueChange={onValueChangeIdentifyOnLoad}
+					/>
+					<Text style={{ fontSize: 16, color: "#1A1A1A", marginLeft: 8 }}>Identify on load</Text>
+				</View>
+
+				<View style={styles.infoContainer}>
+					<Text style={styles.infoText}>Version status: {user?.version_status?.status ?? "Unknown"}</Text>
+					<Text style={styles.infoText}>Session ID: {user?.session_id ?? "No user"}</Text>
+					<Text style={styles.infoText}>Device ID: {user?.device_id ?? "No device"}</Text>
+					<Text style={styles.infoText}>Persona ID: {user?.persona_id ?? "No persona"}</Text>
+					<Text style={styles.infoText}>Token: {`${user?.token?.slice(0, 10)}...` ?? "No token"}</Text>
 				</View>
 			</View>
 		</View>
@@ -96,10 +110,102 @@ export default function MainScreen() {
 function Button({ children, onPress }: { children: React.ReactNode; onPress: () => void }) {
 	return (
 		<Pressable
-			className="flex-1 max-h-20 justify-center items-center p-2.5 rounded-lg border border-[white]"
+			style={styles.primaryButton}
 			onPress={onPress}
 		>
 			{children}
 		</Pressable>
 	);
 }
+
+function Switch({ value, onValueChange }: { value: boolean; onValueChange: (value: boolean) => void }) {
+	return (
+		<Pressable
+			onPress={() => onValueChange(!value)}
+			style={({ pressed }) => [
+				styles.switchTrack,
+				value && styles.switchTrackActive,
+				pressed && styles.switchTrackPressed,
+			]}
+		>
+			<View style={[styles.switchThumb, value && styles.switchThumbActive]} />
+		</Pressable>
+	);
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: "#FFFFFF",
+	},
+	content: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		width: "100%",
+		padding: 24,
+		gap: 16,
+	},
+	input: {
+		backgroundColor: "#FFFFFF",
+		padding: 16,
+		borderRadius: 12,
+		width: "100%",
+		borderWidth: 1,
+		borderColor: "#E5E5E5",
+		fontSize: 16,
+		color: "#1A1A1A",
+	},
+	buttonContainer: {
+		width: "100%",
+		marginTop: 8,
+	},
+	primaryButton: {
+		backgroundColor: "#2C2C2C",
+		paddingHorizontal: 32,
+		paddingVertical: 16,
+		borderRadius: 12,
+		width: "100%",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	buttonText: {
+		color: "#FFFFFF",
+		fontSize: 16,
+		fontWeight: "600",
+	},
+	infoContainer: {
+		width: "100%",
+		padding: 16,
+		gap: 12,
+	},
+	infoText: {
+		color: "#1A1A1A",
+		fontSize: 16,
+		lineHeight: 24,
+	},
+	switchTrack: {
+		width: 51,
+		height: 31,
+		borderRadius: 15.5,
+		backgroundColor: "#CCC",
+		justifyContent: "center",
+		padding: 2,
+	},
+	switchTrackActive: {
+		backgroundColor: "#007AFF",
+	},
+	switchTrackPressed: {
+		opacity: 0.8,
+	},
+	switchThumb: {
+		width: 27,
+		height: 27,
+		borderRadius: 13.5,
+		backgroundColor: "#FFFFFF",
+		alignSelf: "flex-start",
+	},
+	switchThumbActive: {
+		alignSelf: "flex-end",
+	},
+});

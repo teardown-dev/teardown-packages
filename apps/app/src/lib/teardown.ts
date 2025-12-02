@@ -28,11 +28,16 @@ const createStorage: SupportedStorageFactory = (storageKey: string) => {
 	};
 };
 
+export const global_storage = MMKV.createMMKV({
+	id: "teardown",
+});
+
 export const teardown = new TeardownCore({
 	api: {
-		org_id: "5bd67d0d-d2f8-4aa2-bf6b-a0b5e05f82b9",
-		project_id: "ae090978-4034-4f77-9ff6-316b28513b8d",
-		api_key: "3c0f0f23-560d-4f09-88c0-3462e8ee82e9",
+		org_id: "de3b02a3-404d-405f-ac95-30150cfba757",
+		project_id: "2f8454cf-7dd0-4eee-9752-ab58d41c8365",
+		api_key: "9b206204-f045-456e-a6db-4787c2149cd7",
+		environment_slug: "development",
 	},
 	storage: {
 		createStorage,
@@ -41,6 +46,9 @@ export const teardown = new TeardownCore({
 		// adapter: new ExpoDeviceAdapter(),
 	},
 	identity: {
-		// storage: createStorage("identity"),
+		identifyOnLoad: true,
+	},
+	forceUpdate: {
+		identifyAnonymousDevice: true,
 	},
 });
