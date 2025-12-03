@@ -1,0 +1,271 @@
+# Core Concepts
+
+Understanding the architecture and key concepts of the Teardown SDK.
+
+## Architecture Overview
+
+The Teardown SDK is built with a modular architecture consisting of several specialized clients:
+
+```
+TeardownCore
+├── ApiClient         - HTTP communication with Teardown API
+├── DeviceClient      - Device information and identification
+├── IdentityClient    - User/device session management
+├── StorageClient     - Persistent local storage
+├── LoggingClient     - Structured logging
+├── UtilsClient       - Utility functions (UUID generation, etc.)
+└── ForceUpdateClient - Version checking and force updates
+```
+
+## Key Components
+
+### TeardownCore
+
+The central orchestrator that initializes and manages all clients. It's a singleton that maintains the SDK lifecycle.
+
+```tsx
+const core = new TeardownCore({
+  api: { /* ... */ },
+  storage: { /* ... */ },
+  device: { /* ... */ },
+  identity: { /* ... */ },
+  forceUpdate: { /* ... */ },
+});
+```
+
+**Key Methods:**
+- `shutdown()` - Clean up resources and close connections
+
+### TeardownProvider
+
+React context provider that makes the SDK accessible throughout your component tree.
+
+```tsx
+<TeardownProvider core={teardown}>
+  {children}
+</TeardownProvider>
+```
+
+**Features:**
+- Provides `core` instance via `useTeardown()` hook
+- Automatically calls `shutdown()` on unmount
+- Wraps child providers (ForceUpdateProvider)
+
+## Session States
+
+The SDK manages user sessions with a state machine:
+
+```typescript
+type SessionState = 
+  | { type: 'unidentified' }
+  | { type: 'identifying' }
+  | { type: 'identified', session: Session, version_status: VersionStatus }
+```
+
+### State Transitions
+
+```
+unidentified → identifying → identified
+     ↑              ↓
+     └──────────────┘
+        (on error)
+```
+
+**Unidentified**: No active session, device not registered
+
+**Identifying**: Actively communicating with API to create/refresh session
+
+**Identified**: Active session with device/persona registered
+
+## Version Status
+
+Force update functionality uses a separate state machine:
+
+```typescript
+type VersionStatus =
+  | { type: 'unknown' }
+  | { type: 'checking' }
+  | { type: 'up_to_date' }
+  | { type: 'update_available' }
+  | { type: 'update_required' }
+```
+
+### Status Flow
+
+```
+unknown → checking → up_to_date
+             ↓
+             ├─→ update_available
+             └─→ update_required
+```
+
+## Storage Architecture
+
+The SDK uses namespaced storage to avoid key collisions:
+
+```
+Namespace: "device"
+  └── deviceId: "uuid-here"
+
+Namespace: "identity"
+  └── SESSION_STATE: "{...}"
+
+Namespace: "version"
+  └── VERSION_STATUS: "{...}"
+```
+
+Each client creates its own storage namespace using `storage.createStorage(namespace)`.
+
+## Device Identity
+
+Every device gets a unique identifier that persists across app launches:
+
+1. **First Launch**: Generate UUID and store it
+2. **Subsequent Launches**: Retrieve stored UUID
+3. **Used For**: Device fingerprinting and session management
+
+```tsx
+const deviceId = await core.device.getDeviceId();
+```
+
+## Event System
+
+Clients use EventEmitter3 for reactive updates:
+
+```tsx
+// Subscribe to session changes
+const unsubscribe = core.identity.onSessionStateChange((state) => {
+  console.log('Session changed:', state.type);
+});
+
+// Subscribe to version changes
+const unsubscribe = core.forceUpdate.onVersionStatusChange((status) => {
+  console.log('Version status:', status.type);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+## Data Flow
+
+### Identity Flow
+
+```
+User Action (identify)
+  ↓
+Generate/Retrieve Device ID
+  ↓
+Collect Device Info
+  ↓
+POST /v1/identify
+  ↓
+Update Session State
+  ↓
+Emit SESSION_STATE_CHANGED
+  ↓
+Update Version Status
+  ↓
+Emit VERSION_STATUS_CHANGED
+```
+
+### Force Update Flow
+
+```
+App Enters Foreground
+  ↓
+Check Throttle/Cooldown
+  ↓
+Identify/Refresh Session
+  ↓
+Receive Version Status
+  ↓
+Update Local State
+  ↓
+Notify Listeners (React Hooks)
+```
+
+## Type Safety
+
+The SDK is fully typed with TypeScript and uses Zod for runtime validation:
+
+```tsx
+import { SessionStateSchema, VersionStatusSchema } from '@teardown/react-native';
+
+// Runtime validation
+const sessionState = SessionStateSchema.parse(data);
+
+// TypeScript types
+import type { SessionState, VersionStatus } from '@teardown/react-native';
+```
+
+## Error Handling
+
+All async operations return `AsyncResult<T>`:
+
+```typescript
+type AsyncResult<T> = 
+  | { success: true, data: T }
+  | { success: false, error: string }
+```
+
+**Example:**
+
+```tsx
+const result = await core.identity.identify({ user_id: '123' });
+
+if (result.success) {
+  console.log('Session:', result.data.session_id);
+} else {
+  console.error('Error:', result.error);
+}
+```
+
+## Lifecycle Management
+
+The SDK automatically manages cleanup:
+
+```tsx
+// Provider handles cleanup
+useEffect(() => {
+  return () => {
+    core.shutdown(); // Called automatically on unmount
+  };
+}, []);
+```
+
+**Shutdown Process:**
+1. Remove all event listeners
+2. Close storage connections
+3. Cancel pending requests
+4. Clear in-memory state
+
+## Platform Adapters
+
+The SDK uses adapters to support multiple platforms:
+
+```typescript
+interface DeviceInfoAdapter {
+  getDeviceInfo(): Promise<DeviceInfo>;
+}
+```
+
+**Built-in Adapters:**
+- `ExpoDeviceAdapter` - For Expo projects
+- Custom adapters can be implemented for other platforms
+
+## Best Practices
+
+1. **Single Instance**: Create one `TeardownCore` instance per app
+2. **Provider Placement**: Place `TeardownProvider` at the root of your component tree
+3. **Error Handling**: Always check `result.success` before accessing data
+4. **Cleanup**: Let React handle cleanup via `TeardownProvider`
+5. **Type Safety**: Use TypeScript for full type checking
+6. **Storage**: Use appropriate storage adapter for your platform
+7. **Logging**: Enable debug mode during development
+
+## Next Steps
+
+- [Identity & Authentication](./03-identity.mdx)
+- [Force Updates](./04-force-updates.mdx)
+- [API Reference](./07-api-reference.mdx)

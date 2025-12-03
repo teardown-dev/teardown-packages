@@ -1,0 +1,435 @@
+# Teardown React Native SDK Documentation
+
+Complete documentation for the Teardown SDK for React Native and Expo applications.
+
+## Overview
+
+The Teardown SDK provides a comprehensive solution for managing device identity, force updates, logging, and analytics in React Native and Expo applications. Built with TypeScript, it offers a type-safe, modular architecture designed for production use.
+
+## Features
+
+- 🔐 **Device & User Identity** - Unique device fingerprinting and user session management
+- 🔄 **Force Updates** - Automatic version checking with optional or required update flows
+- 📱 **Device Information** - Comprehensive device, OS, and app information collection
+- 💾 **Storage** - Namespaced persistent storage with platform adapters
+- 📝 **Logging** - Structured logging system with debug modes
+- ⚡ **Performance** - Optimized with caching, throttling, and efficient state management
+- 🎯 **Type Safety** - Full TypeScript support with runtime validation
+- 🧪 **Testable** - Easy to mock and test
+
+## Quick Links
+
+### Getting Started
+- [Installation & Setup](./01-getting-started.mdx)
+- [Core Concepts](./02-core-concepts.mdx)
+
+### Features
+- [Identity & Authentication](./03-identity.mdx)
+- [Force Updates](./04-force-updates.mdx)
+- [Device Information](./05-device-info.mdx)
+- [Storage](./06-storage.mdx)
+- [Logging](./06-logging.mdx)
+
+### Reference
+- [API Reference](./07-api-reference.mdx)
+- [Hooks Reference](./08-hooks-reference.mdx)
+- [Advanced Usage](./09-advanced.mdx)
+
+## Installation
+
+```bash
+bun add @teardown/react-native
+```
+
+### Peer Dependencies
+
+```bash
+bun add react react-native zod
+bun add expo-application expo-device expo-updates
+bun add react-native-device-info
+```
+
+## Quick Start
+
+### 1. Initialize the SDK
+
+```tsx
+import { TeardownCore, ExpoDeviceAdapter } from '@teardown/react-native';
+import * as Device from 'expo-device';
+import * as Application from 'expo-application';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const teardown = new TeardownCore({
+  api: {
+    api_key: 'your-api-key',
+    org_id: 'your-org-id',
+    project_id: 'your-project-id',
+    environment_slug: 'production',
+  },
+  storage: {
+    adapter: {
+      getItem: (key) => AsyncStorage.getItem(key),
+      setItem: (key, value) => AsyncStorage.setItem(key, value),
+      removeItem: (key) => AsyncStorage.removeItem(key),
+    },
+  },
+  device: {
+    adapter: new ExpoDeviceAdapter({ Device, Application }),
+  },
+  identity: {
+    identifyOnLoad: true,
+  },
+  forceUpdate: {
+    throttleMs: 30000,
+    checkCooldownMs: 300000,
+  },
+});
+```
+
+### 2. Wrap Your App
+
+```tsx
+import { TeardownProvider } from '@teardown/react-native';
+
+export default function App() {
+  return (
+    <TeardownProvider core={teardown}>
+      <YourApp />
+    </TeardownProvider>
+  );
+}
+```
+
+### 3. Use the SDK
+
+```tsx
+import { useTeardown, useForceUpdate } from '@teardown/react-native';
+
+function YourComponent() {
+  const { core } = useTeardown();
+  const { isUpdateRequired } = useForceUpdate();
+
+  const handleLogin = async () => {
+    const result = await core.identity.identify({
+      user_id: 'user-123',
+      email: 'user@example.com',
+    });
+    
+    if (result.success) {
+      console.log('User identified');
+    }
+  };
+
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  return <YourContent />;
+}
+```
+
+## Documentation Structure
+
+### 1. Getting Started
+Learn the basics of installing and configuring the SDK.
+
+**Topics:**
+- Installation process
+- Basic configuration
+- Quick start guide
+- Configuration options
+
+[Read Getting Started →](./01-getting-started.mdx)
+
+### 2. Core Concepts
+Understand the architecture and fundamental concepts.
+
+**Topics:**
+- Architecture overview
+- Session states
+- Version status
+- Storage architecture
+- Event system
+- Data flow
+
+[Read Core Concepts →](./02-core-concepts.mdx)
+
+### 3. Identity & Authentication
+Learn how to manage user and device identity.
+
+**Topics:**
+- Session management
+- User identification
+- Anonymous tracking
+- Session lifecycle
+- Auto-identification
+
+[Read Identity Guide →](./03-identity.mdx)
+
+### 4. Force Updates
+Implement version management and force updates.
+
+**Topics:**
+- Version checking
+- Update flows
+- Configuration
+- Platform integration
+- React hooks
+
+[Read Force Updates →](./04-force-updates.mdx)
+
+### 5. Device Information
+Collect and manage device information.
+
+**Topics:**
+- Device identification
+- Information collection
+- Platform adapters
+- Privacy considerations
+- Use cases
+
+[Read Device Info →](./05-device-info.mdx)
+
+### 6. Storage
+Manage persistent local storage.
+
+**Topics:**
+- Storage architecture
+- Platform implementations
+- Namespaced storage
+- JSON storage
+- Migration patterns
+
+[Read Storage Guide →](./06-storage.mdx)
+
+### 7. Logging
+Use the structured logging system.
+
+**Topics:**
+- Creating loggers
+- Log levels
+- Debug mode
+- Usage patterns
+- Production logging
+
+[Read Logging Guide →](./06-logging.mdx)
+
+### 8. API Reference
+Complete reference for all classes and methods.
+
+**Topics:**
+- TeardownCore
+- ApiClient
+- DeviceClient
+- IdentityClient
+- ForceUpdateClient
+- StorageClient
+- LoggingClient
+- Type definitions
+
+[Read API Reference →](./07-api-reference.mdx)
+
+### 9. Hooks Reference
+Complete reference for all React hooks.
+
+**Topics:**
+- useTeardown
+- useForceUpdate
+- Custom hooks
+- Hook composition
+- Best practices
+
+[Read Hooks Reference →](./08-hooks-reference.mdx)
+
+### 10. Advanced Usage
+Advanced patterns and optimization techniques.
+
+**Topics:**
+- Custom device adapters
+- Storage encryption
+- Offline support
+- Request interceptors
+- Error handling
+- Performance optimization
+- Testing strategies
+- Migration guides
+
+[Read Advanced Guide →](./09-advanced.mdx)
+
+## Core Concepts at a Glance
+
+### Session States
+
+```typescript
+type SessionState = 
+  | { type: 'unidentified' }
+  | { type: 'identifying' }
+  | { type: 'identified', session: Session, version_status: VersionStatus }
+```
+
+### Version Status
+
+```typescript
+type VersionStatus =
+  | { type: 'unknown' }
+  | { type: 'checking' }
+  | { type: 'up_to_date' }
+  | { type: 'update_available' }
+  | { type: 'update_required' }
+```
+
+### Error Handling
+
+```typescript
+type AsyncResult<T> = 
+  | { success: true, data: T }
+  | { success: false, error: string }
+```
+
+## Common Use Cases
+
+### User Login
+
+```tsx
+const { core } = useTeardown();
+
+const handleLogin = async (email: string, password: string) => {
+  const user = await yourAuthService.login(email, password);
+  
+  const result = await core.identity.identify({
+    user_id: user.id,
+    email: user.email,
+    name: user.name,
+  });
+  
+  if (result.success) {
+    navigation.navigate('Home');
+  }
+};
+```
+
+### Force Update Screen
+
+```tsx
+function App() {
+  const { isUpdateRequired } = useForceUpdate();
+  
+  if (isUpdateRequired) {
+    return (
+      <View>
+        <Text>Update Required</Text>
+        <Button title="Update Now" onPress={openAppStore} />
+      </View>
+    );
+  }
+  
+  return <YourApp />;
+}
+```
+
+### Device Info Collection
+
+```tsx
+const { core } = useTeardown();
+
+const deviceInfo = await core.device.getDeviceInfo();
+console.log(`Device: ${deviceInfo.hardware.device_name}`);
+console.log(`OS: ${deviceInfo.os.name} ${deviceInfo.os.version}`);
+```
+
+### Custom Storage
+
+```tsx
+const { core } = useTeardown();
+const storage = core.storage.createStorage('settings');
+
+storage.setItem('theme', 'dark');
+const theme = storage.getItem('theme');
+```
+
+### Structured Logging
+
+```tsx
+const logger = core.logging.createLogger({ 
+  name: 'MyFeature',
+  debugEnabled: __DEV__ 
+});
+
+logger.info('Operation started');
+logger.debug('Processing item', item);
+logger.error('Operation failed', error);
+```
+
+## Platform Support
+
+- ✅ React Native (iOS & Android)
+- ✅ Expo (Managed & Bare)
+- ✅ Web (with appropriate adapters)
+
+## TypeScript Support
+
+The SDK is written in TypeScript and provides full type definitions:
+
+```tsx
+import type {
+  TeardownCore,
+  SessionState,
+  VersionStatus,
+  DeviceInfo,
+  AsyncResult,
+} from '@teardown/react-native';
+```
+
+## Browser Compatibility
+
+When using web adapters:
+- Modern browsers (Chrome, Firefox, Safari, Edge)
+- localStorage or IndexedDB support required
+- Service Worker support for push notifications (optional)
+
+## Requirements
+
+- React 16.8+ (hooks support)
+- React Native 0.60+
+- TypeScript 4.5+
+- Expo SDK 45+ (if using Expo)
+
+## Contributing
+
+While this is a proprietary SDK, we welcome feedback and bug reports.
+
+## Support
+
+For support, please contact:
+- Email: support@teardown.app
+- Documentation: https://docs.teardown.app
+- Dashboard: https://app.teardown.app
+
+## License
+
+Proprietary - See LICENSE file for details
+
+---
+
+## Next Steps
+
+New to Teardown? Start here:
+
+1. [Getting Started](./01-getting-started.mdx) - Install and configure the SDK
+2. [Core Concepts](./02-core-concepts.mdx) - Understand the architecture
+3. [Identity Guide](./03-identity.mdx) - Implement user identification
+4. [Force Updates](./04-force-updates.mdx) - Add version management
+
+Need a specific feature?
+
+- **User Authentication** → [Identity Guide](./03-identity.mdx)
+- **Version Management** → [Force Updates](./04-force-updates.mdx)
+- **Device Tracking** → [Device Info](./05-device-info.mdx)
+- **Data Persistence** → [Storage Guide](./06-storage.mdx)
+- **Debugging** → [Logging Guide](./06-logging.mdx)
+
+Looking for advanced features?
+
+- **Custom Adapters** → [Advanced Usage](./09-advanced.mdx)
+- **API Details** → [API Reference](./07-api-reference.mdx)
+- **React Hooks** → [Hooks Reference](./08-hooks-reference.mdx)

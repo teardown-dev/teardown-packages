@@ -1,0 +1,383 @@
+# Identity & Authentication
+
+Learn how to manage user and device identity with the Teardown SDK.
+
+## Overview
+
+The Identity system provides:
+- **Device Identification** - Unique device fingerprinting
+- **User Personas** - Associate users with devices
+- **Session Management** - Persistent sessions across app launches
+- **Anonymous Tracking** - Track devices before user login
+
+## Session States
+
+The identity client manages three distinct states:
+
+### Unidentified
+
+No active session exists. This is the initial state when:
+- App is launched for the first time
+- User has logged out
+- Session has been reset
+
+```tsx
+const { core } = useTeardown();
+const sessionState = core.identity.getSessionState();
+
+if (sessionState.type === 'unidentified') {
+  // Show login screen or identify anonymously
+}
+```
+
+### Identifying
+
+Currently communicating with the API to create or refresh a session.
+
+```tsx
+if (sessionState.type === 'identifying') {
+  // Show loading state
+}
+```
+
+### Identified
+
+Active session with full device and persona information.
+
+```tsx
+if (sessionState.type === 'identified') {
+  const { session, version_status } = sessionState;
+  console.log('Session ID:', session.session_id);
+  console.log('Persona ID:', session.persona_id);
+  console.log('Device ID:', session.device_id);
+}
+```
+
+## Identifying Users
+
+### Anonymous Identification
+
+Identify a device without user information:
+
+```tsx
+const result = await core.identity.identify({});
+
+if (result.success) {
+  console.log('Device identified:', result.data.device_id);
+}
+```
+
+### User Identification
+
+Associate a user with the device:
+
+```tsx
+const result = await core.identity.identify({
+  user_id: 'user-123',
+  email: 'john@example.com',
+  name: 'John Doe',
+});
+
+if (result.success) {
+  console.log('User identified:', result.data);
+}
+```
+
+### Partial Identification
+
+You can provide any combination of user fields:
+
+```tsx
+// Email only
+await core.identity.identify({
+  email: 'user@example.com',
+});
+
+// User ID only
+await core.identity.identify({
+  user_id: 'internal-id-123',
+});
+
+// Name and email
+await core.identity.identify({
+  name: 'Jane Smith',
+  email: 'jane@example.com',
+});
+```
+
+## Persona Types
+
+```typescript
+type Persona = {
+  name?: string;
+  user_id?: string;
+  email?: string;
+};
+```
+
+**Persona**: A unique user identity that can be associated with multiple devices.
+
+**Device**: A unique device that can be associated with one persona at a time.
+
+**Session**: Links a device to a persona for tracking and analytics.
+
+## Auto-Identification
+
+Enable automatic identification on app launch:
+
+```tsx
+const core = new TeardownCore({
+  // ... other config
+  identity: {
+    identifyOnLoad: true, // Automatically identify on mount
+  },
+});
+```
+
+This will:
+1. Check for existing session on mount
+2. If no session exists, identify anonymously
+3. Restore session if one exists in storage
+
+## Session Lifecycle
+
+### Creating a Session
+
+```tsx
+// Login flow
+const handleLogin = async (email: string, password: string) => {
+  // Authenticate with your backend
+  const user = await authenticateUser(email, password);
+  
+  // Identify with Teardown
+  const result = await core.identity.identify({
+    user_id: user.id,
+    email: user.email,
+    name: user.name,
+  });
+  
+  if (result.success) {
+    // Navigate to authenticated area
+    navigation.navigate('Home');
+  }
+};
+```
+
+### Refreshing a Session
+
+Re-identify to refresh session data and version status:
+
+```tsx
+const result = await core.identity.refresh();
+
+if (result.success) {
+  console.log('Session refreshed');
+}
+```
+
+**Note**: `refresh()` only works when already identified. Returns an error if not identified.
+
+### Resetting a Session
+
+Clear the current session and return to unidentified state:
+
+```tsx
+// Logout flow
+const handleLogout = async () => {
+  core.identity.reset();
+  // Navigate to login screen
+  navigation.navigate('Login');
+};
+```
+
+## Listening to Session Changes
+
+Subscribe to session state changes:
+
+```tsx
+useEffect(() => {
+  const unsubscribe = core.identity.onSessionStateChange((state) => {
+    console.log('Session state changed:', state.type);
+    
+    if (state.type === 'identified') {
+      console.log('User session:', state.session);
+    }
+  });
+  
+  return unsubscribe;
+}, []);
+```
+
+## Using with React Hooks
+
+### Custom Hook Example
+
+```tsx
+function useSession() {
+  const { core } = useTeardown();
+  const [sessionState, setSessionState] = useState(
+    core.identity.getSessionState()
+  );
+  
+  useEffect(() => {
+    const unsubscribe = core.identity.onSessionStateChange(setSessionState);
+    return unsubscribe;
+  }, [core.identity]);
+  
+  return {
+    sessionState,
+    isIdentified: sessionState.type === 'identified',
+    isIdentifying: sessionState.type === 'identifying',
+    session: sessionState.type === 'identified' ? sessionState.session : null,
+  };
+}
+```
+
+### Usage in Components
+
+```tsx
+function Profile() {
+  const { session, isIdentified } = useSession();
+  
+  if (!isIdentified) {
+    return <LoginPrompt />;
+  }
+  
+  return (
+    <View>
+      <Text>Session ID: {session.session_id}</Text>
+      <Text>Persona ID: {session.persona_id}</Text>
+    </View>
+  );
+}
+```
+
+## Device Information
+
+The SDK automatically collects device information during identification:
+
+```tsx
+const deviceInfo = await core.device.getDeviceInfo();
+
+console.log({
+  application: deviceInfo.application,    // App version, build number
+  hardware: deviceInfo.hardware,          // Device name, brand, type
+  os: deviceInfo.os,                      // Platform, OS name, OS version
+  update: deviceInfo.update,              // Update info (Expo Updates)
+  notifications: deviceInfo.notifications, // Push notification settings
+});
+```
+
+**Collected Data:**
+- Application version and build number
+- Device name, brand, and type
+- Operating system and version
+- Update channel and version (for Expo)
+- Push notification token and permissions
+
+## Error Handling
+
+All identity operations return `AsyncResult`:
+
+```tsx
+const result = await core.identity.identify({ user_id: '123' });
+
+if (!result.success) {
+  // Handle specific errors
+  if (result.error.includes('422')) {
+    showError('Invalid user data');
+  } else if (result.error.includes('Network')) {
+    showError('Connection failed');
+  } else {
+    showError(result.error);
+  }
+}
+```
+
+## Storage Persistence
+
+Sessions are automatically persisted to local storage:
+
+```
+Storage Key: "identity:SESSION_STATE"
+
+Value: {
+  type: "identified",
+  session: {
+    session_id: "...",
+    device_id: "...",
+    persona_id: "...",
+    token: "..."
+  },
+  version_status: "UP_TO_DATE"
+}
+```
+
+## Best Practices
+
+1. **Identify Early**: Call `identify()` as soon as possible after app launch
+2. **Handle Errors**: Always check `result.success` before proceeding
+3. **Refresh on Foreground**: Consider refreshing sessions when app returns to foreground
+4. **Reset on Logout**: Always call `reset()` when user logs out
+5. **Anonymous First**: Use anonymous identification before login
+6. **Type Safety**: Use TypeScript types for session state
+
+## Common Patterns
+
+### Login Flow
+
+```tsx
+const login = async (credentials) => {
+  // 1. Authenticate with your backend
+  const user = await yourAuthService.login(credentials);
+  
+  // 2. Identify with Teardown
+  const result = await core.identity.identify({
+    user_id: user.id,
+    email: user.email,
+    name: user.name,
+  });
+  
+  // 3. Handle result
+  if (result.success) {
+    navigation.navigate('Home');
+  } else {
+    showError(result.error);
+  }
+};
+```
+
+### Logout Flow
+
+```tsx
+const logout = async () => {
+  // 1. Clear Teardown session
+  core.identity.reset();
+  
+  // 2. Clear your app state
+  clearAppState();
+  
+  // 3. Navigate to login
+  navigation.navigate('Login');
+};
+```
+
+### Background Refresh
+
+```tsx
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', (nextState) => {
+    if (nextState === 'active') {
+      core.identity.refresh();
+    }
+  });
+  
+  return () => subscription.remove();
+}, []);
+```
+
+## Next Steps
+
+- [Force Updates](./04-force-updates.mdx)
+- [Hooks Reference](./08-hooks-reference.mdx)
+- [API Reference](./07-api-reference.mdx)

@@ -1,0 +1,553 @@
+# Hooks Reference
+
+Complete reference for all React hooks provided by the Teardown SDK.
+
+## useTeardown
+
+Access the TeardownCore instance from context.
+
+### Signature
+
+```typescript
+function useTeardown(): TeardownContextType
+
+type TeardownContextType = {
+  core: TeardownCore;
+};
+```
+
+### Usage
+
+```tsx
+import { useTeardown } from '@teardown/react-native';
+
+function MyComponent() {
+  const { core } = useTeardown();
+  
+  const handleIdentify = async () => {
+    const result = await core.identity.identify({
+      user_id: '123',
+    });
+  };
+  
+  return <Button onPress={handleIdentify} />;
+}
+```
+
+### Throws
+
+Throws an error if used outside of `TeardownProvider`.
+
+```tsx
+// ❌ Error: useTeardown must be used within a TeardownProvider
+function App() {
+  const { core } = useTeardown(); // Error!
+  return <View />;
+}
+
+// ✅ Correct usage
+function App() {
+  return (
+    <TeardownProvider core={teardown}>
+      <MyComponent /> {/* Can use useTeardown here */}
+    </TeardownProvider>
+  );
+}
+```
+
+### Access Patterns
+
+```tsx
+function MyComponent() {
+  const { core } = useTeardown();
+  
+  // Access clients
+  core.identity.identify();
+  core.forceUpdate.getVersionStatus();
+  core.device.getDeviceId();
+  core.storage.createStorage('namespace');
+  core.logging.createLogger({ name: 'Component' });
+}
+```
+
+---
+
+## useForceUpdate
+
+Get reactive version status for force updates.
+
+### Signature
+
+```typescript
+function useForceUpdate(): UseForceUpdateResult
+
+type UseForceUpdateResult = {
+  versionStatus: VersionStatus;
+  isUpdateAvailable: boolean;
+  isUpdateRequired: boolean;
+};
+
+type VersionStatus =
+  | { type: 'unknown' }
+  | { type: 'checking' }
+  | { type: 'up_to_date' }
+  | { type: 'update_available' }
+  | { type: 'update_required' }
+```
+
+### Usage
+
+```tsx
+import { useForceUpdate } from '@teardown/react-native';
+
+function App() {
+  const { versionStatus, isUpdateRequired, isUpdateAvailable } = useForceUpdate();
+  
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+  
+  if (isUpdateAvailable) {
+    return (
+      <View>
+        <UpdateBanner />
+        <YourApp />
+      </View>
+    );
+  }
+  
+  return <YourApp />;
+}
+```
+
+### Return Values
+
+#### versionStatus
+
+Full version status object.
+
+```tsx
+const { versionStatus } = useForceUpdate();
+
+switch (versionStatus.type) {
+  case 'unknown':
+    // Version not yet checked
+    break;
+  case 'checking':
+    // Currently checking version
+    break;
+  case 'up_to_date':
+    // App is on latest version
+    break;
+  case 'update_available':
+    // Optional update available
+    break;
+  case 'update_required':
+    // Forced update required
+    break;
+}
+```
+
+#### isUpdateAvailable
+
+True if an update is available (either optional or required).
+
+```tsx
+const { isUpdateAvailable } = useForceUpdate();
+
+if (isUpdateAvailable) {
+  // Show update prompt
+}
+```
+
+**Note:** This is `true` for both `update_available` and `update_required` states.
+
+#### isUpdateRequired
+
+True only if update is required and app should be blocked.
+
+```tsx
+const { isUpdateRequired } = useForceUpdate();
+
+if (isUpdateRequired) {
+  // Block app usage
+  return <MustUpdateScreen />;
+}
+```
+
+### Reactivity
+
+The hook automatically re-renders when version status changes:
+
+```tsx
+function VersionMonitor() {
+  const { versionStatus } = useForceUpdate();
+  
+  // Re-renders automatically when status changes
+  useEffect(() => {
+    console.log('Status changed:', versionStatus.type);
+  }, [versionStatus]);
+  
+  return <Text>{versionStatus.type}</Text>;
+}
+```
+
+### Complete Example
+
+```tsx
+import { useForceUpdate } from '@teardown/react-native';
+import { View, Text, Button, Linking } from 'react-native';
+
+function App() {
+  const { versionStatus, isUpdateRequired, isUpdateAvailable } = useForceUpdate();
+  const [dismissed, setDismissed] = useState(false);
+  
+  // Handle loading states
+  if (versionStatus.type === 'unknown' || versionStatus.type === 'checking') {
+    return <LoadingScreen />;
+  }
+  
+  // Handle required update
+  if (isUpdateRequired) {
+    return (
+      <View style={styles.forceUpdate}>
+        <Text style={styles.title}>Update Required</Text>
+        <Text style={styles.message}>
+          Please update to continue using the app.
+        </Text>
+        <Button
+          title="Update Now"
+          onPress={() => {
+            const url = Platform.select({
+              ios: 'https://apps.apple.com/app/id123',
+              android: 'https://play.google.com/store/apps/details?id=com.app',
+            });
+            Linking.openURL(url);
+          }}
+        />
+      </View>
+    );
+  }
+  
+  return (
+    <View style={styles.app}>
+      {/* Optional update banner */}
+      {isUpdateAvailable && !dismissed && (
+        <View style={styles.banner}>
+          <Text>New version available!</Text>
+          <Button title="Update" onPress={handleUpdate} />
+          <Button title="Later" onPress={() => setDismissed(true)} />
+        </View>
+      )}
+      
+      <YourApp />
+    </View>
+  );
+}
+```
+
+---
+
+## Custom Hooks
+
+While the SDK provides two main hooks, you can create custom hooks for specific use cases:
+
+### useSession
+
+Get current session state reactively.
+
+```tsx
+import { useTeardown } from '@teardown/react-native';
+import { useState, useEffect } from 'react';
+
+function useSession() {
+  const { core } = useTeardown();
+  const [sessionState, setSessionState] = useState(
+    core.identity.getSessionState()
+  );
+  
+  useEffect(() => {
+    const unsubscribe = core.identity.onSessionStateChange(setSessionState);
+    return unsubscribe;
+  }, [core.identity]);
+  
+  return {
+    sessionState,
+    isIdentified: sessionState.type === 'identified',
+    isIdentifying: sessionState.type === 'identifying',
+    isUnidentified: sessionState.type === 'unidentified',
+    session: sessionState.type === 'identified' ? sessionState.session : null,
+  };
+}
+```
+
+**Usage:**
+
+```tsx
+function Profile() {
+  const { isIdentified, session } = useSession();
+  
+  if (!isIdentified) {
+    return <LoginPrompt />;
+  }
+  
+  return <Text>Session ID: {session.session_id}</Text>;
+}
+```
+
+### useDeviceInfo
+
+Load device information on mount.
+
+```tsx
+import { useTeardown } from '@teardown/react-native';
+import { useState, useEffect } from 'react';
+import type { DeviceInfo } from '@teardown/react-native';
+
+function useDeviceInfo() {
+  const { core } = useTeardown();
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    loadDeviceInfo();
+  }, []);
+  
+  const loadDeviceInfo = async () => {
+    try {
+      const info = await core.device.getDeviceInfo();
+      setDeviceInfo(info);
+    } catch (error) {
+      console.error('Failed to load device info:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return { deviceInfo, loading, reload: loadDeviceInfo };
+}
+```
+
+**Usage:**
+
+```tsx
+function DeviceInfoScreen() {
+  const { deviceInfo, loading } = useDeviceInfo();
+  
+  if (loading) return <Loading />;
+  if (!deviceInfo) return <Error />;
+  
+  return (
+    <View>
+      <Text>Device: {deviceInfo.hardware.device_name}</Text>
+      <Text>OS: {deviceInfo.os.name} {deviceInfo.os.version}</Text>
+    </View>
+  );
+}
+```
+
+### useLogger
+
+Create a component-scoped logger.
+
+```tsx
+import { useTeardown } from '@teardown/react-native';
+import { useMemo } from 'react';
+
+function useLogger(name: string, debugEnabled?: boolean) {
+  const { core } = useTeardown();
+  
+  const logger = useMemo(
+    () => core.logging.createLogger({ name, debugEnabled }),
+    [core, name, debugEnabled]
+  );
+  
+  return logger;
+}
+```
+
+**Usage:**
+
+```tsx
+function MyComponent() {
+  const logger = useLogger('MyComponent', __DEV__);
+  
+  useEffect(() => {
+    logger.info('Component mounted');
+    return () => {
+      logger.info('Component unmounted');
+    };
+  }, []);
+  
+  const handleClick = () => {
+    logger.debug('Button clicked');
+  };
+  
+  return <Button onPress={handleClick} />;
+}
+```
+
+### useStorage
+
+Create namespaced storage.
+
+```tsx
+import { useTeardown } from '@teardown/react-native';
+import { useMemo } from 'react';
+
+function useStorage(namespace: string) {
+  const { core } = useTeardown();
+  
+  const storage = useMemo(
+    () => core.storage.createStorage(namespace),
+    [core, namespace]
+  );
+  
+  return storage;
+}
+```
+
+**Usage:**
+
+```tsx
+function Settings() {
+  const storage = useStorage('settings');
+  const [theme, setTheme] = useState(
+    storage.getItem('theme') ?? 'light'
+  );
+  
+  const updateTheme = (newTheme: string) => {
+    storage.setItem('theme', newTheme);
+    setTheme(newTheme);
+  };
+  
+  return (
+    <View>
+      <Text>Current theme: {theme}</Text>
+      <Button title="Toggle" onPress={() => {
+        updateTheme(theme === 'light' ? 'dark' : 'light');
+      }} />
+    </View>
+  );
+}
+```
+
+### useIdentify
+
+Simplified identify function.
+
+```tsx
+import { useTeardown } from '@teardown/react-native';
+import { useState, useCallback } from 'react';
+
+function useIdentify() {
+  const { core } = useTeardown();
+  const [identifying, setIdentifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const identify = useCallback(async (persona?: Persona) => {
+    setIdentifying(true);
+    setError(null);
+    
+    const result = await core.identity.identify(persona);
+    
+    if (!result.success) {
+      setError(result.error);
+    }
+    
+    setIdentifying(false);
+    return result;
+  }, [core]);
+  
+  return { identify, identifying, error };
+}
+```
+
+**Usage:**
+
+```tsx
+function LoginForm() {
+  const { identify, identifying, error } = useIdentify();
+  
+  const handleLogin = async (email: string) => {
+    const result = await identify({ email });
+    
+    if (result.success) {
+      navigation.navigate('Home');
+    }
+  };
+  
+  return (
+    <View>
+      {error && <Text style={styles.error}>{error}</Text>}
+      <Button
+        title="Login"
+        onPress={() => handleLogin('user@example.com')}
+        disabled={identifying}
+      />
+    </View>
+  );
+}
+```
+
+## Hook Composition
+
+Combine multiple hooks for complex functionality:
+
+```tsx
+function useAuth() {
+  const { core } = useTeardown();
+  const { isIdentified, session } = useSession();
+  const { identify, identifying } = useIdentify();
+  const logger = useLogger('Auth');
+  
+  const login = async (email: string, password: string) => {
+    logger.info('Logging in', { email });
+    
+    // Authenticate with your backend
+    const user = await yourApi.login(email, password);
+    
+    // Identify with Teardown
+    const result = await identify({
+      user_id: user.id,
+      email: user.email,
+      name: user.name,
+    });
+    
+    if (result.success) {
+      logger.info('Login successful');
+    }
+    
+    return result;
+  };
+  
+  const logout = () => {
+    logger.info('Logging out');
+    core.identity.reset();
+  };
+  
+  return {
+    isAuthenticated: isIdentified,
+    user: session,
+    login,
+    logout,
+    loading: identifying,
+  };
+}
+```
+
+## Best Practices
+
+1. **Use Context Wisely**: Only call hooks inside `TeardownProvider`
+2. **Memoize Loggers**: Use `useMemo` for logger instances
+3. **Handle Loading**: Always handle loading states in UI
+4. **Error Handling**: Show error messages to users
+5. **Cleanup**: Return cleanup functions from `useEffect`
+6. **Type Safety**: Use TypeScript types for all hooks
+7. **Custom Hooks**: Create reusable custom hooks for common patterns
+
+## Next Steps
+
+- [API Reference](./07-api-reference.mdx)
+- [Advanced Usage](./09-advanced.mdx)
+- [Getting Started](./01-getting-started.mdx)

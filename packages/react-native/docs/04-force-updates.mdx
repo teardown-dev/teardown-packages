@@ -1,0 +1,431 @@
+# Force Updates
+
+Implement version management and force users to update when necessary.
+
+## Overview
+
+The Force Update system provides:
+- **Automatic Version Checking** - Check on app foreground
+- **Version Status** - Know if updates are available or required
+- **Throttling & Cooldown** - Optimize API calls
+- **React Integration** - Easy-to-use hooks
+- **Anonymous Support** - Check versions for non-logged-in users
+
+## Version Status Types
+
+The SDK tracks five distinct version statuses:
+
+### Unknown
+
+Initial state when version status hasn't been determined yet.
+
+```tsx
+const { versionStatus } = useForceUpdate();
+
+if (versionStatus.type === 'unknown') {
+  // Version status not yet checked
+}
+```
+
+### Checking
+
+Currently checking version status with the API.
+
+```tsx
+if (versionStatus.type === 'checking') {
+  // Show loading indicator
+}
+```
+
+### Up to Date
+
+Current app version is the latest available version.
+
+```tsx
+if (versionStatus.type === 'up_to_date') {
+  // User is on the latest version
+}
+```
+
+### Update Available
+
+A new version is available but not required. User can continue using current version.
+
+```tsx
+if (versionStatus.type === 'update_available') {
+  // Show optional update prompt
+  return <OptionalUpdateBanner />;
+}
+```
+
+### Update Required
+
+App version is outdated and user must update to continue.
+
+```tsx
+if (versionStatus.type === 'update_required') {
+  // Block app usage and force update
+  return <ForceUpdateScreen />;
+}
+```
+
+## Configuration
+
+Configure force update behavior when initializing TeardownCore:
+
+```tsx
+const core = new TeardownCore({
+  // ... other config
+  forceUpdate: {
+    // Min ms between foreground checks (default: 30000 = 30s)
+    throttleMs: 30000,
+    
+    // Min ms since last successful check (default: 300000 = 5min)
+    checkCooldownMs: 300000,
+    
+    // Check version for anonymous users (default: false)
+    identifyAnonymousDevice: false,
+  },
+});
+```
+
+### Configuration Options
+
+**throttleMs**: Minimum time between version checks when app comes to foreground
+- Prevents excessive API calls when user switches apps frequently
+- Default: 30 seconds
+
+**checkCooldownMs**: Minimum time since last successful check
+- Only checks if this time has elapsed since the last check
+- Default: 5 minutes
+
+**identifyAnonymousDevice**: Enable version checking for non-identified users
+- If `true`, anonymous users get version checks
+- If `false`, only identified users get checked
+- Default: false
+
+## Using the Hook
+
+The `useForceUpdate` hook provides reactive version status:
+
+```tsx
+import { useForceUpdate } from '@teardown/react-native';
+
+function App() {
+  const { versionStatus, isUpdateRequired, isUpdateAvailable } = useForceUpdate();
+  
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+  
+  if (isUpdateAvailable) {
+    return (
+      <View>
+        <UpdateBanner />
+        <YourApp />
+      </View>
+    );
+  }
+  
+  return <YourApp />;
+}
+```
+
+### Hook Return Value
+
+```typescript
+type UseForceUpdateResult = {
+  versionStatus: VersionStatus;     // Full version status object
+  isUpdateAvailable: boolean;       // True if update_available OR update_required
+  isUpdateRequired: boolean;        // True only if update_required
+};
+```
+
+## Implementation Patterns
+
+### Required Update Screen
+
+Block app usage until user updates:
+
+```tsx
+function App() {
+  const { isUpdateRequired } = useForceUpdate();
+  
+  if (isUpdateRequired) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Update Required</Text>
+        <Text style={styles.message}>
+          Please update to the latest version to continue.
+        </Text>
+        <Button
+          title="Update Now"
+          onPress={() => {
+            const url = Platform.select({
+              ios: 'https://apps.apple.com/app/your-app',
+              android: 'https://play.google.com/store/apps/details?id=your.app',
+            });
+            Linking.openURL(url);
+          }}
+        />
+      </View>
+    );
+  }
+  
+  return <YourApp />;
+}
+```
+
+### Optional Update Banner
+
+Show a dismissible banner for available updates:
+
+```tsx
+function UpdateBanner() {
+  const { isUpdateAvailable, isUpdateRequired } = useForceUpdate();
+  const [dismissed, setDismissed] = useState(false);
+  
+  // Don't show if update is required (handled elsewhere)
+  if (isUpdateRequired) return null;
+  
+  // Don't show if dismissed
+  if (!isUpdateAvailable || dismissed) return null;
+  
+  return (
+    <View style={styles.banner}>
+      <Text>A new version is available!</Text>
+      <Button title="Update" onPress={handleUpdate} />
+      <Button title="Dismiss" onPress={() => setDismissed(true)} />
+    </View>
+  );
+}
+```
+
+### Loading State
+
+Show loading while checking version:
+
+```tsx
+function AppWrapper() {
+  const { versionStatus } = useForceUpdate();
+  
+  if (versionStatus.type === 'checking' || versionStatus.type === 'unknown') {
+    return <SplashScreen />;
+  }
+  
+  return <App />;
+}
+```
+
+## Automatic Checking
+
+The SDK automatically checks version status when:
+
+1. **User Identifies**: When `identify()` is called successfully
+2. **App Foregrounds**: When app returns from background (with throttling)
+3. **Session Refreshes**: When `refresh()` is called
+
+### Foreground Check Flow
+
+```
+App Enters Foreground
+  ↓
+Check if throttleMs elapsed since last foreground
+  ↓ (yes)
+Check if checkCooldownMs elapsed since last successful check
+  ↓ (yes)
+Identify or Refresh (based on current session state)
+  ↓
+Update version status
+  ↓
+Notify listeners (React hooks update)
+```
+
+## Manual Checking
+
+You can manually trigger a version check:
+
+```tsx
+const { core } = useTeardown();
+
+// Method 1: Refresh session (if identified)
+const refreshVersion = async () => {
+  const result = await core.identity.refresh();
+  if (result.success) {
+    // Version status automatically updated
+    console.log('Version refreshed');
+  }
+};
+
+// Method 2: Re-identify
+const checkVersion = async () => {
+  const result = await core.identity.identify();
+  if (result.success) {
+    // Version status automatically updated
+  }
+};
+```
+
+## Listening to Version Changes
+
+Subscribe to version status changes:
+
+```tsx
+useEffect(() => {
+  const unsubscribe = core.forceUpdate.onVersionStatusChange((status) => {
+    console.log('Version status changed:', status.type);
+    
+    if (status.type === 'update_required') {
+      // Show force update screen
+      showForceUpdateModal();
+    }
+  });
+  
+  return unsubscribe;
+}, []);
+```
+
+## Storage Persistence
+
+Version status is persisted to local storage:
+
+```
+Storage Key: "version:VERSION_STATUS"
+
+Value: {
+  type: "up_to_date" | "update_available" | "update_required"
+}
+```
+
+This allows the app to:
+- Remember last known version status
+- Show update screens immediately on launch
+- Work offline with cached status
+
+## Platform Integration
+
+### iOS - App Store
+
+```tsx
+const openAppStore = () => {
+  const url = 'https://apps.apple.com/app/id{YOUR_APP_ID}';
+  Linking.openURL(url);
+};
+```
+
+### Android - Play Store
+
+```tsx
+const openPlayStore = () => {
+  const url = 'https://play.google.com/store/apps/details?id={YOUR_PACKAGE_NAME}';
+  Linking.openURL(url);
+};
+```
+
+### Expo Updates (OTA)
+
+```tsx
+import * as Updates from 'expo-updates';
+
+const checkForUpdates = async () => {
+  try {
+    const update = await Updates.checkForUpdateAsync();
+    if (update.isAvailable) {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+```
+
+## Complete Example
+
+```tsx
+import { useForceUpdate, useTeardown } from '@teardown/react-native';
+import { View, Text, Button, Linking, Platform } from 'react-native';
+
+export default function App() {
+  const { versionStatus, isUpdateRequired, isUpdateAvailable } = useForceUpdate();
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  
+  const openStore = () => {
+    const url = Platform.select({
+      ios: 'https://apps.apple.com/app/id123456789',
+      android: 'https://play.google.com/store/apps/details?id=com.yourapp',
+    });
+    Linking.openURL(url);
+  };
+  
+  // Force update screen - blocks all app usage
+  if (isUpdateRequired) {
+    return (
+      <View style={styles.forceUpdate}>
+        <Text style={styles.title}>Update Required</Text>
+        <Text style={styles.subtitle}>
+          This version is no longer supported. Please update to continue.
+        </Text>
+        <Button title="Update Now" onPress={openStore} />
+      </View>
+    );
+  }
+  
+  // Loading state
+  if (versionStatus.type === 'checking' || versionStatus.type === 'unknown') {
+    return <SplashScreen />;
+  }
+  
+  return (
+    <View style={styles.app}>
+      {/* Optional update banner */}
+      {isUpdateAvailable && !bannerDismissed && (
+        <View style={styles.banner}>
+          <Text>New version available!</Text>
+          <Button title="Update" onPress={openStore} />
+          <Button title="Later" onPress={() => setBannerDismissed(true)} />
+        </View>
+      )}
+      
+      {/* Your app content */}
+      <YourApp />
+    </View>
+  );
+}
+```
+
+## Best Practices
+
+1. **Handle Required Updates First**: Always check `isUpdateRequired` before `isUpdateAvailable`
+2. **Graceful Degradation**: Show cached version status even when offline
+3. **Clear CTAs**: Make update buttons prominent and actionable
+4. **Respect Dismissals**: Let users dismiss optional update prompts
+5. **Test Thoroughly**: Test all version states in development
+6. **Platform Links**: Use correct store links for iOS and Android
+7. **Loading States**: Show appropriate loading UI during checks
+
+## Troubleshooting
+
+### Updates Not Checking
+
+- Verify `identifyOnLoad` is enabled or manually call `identify()`
+- Check that `identifyAnonymousDevice` is `true` for anonymous users
+- Ensure throttle/cooldown periods have elapsed
+
+### Always Showing Update Required
+
+- Check version configured on Teardown dashboard
+- Verify app version matches expected format
+- Check device info is being sent correctly
+
+### Not Persisting After Restart
+
+- Verify storage adapter is configured correctly
+- Check storage permissions on device
+- Ensure storage key isn't being cleared elsewhere
+
+## Next Steps
+
+- [Device Information](./05-device-info.mdx)
+- [Hooks Reference](./08-hooks-reference.mdx)
+- [API Reference](./07-api-reference.mdx)

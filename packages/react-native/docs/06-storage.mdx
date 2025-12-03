@@ -1,0 +1,505 @@
+# Storage
+
+Learn how to manage persistent local storage with the Teardown SDK.
+
+## Overview
+
+The Storage Client provides:
+- **Namespaced Storage** - Isolated storage per client
+- **Platform Adapters** - Support for any storage backend
+- **Type Safety** - Typed storage operations
+- **Automatic Persistence** - Sessions and states auto-saved
+
+## Storage Architecture
+
+Each client uses its own storage namespace to avoid key collisions:
+
+```
+Root Storage
+├── device:deviceId
+├── identity:SESSION_STATE
+└── version:VERSION_STATUS
+```
+
+### Creating Namespaced Storage
+
+```tsx
+const storage = storageClient.createStorage('myNamespace');
+
+// All operations are scoped to 'myNamespace:'
+storage.setItem('key', 'value');  // Saves as 'myNamespace:key'
+```
+
+## Configuration
+
+Configure storage when initializing TeardownCore:
+
+```tsx
+const core = new TeardownCore({
+  // ... other config
+  storage: {
+    adapter: {
+      getItem: async (key: string) => {
+        // Return stored value or null
+        return await AsyncStorage.getItem(key);
+      },
+      setItem: async (key: string, value: string) => {
+        // Store the value
+        await AsyncStorage.setItem(key, value);
+      },
+      removeItem: async (key: string) => {
+        // Remove the value
+        await AsyncStorage.removeItem(key);
+      },
+    },
+  },
+});
+```
+
+### Storage Adapter Interface
+
+```typescript
+type StorageAdapter = {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+  removeItem: (key: string) => Promise<void>;
+};
+```
+
+## Platform Implementations
+
+### React Native - AsyncStorage
+
+```bash
+bun add @react-native-async-storage/async-storage
+```
+
+```tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const core = new TeardownCore({
+  storage: {
+    adapter: {
+      getItem: (key) => AsyncStorage.getItem(key),
+      setItem: (key, value) => AsyncStorage.setItem(key, value),
+      removeItem: (key) => AsyncStorage.removeItem(key),
+    },
+  },
+});
+```
+
+### Web - localStorage
+
+```tsx
+const core = new TeardownCore({
+  storage: {
+    adapter: {
+      getItem: async (key) => localStorage.getItem(key),
+      setItem: async (key, value) => localStorage.setItem(key, value),
+      removeItem: async (key) => localStorage.removeItem(key),
+    },
+  },
+});
+```
+
+### Web - IndexedDB
+
+```tsx
+import { openDB } from 'idb';
+
+const db = await openDB('teardown', 1, {
+  upgrade(db) {
+    db.createObjectStore('storage');
+  },
+});
+
+const core = new TeardownCore({
+  storage: {
+    adapter: {
+      getItem: async (key) => {
+        const value = await db.get('storage', key);
+        return value ?? null;
+      },
+      setItem: async (key, value) => {
+        await db.put('storage', value, key);
+      },
+      removeItem: async (key) => {
+        await db.delete('storage', key);
+      },
+    },
+  },
+});
+```
+
+### Expo - SecureStore
+
+For sensitive data:
+
+```bash
+bun add expo-secure-store
+```
+
+```tsx
+import * as SecureStore from 'expo-secure-store';
+
+const core = new TeardownCore({
+  storage: {
+    adapter: {
+      getItem: (key) => SecureStore.getItemAsync(key),
+      setItem: (key, value) => SecureStore.setItemAsync(key, value),
+      removeItem: (key) => SecureStore.deleteItemAsync(key),
+    },
+  },
+});
+```
+
+## Using Namespaced Storage
+
+Create isolated storage for your features:
+
+```tsx
+const { core } = useTeardown();
+
+// Create namespaced storage
+const myStorage = core.storage.createStorage('myFeature');
+
+// Set item
+await myStorage.setItem('setting', 'value');
+
+// Get item
+const value = await myStorage.getItem('setting');
+
+// Remove item
+await myStorage.removeItem('setting');
+```
+
+## Storage API
+
+### SupportedStorage Interface
+
+```typescript
+interface SupportedStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+```
+
+**Note**: Methods are synchronous when accessed from storage clients.
+
+### getItem
+
+Retrieve a value from storage:
+
+```tsx
+const value = storage.getItem('key');
+
+if (value !== null) {
+  console.log('Found:', value);
+} else {
+  console.log('Not found');
+}
+```
+
+### setItem
+
+Store a value:
+
+```tsx
+storage.setItem('key', 'value');
+```
+
+### removeItem
+
+Remove a value:
+
+```tsx
+storage.removeItem('key');
+```
+
+## JSON Storage
+
+Store and retrieve JSON objects:
+
+```tsx
+// Store object
+const user = { id: '123', name: 'John' };
+storage.setItem('user', JSON.stringify(user));
+
+// Retrieve object
+const stored = storage.getItem('user');
+if (stored) {
+  const user = JSON.parse(stored);
+  console.log(user.name);
+}
+```
+
+## Built-in Storage Keys
+
+The SDK uses these storage keys internally:
+
+### Device Storage
+
+```
+Namespace: "device"
+Keys:
+  - deviceId: string (UUID)
+```
+
+### Identity Storage
+
+```
+Namespace: "identity"
+Keys:
+  - SESSION_STATE: JSON<SessionState>
+```
+
+### Version Storage
+
+```
+Namespace: "version"
+Keys:
+  - VERSION_STATUS: JSON<VersionStatus>
+```
+
+## Custom Storage Patterns
+
+### Settings Manager
+
+```tsx
+class SettingsManager {
+  private storage: SupportedStorage;
+  
+  constructor(storageClient: StorageClient) {
+    this.storage = storageClient.createStorage('settings');
+  }
+  
+  getSetting<T>(key: string, defaultValue: T): T {
+    const stored = this.storage.getItem(key);
+    if (!stored) return defaultValue;
+    
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return defaultValue;
+    }
+  }
+  
+  setSetting<T>(key: string, value: T): void {
+    this.storage.setItem(key, JSON.stringify(value));
+  }
+  
+  removeSetting(key: string): void {
+    this.storage.removeItem(key);
+  }
+}
+
+// Usage
+const settings = new SettingsManager(core.storage);
+settings.setSetting('theme', 'dark');
+const theme = settings.getSetting('theme', 'light');
+```
+
+### Cache Manager
+
+```tsx
+type CacheEntry<T> = {
+  value: T;
+  timestamp: number;
+  ttl: number;
+};
+
+class CacheManager {
+  private storage: SupportedStorage;
+  
+  constructor(storageClient: StorageClient) {
+    this.storage = storageClient.createStorage('cache');
+  }
+  
+  set<T>(key: string, value: T, ttl: number = 3600000): void {
+    const entry: CacheEntry<T> = {
+      value,
+      timestamp: Date.now(),
+      ttl,
+    };
+    this.storage.setItem(key, JSON.stringify(entry));
+  }
+  
+  get<T>(key: string): T | null {
+    const stored = this.storage.getItem(key);
+    if (!stored) return null;
+    
+    try {
+      const entry: CacheEntry<T> = JSON.parse(stored);
+      const now = Date.now();
+      
+      if (now - entry.timestamp > entry.ttl) {
+        this.storage.removeItem(key);
+        return null;
+      }
+      
+      return entry.value;
+    } catch {
+      return null;
+    }
+  }
+}
+
+// Usage
+const cache = new CacheManager(core.storage);
+cache.set('user', { id: '123' }, 60000); // 1 minute TTL
+const user = cache.get('user');
+```
+
+## Migration Patterns
+
+### Version Migration
+
+```tsx
+const STORAGE_VERSION_KEY = 'storage_version';
+const CURRENT_VERSION = 2;
+
+async function migrateStorage(storage: SupportedStorage) {
+  const version = parseInt(storage.getItem(STORAGE_VERSION_KEY) ?? '0');
+  
+  if (version < 1) {
+    // Migration to v1
+    const oldData = storage.getItem('old_key');
+    if (oldData) {
+      storage.setItem('new_key', oldData);
+      storage.removeItem('old_key');
+    }
+  }
+  
+  if (version < 2) {
+    // Migration to v2
+    const data = storage.getItem('data');
+    if (data) {
+      const parsed = JSON.parse(data);
+      storage.setItem('data', JSON.stringify({ ...parsed, newField: 'value' }));
+    }
+  }
+  
+  storage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION.toString());
+}
+```
+
+## Storage Limits
+
+Different platforms have different storage limits:
+
+| Platform | Storage Type | Limit |
+|----------|-------------|-------|
+| iOS | AsyncStorage | ~10MB |
+| Android | AsyncStorage | ~6MB |
+| Web | localStorage | ~5-10MB |
+| Web | IndexedDB | ~50MB+ |
+| iOS | SecureStore | ~4KB per item |
+
+**Best Practices:**
+- Keep individual values small
+- Use compression for large data
+- Clean up unused data regularly
+- Consider IndexedDB for large datasets
+
+## Testing Storage
+
+### Mock Adapter
+
+```tsx
+class MockStorageAdapter implements StorageAdapter {
+  private store = new Map<string, string>();
+  
+  async getItem(key: string) {
+    return this.store.get(key) ?? null;
+  }
+  
+  async setItem(key: string, value: string) {
+    this.store.set(key, value);
+  }
+  
+  async removeItem(key: string) {
+    this.store.delete(key);
+  }
+  
+  clear() {
+    this.store.clear();
+  }
+}
+
+// Usage in tests
+const mockAdapter = new MockStorageAdapter();
+const core = new TeardownCore({
+  storage: { adapter: mockAdapter },
+});
+
+// Test
+await core.identity.identify({ user_id: '123' });
+expect(mockAdapter.store.has('identity:SESSION_STATE')).toBe(true);
+```
+
+## Debugging
+
+### Storage Inspector
+
+```tsx
+function StorageInspector() {
+  const { core } = useTeardown();
+  const [keys, setKeys] = useState<string[]>([]);
+  
+  const inspectStorage = () => {
+    const storage = core.storage.createStorage('debug');
+    // Note: You'll need to implement a way to list all keys
+    // This is platform-specific
+  };
+  
+  return (
+    <View>
+      <Button title="Inspect Storage" onPress={inspectStorage} />
+      {keys.map(key => (
+        <Text key={key}>{key}</Text>
+      ))}
+    </View>
+  );
+}
+```
+
+## Best Practices
+
+1. **Namespace Everything**: Always use `createStorage(namespace)`
+2. **JSON Safety**: Use try/catch when parsing JSON
+3. **Null Checks**: Always check for null returns
+4. **Async Operations**: Remember storage operations are async
+5. **Size Limits**: Be aware of platform storage limits
+6. **Cleanup**: Remove unused data regularly
+7. **Security**: Use SecureStore for sensitive data
+8. **Testing**: Use mock adapters in tests
+
+## Troubleshooting
+
+### Data Not Persisting
+
+- Check storage adapter is correctly configured
+- Verify platform permissions
+- Ensure values are serialized correctly
+- Check storage quota limits
+
+### Performance Issues
+
+- Reduce frequency of writes
+- Batch operations when possible
+- Use appropriate storage backend for data size
+- Consider caching frequently accessed values
+
+### Cross-Platform Issues
+
+- Test on all target platforms
+- Account for storage limit differences
+- Handle platform-specific errors
+- Use platform-appropriate storage types
+
+## Next Steps
+
+- [Logging](./06-logging.mdx)
+- [API Reference](./07-api-reference.mdx)
+- [Advanced Usage](./09-advanced.mdx)

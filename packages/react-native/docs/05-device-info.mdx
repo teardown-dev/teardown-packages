@@ -1,0 +1,439 @@
+# Device Information
+
+Learn how to collect and manage device information with the Teardown SDK.
+
+## Overview
+
+The Device Client provides:
+- **Unique Device IDs** - Persistent device identification
+- **Device Information** - Hardware, OS, and app details
+- **Platform Adapters** - Support for Expo and React Native
+- **Automatic Collection** - Data collected during identification
+
+## Device ID
+
+Every device gets a unique, persistent identifier:
+
+```tsx
+const { core } = useTeardown();
+
+const deviceId = await core.device.getDeviceId();
+console.log('Device ID:', deviceId);
+```
+
+### How it Works
+
+1. **First Launch**: Generates a UUID and stores it
+2. **Subsequent Launches**: Retrieves the stored UUID
+3. **Persistence**: Stored in local storage namespace
+4. **Format**: Standard UUID v4 (e.g., `123e4567-e89b-12d3-a456-426614174000`)
+
+### Storage
+
+```
+Storage Key: "device:deviceId"
+Value: "uuid-string"
+```
+
+The device ID persists across:
+- App restarts
+- App updates
+- OS updates
+
+The device ID is cleared when:
+- App is uninstalled
+- Storage is manually cleared
+- User clears app data
+
+## Device Information
+
+Collect comprehensive device information:
+
+```tsx
+const deviceInfo = await core.device.getDeviceInfo();
+
+console.log({
+  application: deviceInfo.application,
+  hardware: deviceInfo.hardware,
+  os: deviceInfo.os,
+  update: deviceInfo.update,
+  notifications: deviceInfo.notifications,
+});
+```
+
+### Device Info Structure
+
+```typescript
+type DeviceInfo = {
+  application: ApplicationInfo;
+  hardware: HardwareInfo;
+  os: OSInfo;
+  update: UpdateInfo | null;
+  notifications: NotificationInfo;
+};
+```
+
+## Application Information
+
+Details about your app version and build:
+
+```typescript
+type ApplicationInfo = {
+  version: string;        // App version (e.g., "1.2.3")
+  build_number: number;   // Build number (e.g., 42)
+};
+```
+
+**Example:**
+```json
+{
+  "version": "1.0.0",
+  "build_number": 2
+}
+```
+
+**Sources:**
+- **Expo**: `expo-application` module
+- **React Native**: `react-native-device-info` package
+
+## Hardware Information
+
+Details about the physical device:
+
+```typescript
+type HardwareInfo = {
+  device_name: string;    // e.g., "iPhone 13"
+  device_brand: string;   // e.g., "Apple"
+  device_type: string;    // e.g., "ios", "android"
+};
+```
+
+**Example:**
+```json
+{
+  "device_name": "iPhone 13",
+  "device_brand": "Apple",
+  "device_type": "ios"
+}
+```
+
+## Operating System Information
+
+Details about the device OS:
+
+```typescript
+type OSInfo = {
+  platform: DevicePlatformEnum;  // IOS, ANDROID, WEB
+  name: string;                  // e.g., "iOS"
+  version: string;               // e.g., "15.0"
+};
+```
+
+**Example:**
+```json
+{
+  "platform": "IOS",
+  "name": "iOS",
+  "version": "15.0"
+}
+```
+
+### Platform Enum
+
+```typescript
+enum DevicePlatformEnum {
+  IOS = "IOS",
+  ANDROID = "ANDROID",
+  WEB = "WEB",
+}
+```
+
+## Update Information
+
+For Expo apps using OTA updates:
+
+```typescript
+type UpdateInfo = {
+  is_enabled: boolean;               // Updates enabled
+  update_id: string;                 // Current update ID
+  update_channel: string;            // e.g., "production"
+  runtime_version: string;           // Runtime version
+  emergency_launch: EmergencyLaunch; // Emergency launch info
+  is_embedded_launch: boolean;       // Launched from embedded bundle
+  created_at: string;                // ISO timestamp
+};
+
+type EmergencyLaunch = {
+  is_emergency_launch: boolean;
+  reason?: string;
+};
+```
+
+**Example:**
+```json
+{
+  "is_enabled": true,
+  "update_id": "abc123",
+  "update_channel": "production",
+  "runtime_version": "1.0.0",
+  "emergency_launch": {
+    "is_emergency_launch": false
+  },
+  "is_embedded_launch": false,
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**Note**: Only available in Expo apps with expo-updates configured.
+
+## Notification Information
+
+Push notification status and token:
+
+```typescript
+type NotificationInfo = {
+  push: {
+    platform: NotificationPlatformEnum;
+    enabled: boolean;
+    granted: boolean;
+    token?: string;
+  };
+};
+
+enum NotificationPlatformEnum {
+  APNS = "APNS",   // Apple Push Notification Service
+  FCM = "FCM",     // Firebase Cloud Messaging
+  EXPO = "EXPO",   // Expo Push Notifications
+}
+```
+
+**Example:**
+```json
+{
+  "push": {
+    "platform": "EXPO",
+    "enabled": true,
+    "granted": true,
+    "token": "ExponentPushToken[abc123]"
+  }
+}
+```
+
+## Platform Adapters
+
+The SDK uses adapters to support different platforms:
+
+### Expo Adapter
+
+Built-in adapter for Expo projects:
+
+```tsx
+import { ExpoDeviceAdapter } from '@teardown/react-native';
+import * as Device from 'expo-device';
+import * as Application from 'expo-application';
+
+const core = new TeardownCore({
+  // ... other config
+  device: {
+    adapter: new ExpoDeviceAdapter({
+      Device,
+      Application,
+    }),
+  },
+});
+```
+
+### Custom Adapter
+
+Create your own adapter for other platforms:
+
+```typescript
+import type { DeviceInfoAdapter } from '@teardown/react-native';
+
+class MyDeviceAdapter implements DeviceInfoAdapter {
+  async getDeviceInfo(): Promise<DeviceInfo> {
+    return {
+      application: {
+        version: await this.getAppVersion(),
+        build_number: await this.getBuildNumber(),
+      },
+      hardware: {
+        device_name: await this.getDeviceName(),
+        device_brand: await this.getBrand(),
+        device_type: await this.getDeviceType(),
+      },
+      os: {
+        platform: await this.getPlatform(),
+        name: await this.getOSName(),
+        version: await this.getOSVersion(),
+      },
+      update: null, // If not using updates
+      notifications: {
+        push: {
+          platform: NotificationPlatformEnum.FCM,
+          enabled: await this.areNotificationsEnabled(),
+          granted: await this.isNotificationPermissionGranted(),
+          token: await this.getPushToken(),
+        },
+      },
+    };
+  }
+  
+  // Implement required methods...
+}
+```
+
+## Automatic Collection
+
+Device information is automatically collected during:
+
+1. **Identification**: When `identify()` is called
+2. **Session Refresh**: When `refresh()` is called
+
+```tsx
+// Device info collected automatically
+const result = await core.identity.identify({
+  user_id: '123',
+});
+
+// Sent to API with identification request
+```
+
+## Manual Collection
+
+You can also collect device info manually:
+
+```tsx
+const deviceId = await core.device.getDeviceId();
+const deviceInfo = await core.device.getDeviceInfo();
+
+console.log('Device ID:', deviceId);
+console.log('Device Info:', deviceInfo);
+```
+
+## Privacy Considerations
+
+The SDK collects:
+- ✅ Device model and OS version
+- ✅ App version and build number
+- ✅ Generated UUID (not IDFA/AAID)
+- ✅ Push notification token (if granted)
+
+The SDK does NOT collect:
+- ❌ Personal information
+- ❌ IDFA (iOS) or AAID (Android)
+- ❌ Contact lists
+- ❌ Location data
+- ❌ Photos or files
+
+## Use Cases
+
+### Analytics
+
+Track app usage by device type:
+
+```tsx
+const deviceInfo = await core.device.getDeviceInfo();
+
+analytics.track('app_opened', {
+  device_type: deviceInfo.hardware.device_type,
+  os_version: deviceInfo.os.version,
+  app_version: deviceInfo.application.version,
+});
+```
+
+### Support & Debugging
+
+Include device info in support tickets:
+
+```tsx
+const submitSupportTicket = async (issue: string) => {
+  const deviceInfo = await core.device.getDeviceInfo();
+  
+  await api.createTicket({
+    issue,
+    device_info: {
+      model: deviceInfo.hardware.device_name,
+      os: `${deviceInfo.os.name} ${deviceInfo.os.version}`,
+      app_version: deviceInfo.application.version,
+    },
+  });
+};
+```
+
+### Feature Flags
+
+Enable features based on device capabilities:
+
+```tsx
+const shouldEnableFeature = async () => {
+  const deviceInfo = await core.device.getDeviceInfo();
+  
+  // Enable feature only on newer OS versions
+  const osVersion = parseFloat(deviceInfo.os.version);
+  return osVersion >= 14.0;
+};
+```
+
+## Best Practices
+
+1. **Privacy First**: Always be transparent about data collection
+2. **Async Handling**: Device info collection is async
+3. **Error Handling**: Wrap in try/catch for platform differences
+4. **Caching**: Cache device info if needed frequently
+5. **Platform Testing**: Test on both iOS and Android
+6. **Update Tracking**: Monitor update adoption rates
+
+## Example: Device Info Display
+
+```tsx
+function DeviceInfoScreen() {
+  const { core } = useTeardown();
+  const [info, setInfo] = useState<DeviceInfo | null>(null);
+  
+  useEffect(() => {
+    loadDeviceInfo();
+  }, []);
+  
+  const loadDeviceInfo = async () => {
+    const deviceInfo = await core.device.getDeviceInfo();
+    setInfo(deviceInfo);
+  };
+  
+  if (!info) return <Loading />;
+  
+  return (
+    <ScrollView>
+      <Section title="Application">
+        <InfoRow label="Version" value={info.application.version} />
+        <InfoRow label="Build" value={info.application.build_number} />
+      </Section>
+      
+      <Section title="Device">
+        <InfoRow label="Model" value={info.hardware.device_name} />
+        <InfoRow label="Brand" value={info.hardware.device_brand} />
+        <InfoRow label="Type" value={info.hardware.device_type} />
+      </Section>
+      
+      <Section title="Operating System">
+        <InfoRow label="Platform" value={info.os.platform} />
+        <InfoRow label="Name" value={info.os.name} />
+        <InfoRow label="Version" value={info.os.version} />
+      </Section>
+      
+      {info.update && (
+        <Section title="Updates">
+          <InfoRow label="Channel" value={info.update.update_channel} />
+          <InfoRow label="Update ID" value={info.update.update_id} />
+        </Section>
+      )}
+    </ScrollView>
+  );
+}
+```
+
+## Next Steps
+
+- [Storage](./06-storage.mdx)
+- [Logging](./06-logging.mdx)
+- [API Reference](./07-api-reference.mdx)

@@ -1,0 +1,493 @@
+# Logging
+
+Learn how to use the structured logging system in the Teardown SDK.
+
+## Overview
+
+The Logging Client provides:
+- **Named Loggers** - Create loggers with specific names
+- **Debug Mode** - Toggle debug logging on/off
+- **Log Levels** - info, error, debug, warn, trace
+- **Structured Output** - Consistent log formatting
+- **Preserved Call Sites** - Accurate file/line numbers
+
+## Creating Loggers
+
+Create a named logger instance:
+
+```tsx
+const { core } = useTeardown();
+
+const logger = core.logging.createLogger({
+  name: 'MyFeature',
+  debugEnabled: false, // Optional: enable debug mode
+});
+```
+
+### Logger Configuration
+
+```typescript
+type LoggerOptions = {
+  name: string;           // Logger name for prefixes
+  debugEnabled?: boolean; // Enable debug-level logging
+};
+```
+
+## Log Levels
+
+### info
+
+For general informational messages:
+
+```tsx
+logger.info('User logged in', { userId: '123' });
+// Output: [MyFeature] User logged in { userId: '123' }
+```
+
+### error
+
+For error messages and exceptions:
+
+```tsx
+logger.error('Failed to save data', error);
+// Output: [MyFeature] Failed to save data Error: ...
+```
+
+### debug
+
+For detailed debugging information (only shown when debug enabled):
+
+```tsx
+logger.debug('Processing item', item);
+// Only outputs if debugEnabled is true
+```
+
+### warn
+
+For warning messages:
+
+```tsx
+logger.warn('Deprecated API usage', { method: 'oldMethod' });
+// Output: [MyFeature] Deprecated API usage { method: 'oldMethod' }
+```
+
+### trace
+
+For stack traces:
+
+```tsx
+logger.trace('Execution path');
+// Output: [MyFeature] Execution path
+// + full stack trace
+```
+
+## Debug Mode
+
+### Enabling Debug Mode
+
+**Per Logger:**
+
+```tsx
+const logger = core.logging.createLogger({
+  name: 'MyFeature',
+  debugEnabled: true, // Enable for this logger
+});
+```
+
+**Toggle at Runtime:**
+
+```tsx
+logger.setDebugEnabled(true);  // Enable
+logger.setDebugEnabled(false); // Disable
+```
+
+**Check Status:**
+
+```tsx
+if (logger.isDebugEnabled()) {
+  // Debug is enabled
+}
+```
+
+### Global Debug Mode
+
+Configure default debug mode for all loggers:
+
+```tsx
+const core = new TeardownCore({
+  // ... other config
+  logging: {
+    debugEnabled: true, // All loggers default to debug mode
+  },
+});
+```
+
+## Log Formatting
+
+All logs are prefixed with the logger name:
+
+```
+[LoggerName] Message ...additional data
+```
+
+**Examples:**
+
+```
+[TeardownCore] Shutting down
+[DeviceClient] Getting device ID
+[IdentityClient] Session state: unidentified -> identifying
+[ForceUpdateClient] Version status: unknown -> up_to_date
+```
+
+## Usage Patterns
+
+### Feature Logger
+
+```tsx
+class MyFeature {
+  private logger: Logger;
+  
+  constructor(logging: LoggingClient) {
+    this.logger = logging.createLogger({
+      name: 'MyFeature',
+    });
+  }
+  
+  async doSomething() {
+    this.logger.info('Starting operation');
+    
+    try {
+      // ... operation
+      this.logger.debug('Operation details', { data });
+      this.logger.info('Operation completed');
+    } catch (error) {
+      this.logger.error('Operation failed', error);
+      throw error;
+    }
+  }
+}
+```
+
+### Component Logger
+
+```tsx
+function MyComponent() {
+  const { core } = useTeardown();
+  const logger = useMemo(
+    () => core.logging.createLogger({ name: 'MyComponent' }),
+    [core]
+  );
+  
+  useEffect(() => {
+    logger.info('Component mounted');
+    return () => {
+      logger.info('Component unmounted');
+    };
+  }, []);
+  
+  const handleAction = () => {
+    logger.debug('Action triggered');
+    // ... handle action
+  };
+  
+  return <Button onPress={handleAction} />;
+}
+```
+
+### API Logger
+
+```tsx
+class ApiService {
+  private logger: Logger;
+  
+  constructor(logging: LoggingClient) {
+    this.logger = logging.createLogger({ name: 'ApiService' });
+  }
+  
+  async fetch(endpoint: string) {
+    this.logger.debug('Fetching', { endpoint });
+    
+    try {
+      const response = await fetch(endpoint);
+      this.logger.info('Fetch successful', { 
+        endpoint, 
+        status: response.status 
+      });
+      return response;
+    } catch (error) {
+      this.logger.error('Fetch failed', { endpoint, error });
+      throw error;
+    }
+  }
+}
+```
+
+## Internal SDK Loggers
+
+The SDK uses loggers internally for debugging:
+
+```
+[TeardownCore]        - Core initialization and shutdown
+[ApiClient]           - HTTP requests and responses
+[DeviceClient]        - Device ID and info operations
+[IdentityClient]      - Session state changes
+[ForceUpdateClient]   - Version status changes
+[StorageClient]       - Storage operations
+```
+
+## Production Logging
+
+### Disable Debug Logs
+
+In production, disable debug logging:
+
+```tsx
+const core = new TeardownCore({
+  logging: {
+    debugEnabled: false, // Disable in production
+  },
+});
+```
+
+### Environment-Based Configuration
+
+```tsx
+const isDevelopment = __DEV__;
+
+const core = new TeardownCore({
+  logging: {
+    debugEnabled: isDevelopment,
+  },
+});
+```
+
+## Custom Log Handlers
+
+While the SDK doesn't support custom log handlers out of the box, you can wrap loggers:
+
+```tsx
+class CustomLogger {
+  constructor(
+    private logger: Logger,
+    private remoteLogger: RemoteLogger
+  ) {}
+  
+  info(message: string, ...args: unknown[]) {
+    this.logger.info(message, ...args);
+    // Send to remote service
+    this.remoteLogger.log('info', message, args);
+  }
+  
+  error(message: string, ...args: unknown[]) {
+    this.logger.error(message, ...args);
+    // Send to error tracking
+    this.remoteLogger.error(message, args);
+  }
+  
+  // ... other methods
+}
+```
+
+## Log Aggregation
+
+Integrate with external logging services:
+
+### Sentry
+
+```tsx
+import * as Sentry from '@sentry/react-native';
+
+class SentryLogger {
+  private logger: Logger;
+  
+  constructor(logging: LoggingClient) {
+    this.logger = logging.createLogger({ name: 'App' });
+  }
+  
+  error(message: string, error?: Error) {
+    this.logger.error(message, error);
+    
+    if (error) {
+      Sentry.captureException(error, {
+        tags: { logger: 'App' },
+        extra: { message },
+      });
+    }
+  }
+}
+```
+
+### LogRocket
+
+```tsx
+import LogRocket from '@logrocket/react-native';
+
+class LogRocketLogger {
+  private logger: Logger;
+  
+  constructor(logging: LoggingClient) {
+    this.logger = logging.createLogger({ name: 'App' });
+  }
+  
+  info(message: string, data?: object) {
+    this.logger.info(message, data);
+    LogRocket.log(message, data);
+  }
+  
+  error(message: string, error?: Error) {
+    this.logger.error(message, error);
+    LogRocket.captureException(error, {
+      extra: { message },
+    });
+  }
+}
+```
+
+## Debugging Tips
+
+### Enable Debug Mode in Development
+
+```tsx
+// In development
+const logger = core.logging.createLogger({
+  name: 'Debug',
+  debugEnabled: __DEV__,
+});
+```
+
+### Conditional Logging
+
+```tsx
+if (__DEV__) {
+  logger.debug('Development only log');
+}
+```
+
+### Structured Data
+
+Pass structured data for better debugging:
+
+```tsx
+logger.info('User action', {
+  action: 'button_click',
+  buttonId: 'submit',
+  userId: user.id,
+  timestamp: Date.now(),
+});
+```
+
+## Performance Considerations
+
+### Avoid Expensive Operations in Logs
+
+```tsx
+// ❌ Bad: Expensive operation always runs
+logger.debug('Data:', JSON.stringify(largeObject));
+
+// ✅ Good: Only runs if debug enabled
+if (logger.isDebugEnabled()) {
+  logger.debug('Data:', JSON.stringify(largeObject));
+}
+```
+
+### Lazy Evaluation
+
+```tsx
+// Use functions for lazy evaluation
+const logExpensiveData = () => {
+  if (logger.isDebugEnabled()) {
+    const data = computeExpensiveData();
+    logger.debug('Computed data:', data);
+  }
+};
+```
+
+## Testing with Loggers
+
+### Mock Logger
+
+```tsx
+class MockLogger implements Logger {
+  logs: Array<{ level: string; message: string; args: unknown[] }> = [];
+  
+  info(message: string, ...args: unknown[]) {
+    this.logs.push({ level: 'info', message, args });
+  }
+  
+  error(message: string, ...args: unknown[]) {
+    this.logs.push({ level: 'error', message, args });
+  }
+  
+  // ... other methods
+  
+  clear() {
+    this.logs = [];
+  }
+}
+
+// Usage in tests
+const mockLogger = new MockLogger();
+myService.logger = mockLogger;
+
+myService.doSomething();
+
+expect(mockLogger.logs).toContainEqual({
+  level: 'info',
+  message: 'Operation completed',
+  args: [],
+});
+```
+
+## Best Practices
+
+1. **Meaningful Names**: Use descriptive logger names
+2. **Appropriate Levels**: Use correct log level for each message
+3. **Structured Data**: Pass objects rather than concatenating strings
+4. **Debug Mode**: Only enable debug logs in development
+5. **Error Context**: Include error objects with error logs
+6. **Performance**: Avoid expensive operations in log arguments
+7. **Consistency**: Use consistent naming and formatting
+8. **Privacy**: Never log sensitive user data
+
+## Common Patterns
+
+### Request/Response Logging
+
+```tsx
+logger.debug('Request', { method, url, body });
+const response = await fetch(url, { method, body });
+logger.debug('Response', { status: response.status, body: await response.text() });
+```
+
+### Operation Timing
+
+```tsx
+const start = Date.now();
+logger.debug('Starting operation');
+
+await doOperation();
+
+const duration = Date.now() - start;
+logger.info('Operation completed', { duration });
+```
+
+### Error Tracking
+
+```tsx
+try {
+  await riskyOperation();
+} catch (error) {
+  logger.error('Operation failed', {
+    error: error.message,
+    stack: error.stack,
+    context: additionalContext,
+  });
+  throw error;
+}
+```
+
+## Next Steps
+
+- [API Reference](./07-api-reference.mdx)
+- [Hooks Reference](./08-hooks-reference.mdx)
+- [Advanced Usage](./09-advanced.mdx)

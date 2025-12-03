@@ -1,0 +1,738 @@
+# Advanced Usage
+
+Advanced patterns, optimization techniques, and best practices for the Teardown SDK.
+
+## Table of Contents
+
+1. [Custom Device Adapters](#custom-device-adapters)
+2. [Storage Encryption](#storage-encryption)
+3. [Offline Support](#offline-support)
+4. [Request Interceptors](#request-interceptors)
+5. [Error Handling Strategies](#error-handling-strategies)
+6. [Performance Optimization](#performance-optimization)
+7. [Testing Strategies](#testing-strategies)
+8. [Migration Guides](#migration-guides)
+
+---
+
+## Custom Device Adapters
+
+Create custom adapters for non-Expo platforms or custom requirements.
+
+### Implementing DeviceInfoAdapter
+
+```typescript
+import type { DeviceInfoAdapter, DeviceInfo } from '@teardown/react-native';
+import DeviceInfo from 'react-native-device-info';
+
+class ReactNativeDeviceAdapter implements DeviceInfoAdapter {
+  async getDeviceInfo(): Promise<DeviceInfo> {
+    return {
+      application: {
+        version: DeviceInfo.getVersion(),
+        build_number: parseInt(DeviceInfo.getBuildNumber()),
+      },
+      hardware: {
+        device_name: await DeviceInfo.getDeviceName(),
+        device_brand: DeviceInfo.getBrand(),
+        device_type: Platform.OS,
+      },
+      os: {
+        platform: this.getPlatformEnum(),
+        name: DeviceInfo.getSystemName(),
+        version: DeviceInfo.getSystemVersion(),
+      },
+      update: null, // Not using OTA updates
+      notifications: await this.getNotificationInfo(),
+    };
+  }
+  
+  private getPlatformEnum(): DevicePlatformEnum {
+    switch (Platform.OS) {
+      case 'ios':
+        return DevicePlatformEnum.IOS;
+      case 'android':
+        return DevicePlatformEnum.ANDROID;
+      default:
+        return DevicePlatformEnum.WEB;
+    }
+  }
+  
+  private async getNotificationInfo() {
+    const token = await messaging().getToken();
+    const authStatus = await messaging().hasPermission();
+    
+    return {
+      push: {
+        platform: NotificationPlatformEnum.FCM,
+        enabled: true,
+        granted: authStatus === messaging.AuthorizationStatus.AUTHORIZED,
+        token,
+      },
+    };
+  }
+}
+
+// Usage
+const core = new TeardownCore({
+  device: {
+    adapter: new ReactNativeDeviceAdapter(),
+  },
+});
+```
+
+### Web Adapter
+
+```typescript
+class WebDeviceAdapter implements DeviceInfoAdapter {
+  async getDeviceInfo(): Promise<DeviceInfo> {
+    return {
+      application: {
+        version: import.meta.env.VITE_APP_VERSION || '1.0.0',
+        build_number: parseInt(import.meta.env.VITE_BUILD_NUMBER || '1'),
+      },
+      hardware: {
+        device_name: this.getDeviceName(),
+        device_brand: 'Web',
+        device_type: 'web',
+      },
+      os: {
+        platform: DevicePlatformEnum.WEB,
+        name: this.getOSName(),
+        version: this.getOSVersion(),
+      },
+      update: null,
+      notifications: {
+        push: {
+          platform: NotificationPlatformEnum.FCM,
+          enabled: 'Notification' in window,
+          granted: Notification.permission === 'granted',
+          token: await this.getWebPushToken(),
+        },
+      },
+    };
+  }
+  
+  private getDeviceName(): string {
+    const ua = navigator.userAgent;
+    if (/iPhone/i.test(ua)) return 'iPhone';
+    if (/iPad/i.test(ua)) return 'iPad';
+    if (/Android/i.test(ua)) return 'Android Device';
+    return 'Desktop';
+  }
+  
+  private getOSName(): string {
+    const ua = navigator.userAgent;
+    if (/Mac OS X/i.test(ua)) return 'macOS';
+    if (/Windows/i.test(ua)) return 'Windows';
+    if (/Linux/i.test(ua)) return 'Linux';
+    if (/iPhone|iPad/i.test(ua)) return 'iOS';
+    if (/Android/i.test(ua)) return 'Android';
+    return 'Unknown';
+  }
+  
+  private getOSVersion(): string {
+    const ua = navigator.userAgent;
+    const match = ua.match(/(?:Version\/|OS )(\d+[._]\d+)/);
+    return match ? match[1].replace('_', '.') : 'Unknown';
+  }
+  
+  private async getWebPushToken(): Promise<string | undefined> {
+    if (!('serviceWorker' in navigator)) return undefined;
+    
+    // Implement web push token retrieval
+    return undefined;
+  }
+}
+```
+
+---
+
+## Storage Encryption
+
+Encrypt sensitive data before storing.
+
+### Encrypted Storage Adapter
+
+```bash
+bun add expo-crypto
+```
+
+```typescript
+import * as Crypto from 'expo-crypto';
+
+class EncryptedStorageAdapter implements StorageAdapter {
+  constructor(
+    private readonly baseAdapter: StorageAdapter,
+    private readonly encryptionKey: string
+  ) {}
+  
+  async getItem(key: string): Promise<string | null> {
+    const encrypted = await this.baseAdapter.getItem(key);
+    if (!encrypted) return null;
+    
+    try {
+      return await this.decrypt(encrypted);
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      return null;
+    }
+  }
+  
+  async setItem(key: string, value: string): Promise<void> {
+    const encrypted = await this.encrypt(value);
+    await this.baseAdapter.setItem(key, encrypted);
+  }
+  
+  async removeItem(key: string): Promise<void> {
+    await this.baseAdapter.removeItem(key);
+  }
+  
+  private async encrypt(plaintext: string): Promise<string> {
+    const digest = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      this.encryptionKey
+    );
+    
+    // Simple XOR encryption (use AES for production!)
+    const key = Buffer.from(digest, 'hex');
+    const data = Buffer.from(plaintext);
+    const encrypted = Buffer.alloc(data.length);
+    
+    for (let i = 0; i < data.length; i++) {
+      encrypted[i] = data[i] ^ key[i % key.length];
+    }
+    
+    return encrypted.toString('base64');
+  }
+  
+  private async decrypt(ciphertext: string): Promise<string> {
+    // Reverse of encrypt
+    return this.encrypt(ciphertext); // XOR is symmetric
+  }
+}
+
+// Usage
+const baseAdapter = {
+  getItem: (key) => AsyncStorage.getItem(key),
+  setItem: (key, value) => AsyncStorage.setItem(key, value),
+  removeItem: (key) => AsyncStorage.removeItem(key),
+};
+
+const core = new TeardownCore({
+  storage: {
+    adapter: new EncryptedStorageAdapter(baseAdapter, 'your-secret-key'),
+  },
+});
+```
+
+---
+
+## Offline Support
+
+Handle offline scenarios gracefully.
+
+### Offline Queue
+
+```typescript
+class OfflineIdentityManager {
+  private queue: Array<{ persona: Persona; timestamp: number }> = [];
+  
+  constructor(
+    private readonly identity: IdentityClient,
+    private readonly storage: SupportedStorage
+  ) {
+    this.loadQueue();
+    this.setupOnlineListener();
+  }
+  
+  async identify(persona: Persona): AsyncResult<IdentityUser> {
+    const result = await this.identity.identify(persona);
+    
+    if (!result.success) {
+      // Queue for later if offline
+      this.queue.push({ persona, timestamp: Date.now() });
+      this.saveQueue();
+      
+      return {
+        success: false,
+        error: 'Queued for retry when online',
+      };
+    }
+    
+    return result;
+  }
+  
+  private setupOnlineListener() {
+    NetInfo.addEventListener(state => {
+      if (state.isConnected) {
+        this.processQueue();
+      }
+    });
+  }
+  
+  private async processQueue() {
+    while (this.queue.length > 0) {
+      const item = this.queue[0];
+      const result = await this.identity.identify(item.persona);
+      
+      if (result.success) {
+        this.queue.shift();
+        this.saveQueue();
+      } else {
+        break; // Stop if still offline
+      }
+    }
+  }
+  
+  private loadQueue() {
+    const stored = this.storage.getItem('offline_queue');
+    if (stored) {
+      this.queue = JSON.parse(stored);
+    }
+  }
+  
+  private saveQueue() {
+    this.storage.setItem('offline_queue', JSON.stringify(this.queue));
+  }
+}
+```
+
+### Cached Responses
+
+```typescript
+class CachedApiClient {
+  private cache = new Map<string, { data: any; timestamp: number }>();
+  private readonly cacheTTL = 300000; // 5 minutes
+  
+  constructor(private readonly api: ApiClient) {}
+  
+  async request<T>(endpoint: string, options: any): AsyncResult<T> {
+    const cacheKey = this.getCacheKey(endpoint, options);
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
+      return { success: true, data: cached.data };
+    }
+    
+    const result = await this.api.client(endpoint, options);
+    
+    if (result.data) {
+      this.cache.set(cacheKey, {
+        data: result.data,
+        timestamp: Date.now(),
+      });
+    }
+    
+    return result as any;
+  }
+  
+  private getCacheKey(endpoint: string, options: any): string {
+    return `${endpoint}:${JSON.stringify(options)}`;
+  }
+}
+```
+
+---
+
+## Request Interceptors
+
+Intercept and modify API requests.
+
+### Auth Token Interceptor
+
+```typescript
+const core = new TeardownCore({
+  api: {
+    api_key: 'your-key',
+    org_id: 'your-org',
+    project_id: 'your-project',
+    environment_slug: 'production',
+    onRequest: async (endpoint, options) => {
+      // Add custom headers
+      const customToken = await getCustomAuthToken();
+      
+      return {
+        ...options,
+        headers: {
+          ...options.headers,
+          'X-Custom-Auth': customToken,
+        },
+      };
+    },
+  },
+});
+```
+
+### Request Logging Interceptor
+
+```typescript
+const core = new TeardownCore({
+  api: {
+    // ... other config
+    onRequest: async (endpoint, options) => {
+      console.log('API Request:', {
+        endpoint,
+        method: options.method,
+        timestamp: new Date().toISOString(),
+      });
+      
+      const start = Date.now();
+      
+      // Add request ID for tracking
+      const requestId = uuid();
+      
+      return {
+        ...options,
+        headers: {
+          ...options.headers,
+          'X-Request-ID': requestId,
+        },
+      };
+    },
+  },
+});
+```
+
+### Rate Limiting Interceptor
+
+```typescript
+class RateLimiter {
+  private requests: number[] = [];
+  private readonly limit = 10; // 10 requests
+  private readonly window = 60000; // per minute
+  
+  async checkLimit(): Promise<void> {
+    const now = Date.now();
+    this.requests = this.requests.filter(time => now - time < this.window);
+    
+    if (this.requests.length >= this.limit) {
+      const oldestRequest = this.requests[0];
+      const waitTime = this.window - (now - oldestRequest);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return this.checkLimit();
+    }
+    
+    this.requests.push(now);
+  }
+}
+
+const rateLimiter = new RateLimiter();
+
+const core = new TeardownCore({
+  api: {
+    // ... other config
+    onRequest: async (endpoint, options) => {
+      await rateLimiter.checkLimit();
+      return options;
+    },
+  },
+});
+```
+
+---
+
+## Error Handling Strategies
+
+Advanced error handling patterns.
+
+### Retry Logic
+
+```typescript
+class RetryableIdentityClient {
+  constructor(
+    private readonly identity: IdentityClient,
+    private readonly maxRetries = 3,
+    private readonly retryDelay = 1000
+  ) {}
+  
+  async identifyWithRetry(persona?: Persona): AsyncResult<IdentityUser> {
+    let lastError: string = '';
+    
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      const result = await this.identity.identify(persona);
+      
+      if (result.success) {
+        return result;
+      }
+      
+      lastError = result.error;
+      
+      // Don't retry validation errors
+      if (result.error.includes('422')) {
+        return result;
+      }
+      
+      // Wait before retry
+      if (attempt < this.maxRetries - 1) {
+        await new Promise(resolve => 
+          setTimeout(resolve, this.retryDelay * (attempt + 1))
+        );
+      }
+    }
+    
+    return { success: false, error: `Failed after ${this.maxRetries} attempts: ${lastError}` };
+  }
+}
+```
+
+### Global Error Handler
+
+```typescript
+class GlobalErrorHandler {
+  private errorCallbacks: Array<(error: Error) => void> = [];
+  
+  constructor(private readonly core: TeardownCore) {
+    this.setupHandlers();
+  }
+  
+  private setupHandlers() {
+    // Handle identity errors
+    this.core.identity.onSessionStateChange((state) => {
+      if (state.type === 'unidentified') {
+        // Check if it was an error transition
+        this.handleIdentityError();
+      }
+    });
+  }
+  
+  onError(callback: (error: Error) => void) {
+    this.errorCallbacks.push(callback);
+    return () => {
+      const index = this.errorCallbacks.indexOf(callback);
+      if (index > -1) {
+        this.errorCallbacks.splice(index, 1);
+      }
+    };
+  }
+  
+  private handleIdentityError() {
+    const error = new Error('Identity error occurred');
+    this.errorCallbacks.forEach(cb => cb(error));
+  }
+}
+
+// Usage
+const errorHandler = new GlobalErrorHandler(core);
+errorHandler.onError((error) => {
+  // Log to error tracking
+  Sentry.captureException(error);
+  
+  // Show user-friendly message
+  Toast.show({ text: 'Something went wrong' });
+});
+```
+
+---
+
+## Performance Optimization
+
+### Lazy Initialization
+
+```typescript
+class LazyTeardown {
+  private _core: TeardownCore | null = null;
+  
+  get core(): TeardownCore {
+    if (!this._core) {
+      this._core = new TeardownCore({
+        // ... config
+      });
+    }
+    return this._core;
+  }
+}
+
+const teardown = new LazyTeardown();
+
+// Only initializes when first accessed
+export default teardown.core;
+```
+
+### Debounced Operations
+
+```typescript
+function useDebouncedIdentify(delay = 1000) {
+  const { core } = useTeardown();
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  
+  const identify = useCallback((persona: Persona) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      core.identity.identify(persona);
+    }, delay);
+  }, [core, delay]);
+  
+  return identify;
+}
+
+// Usage
+function SearchComponent() {
+  const identify = useDebouncedIdentify(500);
+  
+  const handleSearch = (query: string) => {
+    identify({ name: query });
+  };
+  
+  return <SearchInput onChange={handleSearch} />;
+}
+```
+
+### Memoized Device Info
+
+```typescript
+class CachedDeviceClient {
+  private cachedInfo: DeviceInfo | null = null;
+  private cacheExpiry: number | null = null;
+  private readonly cacheDuration = 3600000; // 1 hour
+  
+  constructor(private readonly device: DeviceClient) {}
+  
+  async getDeviceInfo(): Promise<DeviceInfo> {
+    const now = Date.now();
+    
+    if (
+      this.cachedInfo &&
+      this.cacheExpiry &&
+      now < this.cacheExpiry
+    ) {
+      return this.cachedInfo;
+    }
+    
+    this.cachedInfo = await this.device.getDeviceInfo();
+    this.cacheExpiry = now + this.cacheDuration;
+    
+    return this.cachedInfo;
+  }
+}
+```
+
+---
+
+## Testing Strategies
+
+### Mock TeardownCore
+
+```typescript
+class MockTeardownCore implements TeardownCore {
+  identity = {
+    identify: jest.fn().mockResolvedValue({ success: true, data: mockUser }),
+    refresh: jest.fn().mockResolvedValue({ success: true, data: mockUser }),
+    reset: jest.fn(),
+    getSessionState: jest.fn().mockReturnValue({ type: 'identified' }),
+    onSessionStateChange: jest.fn().mockReturnValue(() => {}),
+    shutdown: jest.fn(),
+  };
+  
+  forceUpdate = {
+    getVersionStatus: jest.fn().mockReturnValue({ type: 'up_to_date' }),
+    onVersionStatusChange: jest.fn().mockReturnValue(() => {}),
+    shutdown: jest.fn(),
+  };
+  
+  // ... other clients
+  
+  shutdown = jest.fn();
+}
+
+// Usage in tests
+describe('MyComponent', () => {
+  it('identifies user on mount', () => {
+    const mockCore = new MockTeardownCore();
+    
+    render(
+      <TeardownProvider core={mockCore as any}>
+        <MyComponent />
+      </TeardownProvider>
+    );
+    
+    expect(mockCore.identity.identify).toHaveBeenCalled();
+  });
+});
+```
+
+### Integration Tests
+
+```typescript
+describe('Teardown Integration', () => {
+  let core: TeardownCore;
+  
+  beforeEach(() => {
+    core = new TeardownCore({
+      api: {
+        api_key: 'test-key',
+        org_id: 'test-org',
+        project_id: 'test-project',
+        environment_slug: 'test',
+      },
+      storage: {
+        adapter: new MockStorageAdapter(),
+      },
+      device: {
+        adapter: new MockDeviceAdapter(),
+      },
+      identity: {
+        identifyOnLoad: false,
+      },
+    });
+  });
+  
+  afterEach(() => {
+    core.shutdown();
+  });
+  
+  it('completes full identify flow', async () => {
+    const result = await core.identity.identify({
+      user_id: 'test-user',
+    });
+    
+    expect(result.success).toBe(true);
+    expect(core.identity.getSessionState().type).toBe('identified');
+  });
+});
+```
+
+---
+
+## Migration Guides
+
+### Migrating Storage Keys
+
+```typescript
+async function migrateStorageKeys(storage: StorageClient) {
+  const oldStorage = storage.createStorage('old_namespace');
+  const newStorage = storage.createStorage('new_namespace');
+  
+  const migrations = [
+    { old: 'user_id', new: 'userId' },
+    { old: 'device_token', new: 'deviceId' },
+  ];
+  
+  for (const { old, new: newKey } of migrations) {
+    const value = oldStorage.getItem(old);
+    if (value) {
+      newStorage.setItem(newKey, value);
+      oldStorage.removeItem(old);
+    }
+  }
+}
+```
+
+## Best Practices Summary
+
+1. **Adapters**: Create platform-specific adapters
+2. **Security**: Encrypt sensitive data in storage
+3. **Offline**: Handle offline scenarios gracefully
+4. **Errors**: Implement retry logic and global error handling
+5. **Performance**: Cache frequently accessed data
+6. **Testing**: Write comprehensive tests with mocks
+7. **Migration**: Plan for data migration strategies
+
+## Next Steps
+
+- [Getting Started](./01-getting-started.mdx)
+- [API Reference](./07-api-reference.mdx)
+- [Hooks Reference](./08-hooks-reference.mdx)

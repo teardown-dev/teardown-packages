@@ -5,7 +5,8 @@
 		"access": "public"
 	},
 	"files": [
-		"src/**/*"
+		"src/**/*",
+		"docs/**/*"
 	],
 	"main": "./src/index.ts",
 	"module": "./src/index.ts",

@@ -1,0 +1,172 @@
+# Getting Started with Teardown SDK
+
+The Teardown SDK provides a comprehensive solution for managing device identity, force updates, logging, and analytics in React Native and Expo applications.
+
+## Installation
+
+Install the SDK using Bun (or your preferred package manager):
+
+```bash
+bun add @teardown/react-native
+```
+
+### Peer Dependencies
+
+The SDK requires the following peer dependencies:
+
+```bash
+bun add react react-native zod
+bun add expo-application expo-device expo-updates
+bun add react-native-device-info
+```
+
+## Quick Start
+
+### 1. Initialize the SDK
+
+Create a Teardown instance and configure it with your project credentials:
+
+```tsx
+import { TeardownCore } from '@teardown/react-native';
+import * as Device from 'expo-device';
+import * as Application from 'expo-application';
+import { ExpoDeviceAdapter } from '@teardown/react-native';
+
+// Initialize the core SDK
+const teardown = new TeardownCore({
+  api: {
+    api_key: 'your-api-key',
+    org_id: 'your-org-id',
+    project_id: 'your-project-id',
+    environment_slug: 'production',
+  },
+  storage: {
+    adapter: {
+      getItem: async (key) => localStorage.getItem(key),
+      setItem: async (key, value) => localStorage.setItem(key, value),
+      removeItem: async (key) => localStorage.removeItem(key),
+    },
+  },
+  device: {
+    adapter: new ExpoDeviceAdapter({
+      Device,
+      Application,
+    }),
+  },
+  identity: {
+    identifyOnLoad: true, // Automatically identify on mount
+  },
+  forceUpdate: {
+    throttleMs: 30000, // Check on foreground every 30s
+    checkCooldownMs: 300000, // Wait 5min between checks
+    identifyAnonymousDevice: false,
+  },
+});
+```
+
+### 2. Wrap Your App
+
+Wrap your application with the `TeardownProvider`:
+
+```tsx
+import { TeardownProvider } from '@teardown/react-native';
+
+export default function App() {
+  return (
+    <TeardownProvider core={teardown}>
+      <YourApp />
+    </TeardownProvider>
+  );
+}
+```
+
+### 3. Use the SDK
+
+Access Teardown functionality via hooks:
+
+```tsx
+import { useTeardown, useForceUpdate } from '@teardown/react-native';
+
+function YourComponent() {
+  const { core } = useTeardown();
+  const { isUpdateRequired, isUpdateAvailable } = useForceUpdate();
+
+  // Identify a user
+  const handleLogin = async () => {
+    const result = await core.identity.identify({
+      user_id: 'user-123',
+      email: 'user@example.com',
+      name: 'John Doe',
+    });
+    
+    if (result.success) {
+      console.log('User identified:', result.data);
+    }
+  };
+
+  // Check for force updates
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  return <YourContent />;
+}
+```
+
+## Configuration Options
+
+### API Configuration
+
+```typescript
+api: {
+  api_key: string;        // Your Teardown API key
+  org_id: string;         // Your organization ID
+  project_id: string;     // Your project ID
+  environment_slug: string; // Environment (e.g., 'production', 'staging')
+}
+```
+
+### Storage Configuration
+
+```typescript
+storage: {
+  adapter: {
+    getItem: (key: string) => Promise<string | null>;
+    setItem: (key: string, value: string) => Promise<void>;
+    removeItem: (key: string) => Promise<void>;
+  }
+}
+```
+
+### Device Configuration
+
+```typescript
+device: {
+  adapter: DeviceInfoAdapter; // Platform-specific adapter
+}
+```
+
+### Identity Configuration
+
+```typescript
+identity: {
+  identifyOnLoad?: boolean; // Auto-identify on mount (default: false)
+}
+```
+
+### Force Update Configuration
+
+```typescript
+forceUpdate: {
+  throttleMs?: number;              // Min ms between foreground checks (default: 30000)
+  checkCooldownMs?: number;         // Min ms since last check (default: 300000)
+  identifyAnonymousDevice?: boolean; // Check version for anonymous users (default: false)
+}
+```
+
+## Next Steps
+
+- [Core Concepts](./02-core-concepts.mdx) - Understand the architecture
+- [Identity & Authentication](./03-identity.mdx) - Learn about user identification
+- [Force Updates](./04-force-updates.mdx) - Implement version management
+- [Hooks Reference](./08-hooks-reference.mdx) - Available React hooks
