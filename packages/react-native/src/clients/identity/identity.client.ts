@@ -5,8 +5,9 @@ import type { DeviceClient } from "../device";
 import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils";
-import type { EventEmitter } from "eventemitter3";
-
+import { EventEmitter } from "eventemitter3";
+import { z } from "zod";
+import { IdentifyVersionStatusEnum } from "@teardown/schemas";
 
 export { eden };
 
@@ -17,25 +18,71 @@ export type Persona = {
 };
 
 export type IdentityClientOptions = {
-	storage: StorageClient;
+	/** If true, automatically identify anonymous device on load when not already identified (default: false) */
+	identifyOnLoad?: boolean;
 };
+
 
 export type IdentityUser = {
 	session_id: string;
 	device_id: string;
 	persona_id: string;
 	token: string;
+	version_status?: IdentifyVersionStatusEnum;
 };
 
+export const UnidentifiedSessionStateSchema = z.object({
+	type: z.literal("unidentified"),
+});
+export const IdentifyingSessionStateSchema = z.object({
+	type: z.literal("identifying"),
+});
+
+
+export const UpdateVersionStatusBodySchema = z.object({
+	version: z.string(),
+});
+
+export const SessionSchema = z.object({
+	session_id: z.string(),
+	device_id: z.string(),
+	persona_id: z.string(),
+	token: z.string(),
+});
+export type Session = z.infer<typeof SessionSchema>;
+
+export const VersionStatusResponseSchema = z.object({
+	status: z.enum(["UPDATE_AVAILABLE", "UPDATE_REQUIRED", "UP_TO_DATE"]),
+	latest_version: z.string().optional(),
+});
+
+export const IdentifiedSessionStateSchema = z.object({
+	type: z.literal("identified"),
+	session: SessionSchema,
+	version_status: z.enum(IdentifyVersionStatusEnum),
+});
+
+export const SessionStateSchema = z.discriminatedUnion("type", [UnidentifiedSessionStateSchema, IdentifyingSessionStateSchema, IdentifiedSessionStateSchema]);
+export type SessionState = z.infer<typeof SessionStateSchema>;
+
+export type UnidentifiedSessionState = z.infer<typeof UnidentifiedSessionStateSchema>;
+export type IdentifyingSessionState = z.infer<typeof IdentifyingSessionStateSchema>;
+export type IdentifiedSessionState = z.infer<typeof IdentifiedSessionStateSchema>;
+
+export type SessionStateChangeEvents = {
+	SESSION_STATE_CHANGED: (state: SessionState) => void;
+};
+
+
+export const SESSION_STORAGE_KEY = "SESSION_STATE";
+
 export class IdentityClient {
+	private emitter = new EventEmitter<SessionStateChangeEvents>();
+	private sessionState: SessionState = { type: "unidentified" };
 
 	public readonly logger: Logger;
 	public readonly utils: UtilsClient;
 	public readonly storage: SupportedStorage;
-
-
-
-	private _persona: Persona | null = null;
 
 	constructor(
 		logging: LoggingClient,
@@ -43,28 +90,74 @@ export class IdentityClient {
 		storage: StorageClient,
 		private readonly api: ApiClient,
 		private readonly device: DeviceClient,
-		_options: IdentityClientOptions
+		private readonly options: IdentityClientOptions
 	) {
 		this.logger = logging.createLogger({
 			name: "IdentityClient",
 		});
 		this.storage = storage.createStorage("identity");
 		this.utils = utils;
+		this.sessionState = this.getSessionStateFromStorage();
+		console.log("sessionState", this.sessionState);
+		console.log("options", this.options);
+
+		if (this.options.identifyOnLoad) {
+			console.log("identifyOnLoad", this.options.identifyOnLoad);
+			this.identify({}).then((result) => console.log("result", result));
+		}
 	}
 
-	private async getPersona(): Promise<Persona> {
-		if (this._persona != null) {
-			return this._persona;
+	private getSessionStateFromStorage(): SessionState {
+		const stored = this.storage.getItem(SESSION_STORAGE_KEY);
+		if (stored == null) {
+			// console.log("no stored session state");
+			return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
 		}
 
-		const persona = await this.storage.getItem("persona");
-		this._persona = persona;
-		return persona;
+		// console.log("stored session state", stored);
+		return SessionStateSchema.parse(JSON.parse(stored));
 	}
 
-	private async setPersona(persona: Persona): Promise<void> {
-		this._persona = persona;
-		await this.storage.setItem("persona", persona);
+	private saveSessionStateToStorage(sessionState: SessionState): void {
+		this.storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionState));
+	}
+
+	private setSessionState(newState: SessionState): void {
+		this.logger.info(`Session state: ${this.sessionState.type} -> ${newState.type}`);
+		this.sessionState = newState;
+		this.saveSessionStateToStorage(newState);
+		this.emitter.emit("SESSION_STATE_CHANGED", newState);
+	}
+
+	public onSessionStateChange(listener: (state: SessionState) => void) {
+		this.emitter.addListener("SESSION_STATE_CHANGED", listener);
+		return () => {
+			this.emitter.removeListener("SESSION_STATE_CHANGED", listener);
+		};
+	}
+
+	public getSessionState(): SessionState {
+		return this.sessionState;
+	}
+
+	public shutdown() {
+		this.emitter.removeAllListeners("SESSION_STATE_CHANGED");
+	}
+
+	public reset() {
+		this.storage.removeItem(SESSION_STORAGE_KEY);
+		this.setSessionState({ type: "unidentified" });
+	}
+
+	/**
+	 * Re-identify the current persona to refresh session data.
+	 * Only works if already identified.
+	 */
+	async refresh(): AsyncResult<IdentityUser> {
+		if (this.sessionState.type !== "identified") {
+			return { success: false, error: "Not identified" };
+		}
+		return this.identify();
 	}
 
 	/**
@@ -84,7 +177,10 @@ export class IdentityClient {
 		}
 	}
 
-	async identify(persona: Persona): AsyncResult<IdentityUser> {
+	async identify(persona?: Persona): AsyncResult<IdentityUser> {
+		const previousState = this.sessionState;
+		this.setSessionState({ type: "identifying" });
+
 		return this.tryCatch(async () => {
 			const deviceId = await this.device.getDeviceId();
 			const deviceInfo = await this.device.getDeviceInfo();
@@ -99,13 +195,23 @@ export class IdentityClient {
 				},
 				body: {
 					persona,
-					device: deviceInfo,
+					device: {
+						...deviceInfo,
+						update: deviceInfo.update
+							? {
+								...deviceInfo.update,
+								created_at: deviceInfo.update.created_at,
+							}
+							: null,
+					},
 				},
 			});
 
 			if (response.error != null) {
+				this.setSessionState(previousState);
+
 				if (response.error.status === 422) {
-					console.warn("422 Error identifying user", response.error.value);
+					this.logger.warn("422 Error identifying user", response.error.value);
 					return {
 						success: false,
 						error: response.error.value.message ?? "Unknown error",
@@ -118,6 +224,12 @@ export class IdentityClient {
 					error: value?.error?.message ?? "Unknown error",
 				};
 			}
+
+			this.setSessionState({
+				type: "identified",
+				session: response.data.data,
+				version_status: response.data.data.version_info.status,
+			});
 
 			return {
 				success: true,

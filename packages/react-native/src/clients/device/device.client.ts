@@ -1,9 +1,14 @@
-import { NotificationPlatform, type DeviceInfo } from "@teardown/ingest-api/schemas";
-import { DevicePlatformEnum } from "@teardown/ingest-api/vendored/consts";
+import { type DeviceInfo, DevicePlatformEnum } from "@teardown/schemas";
 import type { Logger, LoggingClient } from "../logging/";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils/utils.client";
 import type { DeviceInfoAdapter } from "./device.adpater-interface";
+
+export enum NotificationPlatformEnum {
+	APNS = "APNS", // Apple Push Notification Service
+	FCM = "FCM", // Firebase Cloud Messaging
+	EXPO = "EXPO", // Expo Push Notifications
+}
 
 export type DeviceClientOptions = {
 	adapter: DeviceInfoAdapter;
@@ -43,7 +48,7 @@ export class DeviceClient {
 		return {
 			application: {
 				version: "1.0.0",
-				build_number: "1",
+				build_number: 2,
 			},
 			update: {
 				is_enabled: true,
@@ -55,7 +60,7 @@ export class DeviceClient {
 					reason: undefined,
 				},
 				is_embedded_launch: false,
-				created_at: new Date(),
+				created_at: new Date().toISOString(),
 			},
 			hardware: {
 				device_name: "iPhone 13",
@@ -69,7 +74,7 @@ export class DeviceClient {
 			},
 			notifications: {
 				push: {
-					platform: NotificationPlatform.EXPO,
+					platform: NotificationPlatformEnum.EXPO,
 					enabled: true,
 					granted: true,
 					token: "1234567890",

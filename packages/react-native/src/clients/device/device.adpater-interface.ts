@@ -3,7 +3,7 @@ import type {
 	HardwareInfo,
 	NotificationsInfo,
 	OSInfo
-} from "@teardown/ingest-api/schemas";
+} from "@teardown/schemas";
 
 /**
  * An interface for a device adapter.
