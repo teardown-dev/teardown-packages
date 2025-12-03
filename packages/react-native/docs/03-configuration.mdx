@@ -1,0 +1,375 @@
+# Configuration
+
+Complete configuration reference for Teardown SDK.
+
+## TeardownCoreOptions
+
+Top-level configuration object passed to `TeardownCore` constructor.
+
+```typescript
+export type TeardownCoreOptions = {
+  api: ApiClientOptions;
+  storage: StorageClientOptions;
+  device: DeviceClientOptions;
+  identity: IdentityClientOptions;
+  forceUpdate?: ForceUpdateClientOptions;
+  logging?: LoggingClientOptions;
+};
+```
+
+## ApiClientOptions
+
+Configure the API client for communicating with Teardown Ingest API.
+
+```typescript
+export type ApiClientOptions = {
+  /** Your organization ID from Teardown dashboard */
+  org_id: string;
+  
+  /** Your project ID from Teardown dashboard */
+  project_id: string;
+  
+  /** Your API key from Teardown dashboard */
+  api_key: string;
+  
+  /** Environment slug (e.g., "production", "staging", "development") */
+  environment_slug: string;
+  
+  /** Optional request interceptor */
+  onRequest?: (
+    endpoint: string,
+    options: RequestOptions
+  ) => Promise<RequestOptions>;
+};
+```
+
+### Example
+
+```typescript
+{
+  api: {
+    org_id: "5bd67d0d-d2f8-4aa2-bf6b-a0b5e05f82b9",
+    project_id: "ae090978-4034-4f77-9ff6-316b28513b8d",
+    api_key: "3c0f0f23-560d-4f09-88c0-3462e8ee82e9",
+    environment_slug: "production",
+  }
+}
+```
+
+## StorageClientOptions
+
+Configure the storage backend for persisting SDK data.
+
+```typescript
+export type StorageClientOptions = {
+  /** Factory function to create namespaced storage instances */
+  createStorage: SupportedStorageFactory;
+};
+
+export type SupportedStorageFactory = (
+  storageKey: string
+) => SupportedStorage;
+
+export type SupportedStorage = {
+  preload: () => void;
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+  clear: () => void;
+  keys: () => string[];
+};
+```
+
+### MMKV Example
+
+```typescript
+import * as MMKV from "react-native-mmkv";
+
+const createStorage: SupportedStorageFactory = (storageKey: string) => {
+  const storage = MMKV.createMMKV({ id: storageKey });
+
+  return {
+    preload: () => storage.getAllKeys(),
+    getItem: (key) => storage.getString(key) ?? null,
+    setItem: (key, value) => storage.set(key, value),
+    removeItem: (key) => storage.remove(key),
+    clear: () => storage.clearAll(),
+    keys: () => storage.getAllKeys(),
+  };
+};
+```
+
+### AsyncStorage Example
+
+```typescript
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const createStorage: SupportedStorageFactory = (storageKey: string) => {
+  const prefix = `${storageKey}:`;
+  
+  return {
+    preload: () => {}, // AsyncStorage doesn't need preload
+    getItem: (key) => {
+      const value = AsyncStorage.getItem(`${prefix}${key}`);
+      return value ?? null;
+    },
+    setItem: (key, value) => {
+      AsyncStorage.setItem(`${prefix}${key}`, value);
+    },
+    removeItem: (key) => {
+      AsyncStorage.removeItem(`${prefix}${key}`);
+    },
+    clear: async () => {
+      const keys = await AsyncStorage.getAllKeys();
+      const prefixedKeys = keys.filter(k => k.startsWith(prefix));
+      await AsyncStorage.multiRemove(prefixedKeys);
+    },
+    keys: async () => {
+      const keys = await AsyncStorage.getAllKeys();
+      return keys.filter(k => k.startsWith(prefix));
+    },
+  };
+};
+```
+
+## DeviceClientOptions
+
+Configure device information adapter.
+
+```typescript
+export type DeviceClientOptions = {
+  /** Device adapter implementation (Expo or React Native) */
+  adapter: DeviceInfoAdapter;
+};
+```
+
+### Expo Adapter
+
+```typescript
+import { ExpoDeviceAdapter } from "@teardown/react-native";
+
+{
+  device: {
+    adapter: new ExpoDeviceAdapter(),
+  }
+}
+```
+
+### Custom Adapter
+
+```typescript
+import type { DeviceInfoAdapter } from "@teardown/react-native";
+
+class MyDeviceAdapter implements DeviceInfoAdapter {
+  async getDeviceInfo() {
+    return {
+      application: {
+        version: "1.0.0",
+        build_number: 1,
+      },
+      hardware: {
+        device_name: "My Device",
+        device_brand: "Brand",
+        device_type: "ios",
+      },
+      os: {
+        platform: DevicePlatformEnum.IOS,
+        name: "iOS",
+        version: "15.0",
+      },
+      update: null, // or OTA update info
+      notifications: null, // or notification info
+    };
+  }
+}
+
+{
+  device: {
+    adapter: new MyDeviceAdapter(),
+  }
+}
+```
+
+## IdentityClientOptions
+
+Configure identity and session management behavior.
+
+```typescript
+export type IdentityClientOptions = {
+  /**
+   * If true, automatically identify anonymous device on load
+   * when not already identified.
+   * 
+   * Default: false
+   */
+  identifyOnLoad?: boolean;
+};
+```
+
+### Example
+
+```typescript
+{
+  identity: {
+    identifyOnLoad: true, // Auto-identify on startup
+  }
+}
+```
+
+## ForceUpdateClientOptions
+
+Configure force update checking behavior.
+
+```typescript
+export type ForceUpdateClientOptions = {
+  /**
+   * Minimum milliseconds between foreground checks.
+   * Prevents excessive checks when app is foregrounded rapidly.
+   * 
+   * Default: 30000 (30 seconds)
+   */
+  throttleMs?: number;
+
+  /**
+   * Minimum milliseconds since last successful check before re-checking.
+   * Cooldown period to avoid hitting API too frequently.
+   * 
+   * Default: 300000 (5 minutes)
+   */
+  checkCooldownMs?: number;
+
+  /**
+   * If true, check version even when not identified by using
+   * anonymous device identification.
+   * 
+   * Default: false
+   */
+  identifyAnonymousDevice?: boolean;
+};
+```
+
+### Example
+
+```typescript
+{
+  forceUpdate: {
+    throttleMs: 60000,           // 1 minute throttle
+    checkCooldownMs: 600000,     // 10 minute cooldown
+    identifyAnonymousDevice: true, // Check for anonymous users
+  }
+}
+```
+
+## LoggingClientOptions
+
+Configure logging behavior.
+
+```typescript
+export type LoggingClientOptions = {
+  /**
+   * Enable debug-level logging globally.
+   * 
+   * Default: false
+   */
+  debugEnabled?: boolean;
+};
+```
+
+### Example
+
+```typescript
+{
+  logging: {
+    debugEnabled: __DEV__, // Debug logs in development only
+  }
+}
+```
+
+## Complete Configuration Example
+
+```typescript
+import { TeardownCore, ExpoDeviceAdapter } from "@teardown/react-native";
+import * as MMKV from "react-native-mmkv";
+
+const createStorage = (storageKey: string) => {
+  const storage = MMKV.createMMKV({ id: storageKey });
+  return {
+    preload: () => storage.getAllKeys(),
+    getItem: (key) => storage.getString(key) ?? null,
+    setItem: (key, value) => storage.set(key, value),
+    removeItem: (key) => storage.remove(key),
+    clear: () => storage.clearAll(),
+    keys: () => storage.getAllKeys(),
+  };
+};
+
+export const teardown = new TeardownCore({
+  // Required: API configuration
+  api: {
+    org_id: process.env.TEARDOWN_ORG_ID,
+    project_id: process.env.TEARDOWN_PROJECT_ID,
+    api_key: process.env.TEARDOWN_API_KEY,
+    environment_slug: __DEV__ ? "development" : "production",
+  },
+
+  // Required: Storage configuration
+  storage: {
+    createStorage,
+  },
+
+  // Required: Device adapter
+  device: {
+    adapter: new ExpoDeviceAdapter(),
+  },
+
+  // Optional: Identity configuration
+  identity: {
+    identifyOnLoad: true,
+  },
+
+  // Optional: Force update configuration
+  forceUpdate: {
+    throttleMs: 30000,
+    checkCooldownMs: 300000,
+    identifyAnonymousDevice: false,
+  },
+
+  // Optional: Logging configuration
+  logging: {
+    debugEnabled: __DEV__,
+  },
+});
+```
+
+## Environment Variables
+
+Recommended approach using environment variables:
+
+```typescript
+// .env
+TEARDOWN_ORG_ID=5bd67d0d-d2f8-4aa2-bf6b-a0b5e05f82b9
+TEARDOWN_PROJECT_ID=ae090978-4034-4f77-9ff6-316b28513b8d
+TEARDOWN_API_KEY=3c0f0f23-560d-4f09-88c0-3462e8ee82e9
+
+// app.config.ts
+export default {
+  extra: {
+    teardownOrgId: process.env.TEARDOWN_ORG_ID,
+    teardownProjectId: process.env.TEARDOWN_PROJECT_ID,
+    teardownApiKey: process.env.TEARDOWN_API_KEY,
+  },
+};
+
+// lib/teardown.ts
+import Constants from "expo-constants";
+
+export const teardown = new TeardownCore({
+  api: {
+    org_id: Constants.expoConfig?.extra?.teardownOrgId,
+    project_id: Constants.expoConfig?.extra?.teardownProjectId,
+    api_key: Constants.expoConfig?.extra?.teardownApiKey,
+    environment_slug: "production",
+  },
+  // ...
+});
+```

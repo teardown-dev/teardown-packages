@@ -1,0 +1,248 @@
+# Core Concepts
+
+Understanding the architecture and core concepts of Teardown SDK.
+
+## Architecture Overview
+
+Teardown SDK is built around a modular client architecture with the following core components:
+
+```
+TeardownCore
+├── ApiClient         → HTTP client for Teardown API
+├── IdentityClient    → User & device identity management
+├── DeviceClient      → Device information & metadata
+├── StorageClient     → Persistent storage abstraction
+├── LoggingClient     → Structured logging
+├── ForceUpdateClient → Version checking & force updates
+└── UtilsClient       → Utility functions (UUID, etc.)
+```
+
+## TeardownCore
+
+The central orchestrator that initializes and manages all client modules.
+
+```typescript
+import { TeardownCore } from "@teardown/react-native";
+
+const core = new TeardownCore({
+  api: { /* API config */ },
+  storage: { /* Storage config */ },
+  device: { /* Device config */ },
+  identity: { /* Identity config */ },
+  forceUpdate: { /* Force update config */ },
+  logging: { /* Logging config */ },
+});
+```
+
+### Lifecycle
+
+- **Initialization**: All clients are instantiated and configured
+- **Runtime**: Clients operate independently but share state
+- **Shutdown**: Cleanup via `core.shutdown()` (automatic with TeardownProvider)
+
+## Client Modules
+
+### ApiClient
+
+Manages authenticated HTTP requests to the Teardown Ingest API.
+
+**Features:**
+- Automatic header injection (API key, org ID, project ID, environment)
+- Type-safe endpoints using Eden Treaty
+- Request/response interceptors
+
+**Usage:**
+```typescript
+const response = await core.api.client("/v1/identify", {
+  method: "POST",
+  body: { /* ... */ },
+});
+```
+
+### IdentityClient
+
+Handles user and device identification, session management.
+
+**Features:**
+- Anonymous device identification
+- User persona management
+- Session state persistence
+- Event-driven state changes
+
+**Session States:**
+- `unidentified` - No active session
+- `identifying` - Identification in progress
+- `identified` - Active session with token
+
+**Usage:**
+```typescript
+// Identify a user
+await core.identity.identify({
+  user_id: "user-123",
+  email: "user@example.com",
+});
+
+// Listen to session changes
+core.identity.onSessionStateChange((state) => {
+  console.log("Session state:", state.type);
+});
+
+// Get current state
+const state = core.identity.getSessionState();
+```
+
+### DeviceClient
+
+Retrieves device information and generates device IDs.
+
+**Features:**
+- Persistent device ID generation
+- Hardware info (brand, model, type)
+- OS information (platform, version)
+- Application version & build number
+- Update/OTA information
+
+**Usage:**
+```typescript
+const deviceId = await core.device.getDeviceId();
+const deviceInfo = await core.device.getDeviceInfo();
+```
+
+### StorageClient
+
+Provides namespaced persistent storage for all clients.
+
+**Features:**
+- Namespace isolation (each client gets its own storage)
+- Automatic key prefixing (`teardown:v1:namespace:key`)
+- Storage factory pattern for flexibility
+- MMKV, AsyncStorage, or custom backends
+
+**Usage:**
+```typescript
+// Clients use it internally, but you can create storage too
+const storage = core.storage.createStorage("my-namespace");
+storage.setItem("key", "value");
+const value = storage.getItem("key");
+```
+
+### LoggingClient
+
+Structured logging with debug mode support.
+
+**Features:**
+- Named loggers per client
+- Log levels: `info`, `error`, `debug`, `warn`, `trace`
+- Debug mode toggle
+- Contextual prefixes
+
+**Usage:**
+```typescript
+const logger = core.logging.createLogger({ name: "MyComponent" });
+logger.info("User logged in");
+logger.debug("Debug info", { userId: "123" });
+logger.error("Error occurred", error);
+```
+
+### ForceUpdateClient
+
+Manages version checking and force update requirements.
+
+**Features:**
+- Automatic version checks on app foreground
+- Throttling and cooldown mechanisms
+- Version status tracking
+- Integration with IdentityClient
+
+**Version Statuses:**
+- `unknown` - Initial state
+- `checking` - Check in progress
+- `up_to_date` - Current version is latest
+- `update_available` - Update available but optional
+- `update_required` - Update required to continue
+
+**Usage:**
+```typescript
+// Get current status
+const status = core.forceUpdate.getVersionStatus();
+
+// Listen to changes
+core.forceUpdate.onVersionStatusChange((status) => {
+  if (status.type === "update_required") {
+    // Show force update screen
+  }
+});
+```
+
+## Data Flow
+
+### Identification Flow
+
+```
+User Action
+  ↓
+core.identity.identify()
+  ↓
+DeviceClient.getDeviceId()
+DeviceClient.getDeviceInfo()
+  ↓
+ApiClient.POST /v1/identify
+  ↓
+Session State Update
+  ↓
+SessionState Event Emitted
+  ↓
+ForceUpdateClient receives version status
+  ↓
+VersionStatus Event Emitted
+  ↓
+UI Updates (via hooks)
+```
+
+### Force Update Check Flow
+
+```
+App Foreground
+  ↓
+ForceUpdateClient (throttle check)
+  ↓
+IdentityClient.refresh() or .identify()
+  ↓
+ApiClient.POST /v1/identify
+  ↓
+Version Status Updated
+  ↓
+VersionStatus Event Emitted
+  ↓
+useForceUpdate hook updates
+  ↓
+UI responds to update requirement
+```
+
+## Event System
+
+Teardown uses EventEmitter3 for reactive state updates:
+
+```typescript
+// Subscribe to events
+const unsubscribe = core.identity.onSessionStateChange((state) => {
+  // Handle state change
+});
+
+// Cleanup
+unsubscribe();
+```
+
+React hooks automatically handle subscriptions and cleanup.
+
+## Storage Architecture
+
+All persistent data is namespaced and prefixed:
+
+```
+teardown:v1:device:deviceId
+teardown:v1:identity:SESSION_STATE
+teardown:v1:version:VERSION_STATUS
+```
+
+This prevents collisions and allows for clean migration paths.

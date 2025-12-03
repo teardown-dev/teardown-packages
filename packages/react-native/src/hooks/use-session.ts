@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { VersionStatus } from "../clients/force-update";
-import { useTeardown } from "../contexts/teardown.context";
+import { useTeardown } from "../providers/teardown.provider";
 
 export type UseForceUpdateResult = {
   /**

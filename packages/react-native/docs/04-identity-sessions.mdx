@@ -1,0 +1,347 @@
+# Identity & Sessions
+
+Managing user identity, sessions, and personas with Teardown SDK.
+
+## Overview
+
+The IdentityClient manages:
+- User identification and authentication
+- Session state management
+- Persona (user profile) association
+- Anonymous device tracking
+- Session persistence and restoration
+
+## Session States
+
+The SDK uses a type-safe state machine for session management:
+
+```typescript
+type SessionState =
+  | { type: "unidentified" }
+  | { type: "identifying" }
+  | { type: "identified"; session: Session; version_status: VersionStatus };
+```
+
+### State Transitions
+
+```
+unidentified
+    ↓
+identifying (during API call)
+    ↓
+identified (with session data)
+```
+
+## Identifying Users
+
+### Anonymous Identification
+
+Identify a device without user data:
+
+```typescript
+const result = await core.identity.identify();
+
+if (result.success) {
+  console.log("Session ID:", result.data.session_id);
+  console.log("Device ID:", result.data.device_id);
+  console.log("Token:", result.data.token);
+}
+```
+
+### User Identification
+
+Identify with user persona data:
+
+```typescript
+const result = await core.identity.identify({
+  user_id: "user-123",
+  email: "user@example.com",
+  name: "John Doe",
+});
+
+if (result.success) {
+  console.log("Persona ID:", result.data.persona_id);
+  console.log("Session created:", result.data.session_id);
+} else {
+  console.error("Identification failed:", result.error);
+}
+```
+
+### Persona Fields
+
+```typescript
+export type Persona = {
+  /** Unique user ID from your system */
+  user_id?: string;
+  
+  /** User's email address */
+  email?: string;
+  
+  /** User's display name */
+  name?: string;
+};
+```
+
+## Session Management
+
+### Get Current Session State
+
+```typescript
+const state = core.identity.getSessionState();
+
+if (state.type === "identified") {
+  console.log("Session ID:", state.session.session_id);
+  console.log("Token:", state.session.token);
+}
+```
+
+### Listen to Session Changes
+
+```typescript
+const unsubscribe = core.identity.onSessionStateChange((state) => {
+  switch (state.type) {
+    case "unidentified":
+      // No active session
+      break;
+    case "identifying":
+      // Identification in progress
+      break;
+    case "identified":
+      // Session active
+      console.log("Session:", state.session);
+      break;
+  }
+});
+
+// Clean up listener
+unsubscribe();
+```
+
+### Refresh Session
+
+Re-identify to refresh session data and check version status:
+
+```typescript
+const result = await core.identity.refresh();
+
+if (result.success) {
+  console.log("Session refreshed");
+  console.log("Version status:", result.data.version_status);
+}
+```
+
+### Reset Session
+
+Clear session and return to unidentified state:
+
+```typescript
+core.identity.reset();
+// Session is now cleared
+const state = core.identity.getSessionState();
+console.log(state.type); // "unidentified"
+```
+
+## React Integration
+
+### Using the Hook
+
+```typescript
+import { useTeardown } from "@teardown/react-native";
+
+function MyComponent() {
+  const { core } = useTeardown();
+  const [sessionState, setSessionState] = useState(
+    core.identity.getSessionState()
+  );
+
+  useEffect(() => {
+    const unsubscribe = core.identity.onSessionStateChange(setSessionState);
+    return unsubscribe;
+  }, [core.identity]);
+
+  return (
+    <View>
+      {sessionState.type === "identified" ? (
+        <Text>Logged in as {sessionState.session.persona_id}</Text>
+      ) : (
+        <Button onPress={() => core.identity.identify()}>
+          Sign In Anonymously
+        </Button>
+      )}
+    </View>
+  );
+}
+```
+
+## Auto-Identification
+
+Enable automatic identification on app startup:
+
+```typescript
+export const teardown = new TeardownCore({
+  // ...
+  identity: {
+    identifyOnLoad: true, // Auto-identify on startup
+  },
+});
+```
+
+This will automatically call `identify()` when the SDK initializes, creating an anonymous session if none exists.
+
+## Authentication Patterns
+
+### Login Flow
+
+```typescript
+async function handleLogin(email: string, password: string) {
+  // 1. Authenticate with your backend
+  const user = await myApi.login(email, password);
+  
+  // 2. Identify with Teardown
+  const result = await core.identity.identify({
+    user_id: user.id,
+    email: user.email,
+    name: user.name,
+  });
+  
+  if (result.success) {
+    // 3. Session created, version status checked
+    console.log("Version status:", result.data.version_status);
+  }
+}
+```
+
+### Logout Flow
+
+```typescript
+async function handleLogout() {
+  // 1. Logout from your backend
+  await myApi.logout();
+  
+  // 2. Reset Teardown session
+  core.identity.reset();
+  
+  // 3. Optionally re-identify anonymously
+  await core.identity.identify();
+}
+```
+
+### Anonymous to Authenticated
+
+```typescript
+async function handleAnonymousToAuth(user: User) {
+  // Already have anonymous session
+  const currentState = core.identity.getSessionState();
+  console.log("Current session:", currentState);
+  
+  // Upgrade to authenticated
+  const result = await core.identity.identify({
+    user_id: user.id,
+    email: user.email,
+    name: user.name,
+  });
+  
+  // Same device, new persona association
+}
+```
+
+## Session Persistence
+
+Sessions are automatically persisted to storage and restored on app restart:
+
+```typescript
+// First launch
+await core.identity.identify({ user_id: "user-123" });
+// Session saved to storage
+
+// App restart
+const state = core.identity.getSessionState();
+// Session automatically restored from storage
+if (state.type === "identified") {
+  console.log("Session restored:", state.session.session_id);
+}
+```
+
+## Session Data Structure
+
+```typescript
+export type Session = {
+  /** Unique session identifier */
+  session_id: string;
+  
+  /** Device identifier */
+  device_id: string;
+  
+  /** Persona (user) identifier */
+  persona_id: string;
+  
+  /** Authentication token for API requests */
+  token: string;
+};
+
+export type IdentityUser = Session & {
+  /** Current version status for this user */
+  version_status?: VersionStatus;
+};
+```
+
+## Error Handling
+
+```typescript
+const result = await core.identity.identify({
+  user_id: "user-123",
+  email: "invalid-email",
+});
+
+if (!result.success) {
+  console.error("Identification failed:", result.error);
+  
+  // Handle specific errors
+  if (result.error.includes("validation")) {
+    // Handle validation error
+  }
+}
+```
+
+## Best Practices
+
+1. **Identify Early**: Call `identify()` as soon as possible in your app lifecycle
+2. **Handle States**: Always handle all session states in your UI
+3. **Persist Context**: Store user context alongside session (e.g., user preferences)
+4. **Refresh on Foreground**: Use `refresh()` to check version status when app is foregrounded
+5. **Clean Up**: Reset session on logout to prevent stale data
+6. **Error Feedback**: Show user-friendly messages for identification failures
+
+## Advanced Usage
+
+### Conditional Identification
+
+```typescript
+function shouldIdentify(user: User | null): boolean {
+  const state = core.identity.getSessionState();
+  
+  // Already identified
+  if (state.type === "identified") {
+    return false;
+  }
+  
+  // User logged in but not identified
+  if (user && state.type === "unidentified") {
+    return true;
+  }
+  
+  return false;
+}
+```
+
+### Session Monitoring
+
+```typescript
+// Track session changes for analytics
+core.identity.onSessionStateChange((state) => {
+  analytics.track("session_state_changed", {
+    state: state.type,
+    timestamp: new Date().toISOString(),
+  });
+});
+```

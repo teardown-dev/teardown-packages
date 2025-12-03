@@ -1,0 +1,158 @@
+# Teardown React Native SDK Documentation
+
+Complete documentation for integrating and using the Teardown React Native SDK in your mobile applications.
+
+## Overview
+
+Teardown SDK provides a complete solution for managing:
+- **User Identity** - Anonymous and authenticated user tracking
+- **Session Management** - Persistent sessions across app launches
+- **Force Updates** - Automatic version checking and enforcement
+- **Device Information** - Hardware, OS, and app metadata
+- **Analytics Ready** - Built-in event tracking foundation
+
+## Documentation Index
+
+### Getting Started
+- [Getting Started](./01-getting-started.mdx) - Installation and quick start guide
+- [Core Concepts](./02-core-concepts.mdx) - Understanding the SDK architecture
+- [Configuration](./03-configuration.mdx) - Complete configuration reference
+
+### Core Features
+- [Identity & Sessions](./04-identity-sessions.mdx) - User identification and session management
+- [Force Updates](./05-force-updates.mdx) - Version checking and update enforcement
+- [Storage](./06-storage.mdx) - Persistent storage architecture
+
+### Reference
+- [API Reference](./07-api-reference.mdx) - Complete API documentation
+- [Hooks Reference](./08-hooks-reference.mdx) - React hooks and custom hooks
+- [Examples](./09-examples.mdx) - Practical examples and recipes
+
+## Quick Links
+
+### Installation
+
+```bash
+bun add @teardown/react-native
+```
+
+### Basic Setup
+
+```typescript
+import { TeardownCore, TeardownProvider } from "@teardown/react-native";
+
+const teardown = new TeardownCore({
+  api: {
+    org_id: "your-org-id",
+    project_id: "your-project-id",
+    api_key: "your-api-key",
+    environment_slug: "production",
+  },
+  storage: { createStorage },
+  device: { adapter: new ExpoDeviceAdapter() },
+});
+
+function App() {
+  return (
+    <TeardownProvider core={teardown}>
+      {/* Your app */}
+    </TeardownProvider>
+  );
+}
+```
+
+### Using in Components
+
+```typescript
+import { useTeardown, useForceUpdate } from "@teardown/react-native";
+
+function MyComponent() {
+  const { core } = useTeardown();
+  const { isUpdateRequired } = useForceUpdate();
+
+  // Use SDK features
+}
+```
+
+## Key Features
+
+### 🔐 Identity Management
+- Anonymous device tracking
+- User persona association
+- Persistent sessions
+- Event-driven state updates
+
+### 📱 Device Information
+- Platform detection (iOS/Android)
+- Hardware details
+- OS information
+- App version tracking
+- OTA update metadata
+
+### 🔄 Force Updates
+- Automatic version checking
+- Configurable check frequency
+- App foreground detection
+- Blocking and non-blocking updates
+- React hook integration
+
+### 💾 Storage
+- Namespaced persistence
+- MMKV support
+- AsyncStorage support
+- Custom storage backends
+- Type-safe wrappers
+
+### 📊 Logging
+- Structured logging
+- Debug mode
+- Named loggers
+- Multiple log levels
+
+## Platform Support
+
+- ✅ React Native (iOS/Android)
+- ✅ Expo (Managed & Bare workflow)
+- ✅ Expo Go (with limitations)
+
+## Requirements
+
+- React Native >= 0.64
+- React >= 16.8 (hooks support)
+- TypeScript >= 4.5 (recommended)
+
+## Peer Dependencies
+
+```json
+{
+  "react": "*",
+  "react-native": "*",
+  "react-native-device-info": "^14.1.1",
+  "expo-application": "^7.0",
+  "expo-device": "^8.0",
+  "zod": "^4"
+}
+```
+
+## Support
+
+- 📧 Email: support@teardown.dev
+- 💬 Discord: [Join our community](#)
+- 📖 Docs: [docs.teardown.dev](#)
+- 🐛 Issues: [GitHub Issues](#)
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](#) for details.
+
+---
+
+**Next Steps:**
+1. [Install the SDK](./01-getting-started.mdx)
+2. [Learn core concepts](./02-core-concepts.mdx)
+3. [Configure your app](./03-configuration.mdx)
+4. [Explore examples](./09-examples.mdx)

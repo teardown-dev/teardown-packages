@@ -1,0 +1,386 @@
+# Force Updates
+
+Managing app version requirements and force update flows with Teardown SDK.
+
+## Overview
+
+The ForceUpdateClient provides automatic version checking and enforcement:
+- Automatic background version checks
+- Configurable check frequency and throttling
+- Integration with app foreground/background events
+- Version status persistence across app sessions
+- React hook for UI integration
+
+## Version Statuses
+
+```typescript
+type VersionStatus =
+  | { type: "unknown" }          // Initial state, not yet checked
+  | { type: "checking" }         // Check in progress
+  | { type: "up_to_date" }       // Current version is latest
+  | { type: "update_available" } // Update available but optional
+  | { type: "update_required" }  // Update required to continue
+```
+
+## Configuration
+
+```typescript
+export const teardown = new TeardownCore({
+  // ...
+  forceUpdate: {
+    // Minimum time between foreground checks (default: 30s)
+    throttleMs: 30000,
+    
+    // Cooldown after successful check (default: 5min)
+    checkCooldownMs: 300000,
+    
+    // Check version for anonymous devices (default: false)
+    identifyAnonymousDevice: false,
+  },
+});
+```
+
+## Automatic Checking
+
+Version checks happen automatically when:
+1. User is identified (via `identity.identify()`)
+2. Session is refreshed (via `identity.refresh()`)
+3. App comes to foreground (with throttling and cooldown)
+
+### Foreground Check Logic
+
+```typescript
+// Check only if:
+// 1. Enough time since last foreground (throttleMs)
+// 2. Enough time since last check (checkCooldownMs)
+
+App Foreground → Check Throttle → Check Cooldown → Identify/Refresh
+```
+
+## React Hook
+
+Use the `useForceUpdate` hook to integrate version status into your UI:
+
+```typescript
+import { useForceUpdate } from "@teardown/react-native";
+
+function App() {
+  const { versionStatus, isUpdateAvailable, isUpdateRequired } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  if (isUpdateAvailable) {
+    return (
+      <>
+        <UpdateBanner />
+        <MainApp />
+      </>
+    );
+  }
+
+  return <MainApp />;
+}
+```
+
+### Hook Return Type
+
+```typescript
+export type UseForceUpdateResult = {
+  /** Current version status */
+  versionStatus: VersionStatus;
+  
+  /** True if update is available but not required */
+  isUpdateAvailable: boolean;
+  
+  /** True if update is required (blocking) */
+  isUpdateRequired: boolean;
+};
+```
+
+## Manual Version Checking
+
+### Check Current Status
+
+```typescript
+const status = core.forceUpdate.getVersionStatus();
+
+console.log("Status:", status.type);
+```
+
+### Listen to Status Changes
+
+```typescript
+const unsubscribe = core.forceUpdate.onVersionStatusChange((status) => {
+  console.log("Version status changed:", status.type);
+  
+  if (status.type === "update_required") {
+    // Show force update screen
+  }
+});
+
+// Clean up
+unsubscribe();
+```
+
+### Manual Check
+
+Trigger a version check by identifying or refreshing:
+
+```typescript
+// For authenticated users
+await core.identity.refresh();
+
+// For anonymous users (if identifyAnonymousDevice is true)
+await core.identity.identify();
+```
+
+## UI Patterns
+
+### Blocking Update Screen
+
+Show a full-screen takeover when update is required:
+
+```typescript
+import { useForceUpdate } from "@teardown/react-native";
+
+export function ForceUpdateScreen() {
+  const { versionStatus } = useForceUpdate();
+
+  if (versionStatus.type !== "update_required") {
+    return null;
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Update Required</Text>
+      <Text style={styles.message}>
+        A new version of the app is available. Please update to continue.
+      </Text>
+      <Button
+        title="Update Now"
+        onPress={() => {
+          const storeUrl = Platform.select({
+            ios: "https://apps.apple.com/app/yourapp",
+            android: "https://play.google.com/store/apps/details?id=com.yourapp",
+          });
+          Linking.openURL(storeUrl);
+        }}
+      />
+    </View>
+  );
+}
+```
+
+### Optional Update Banner
+
+Show a dismissible banner for optional updates:
+
+```typescript
+export function UpdateBanner() {
+  const { isUpdateAvailable } = useForceUpdate();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!isUpdateAvailable || dismissed) {
+    return null;
+  }
+
+  return (
+    <View style={styles.banner}>
+      <Text>A new version is available</Text>
+      <Button title="Update" onPress={handleUpdate} />
+      <Button title="Later" onPress={() => setDismissed(true)} />
+    </View>
+  );
+}
+```
+
+### App Root Integration
+
+```typescript
+export default function RootLayout() {
+  return (
+    <TeardownProvider core={teardown}>
+      <ForceUpdateGate>
+        <SafeAreaProvider>
+          <Stack />
+        </SafeAreaProvider>
+      </ForceUpdateGate>
+    </TeardownProvider>
+  );
+}
+
+function ForceUpdateGate({ children }) {
+  const { isUpdateRequired } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  return children;
+}
+```
+
+## Check Behavior
+
+### With Authenticated User
+
+```typescript
+// User is identified
+const sessionState = core.identity.getSessionState();
+// sessionState.type === "identified"
+
+// App comes to foreground
+// → Calls core.identity.refresh()
+// → API returns version status
+// → ForceUpdateClient updates status
+// → UI re-renders via useForceUpdate hook
+```
+
+### With Anonymous User
+
+```typescript
+// Configuration
+{
+  forceUpdate: {
+    identifyAnonymousDevice: true, // Enable for anonymous users
+  }
+}
+
+// User is NOT identified
+const sessionState = core.identity.getSessionState();
+// sessionState.type === "unidentified"
+
+// App comes to foreground
+// → Calls core.identity.identify({})
+// → API returns version status
+// → ForceUpdateClient updates status
+```
+
+## Throttling & Cooldowns
+
+Prevent excessive API calls with throttling and cooldowns:
+
+```typescript
+{
+  forceUpdate: {
+    // User opens/closes app rapidly
+    throttleMs: 30000, // Wait 30s between foreground checks
+    
+    // Avoid hitting API too often
+    checkCooldownMs: 300000, // Wait 5min since last successful check
+  }
+}
+```
+
+### Example Timeline
+
+```
+T=0:00  - App foreground → Check (allowed)
+T=0:10  - App background
+T=0:15  - App foreground → Check (blocked by throttle, < 30s)
+T=0:40  - App foreground → Check (blocked by cooldown, < 5min)
+T=5:30  - App foreground → Check (allowed, past both limits)
+```
+
+## Version Management
+
+Version status is determined by your Teardown dashboard configuration:
+- **Minimum Version**: Versions below this require update
+- **Recommended Version**: Versions below this show update available
+- **Latest Version**: Current version in app stores
+
+### Status Resolution
+
+```
+User Version < Minimum → update_required
+User Version < Recommended → update_available
+User Version >= Recommended → up_to_date
+```
+
+## Persistence
+
+Version status is persisted across app sessions:
+
+```typescript
+// First launch, after version check
+versionStatus.type === "update_available"
+
+// App restart
+const status = core.forceUpdate.getVersionStatus();
+// status.type === "update_available" (restored from storage)
+```
+
+## Best Practices
+
+1. **Place at Root**: Wrap ForceUpdateGate at app root level
+2. **Block Navigation**: Prevent navigation when update required
+3. **Store Links**: Use deep links to app store pages
+4. **Clear Messaging**: Explain why update is needed
+5. **Test Throttling**: Verify throttling prevents excessive checks
+6. **Handle States**: Account for all version status states
+7. **Track Events**: Log version check events for monitoring
+
+## Advanced Usage
+
+### Custom Check Logic
+
+```typescript
+// Manually trigger check on specific events
+async function checkVersionAfterPurchase() {
+  await core.identity.refresh();
+  
+  const status = core.forceUpdate.getVersionStatus();
+  
+  if (status.type === "update_required") {
+    // Prevent purchase flow
+  }
+}
+```
+
+### Version Gate for Features
+
+```typescript
+function FeatureGate({ children, minVersion }) {
+  const { versionStatus } = useForceUpdate();
+  const currentVersion = getCurrentAppVersion();
+  
+  if (compareVersions(currentVersion, minVersion) < 0) {
+    return <UpdatePrompt minVersion={minVersion} />;
+  }
+  
+  return children;
+}
+```
+
+### Analytics Integration
+
+```typescript
+core.forceUpdate.onVersionStatusChange((status) => {
+  analytics.track("version_status_changed", {
+    status: status.type,
+    timestamp: new Date().toISOString(),
+  });
+});
+```
+
+## Troubleshooting
+
+### Checks Not Happening
+
+- Verify `identifyAnonymousDevice: true` for anonymous users
+- Check throttleMs and checkCooldownMs values
+- Ensure app is foregrounding (not just reopening)
+
+### Status Not Updating
+
+- Check network connectivity
+- Verify API credentials are correct
+- Look for errors in logs (enable debug mode)
+
+### Infinite Update Loops
+
+- Ensure version numbers are incremented properly
+- Verify dashboard configuration matches deployed version
+- Check for version comparison bugs in custom logic

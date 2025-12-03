@@ -1,0 +1,430 @@
+# Storage
+
+Understanding Teardown's storage architecture and customization.
+
+## Overview
+
+The StorageClient provides a namespaced, persistent storage abstraction for all SDK clients. It supports multiple storage backends (MMKV, AsyncStorage, etc.) through a factory pattern.
+
+## Storage Architecture
+
+### Namespace Isolation
+
+Each client gets its own isolated storage namespace:
+
+```
+teardown:v1:device:deviceId
+teardown:v1:identity:SESSION_STATE
+teardown:v1:version:VERSION_STATUS
+teardown:v1:custom:myKey
+```
+
+### Key Prefixing
+
+```typescript
+// Client requests storage with namespace
+const storage = storageClient.createStorage("identity");
+
+// Keys are automatically prefixed
+storage.setItem("SESSION_STATE", data);
+// Actual key: "teardown:v1:identity:SESSION_STATE"
+```
+
+## Storage Interface
+
+```typescript
+export type SupportedStorage = {
+  /** Preload storage (for optimization) */
+  preload: () => void;
+  
+  /** Get item by key */
+  getItem: (key: string) => string | null;
+  
+  /** Set item */
+  setItem: (key: string, value: string) => void;
+  
+  /** Remove item */
+  removeItem: (key: string) => void;
+  
+  /** Clear all items in this namespace */
+  clear: () => void;
+  
+  /** Get all keys in this namespace */
+  keys: () => string[];
+};
+```
+
+## Storage Backends
+
+### MMKV (Recommended)
+
+Fast, synchronous storage using MMKV:
+
+```typescript
+import * as MMKV from "react-native-mmkv";
+import type { SupportedStorageFactory } from "@teardown/react-native";
+
+const createStorage: SupportedStorageFactory = (storageKey: string) => {
+  const storage = MMKV.createMMKV({
+    id: storageKey,
+  });
+
+  return {
+    preload: () => {
+      storage.getAllKeys();
+    },
+    getItem: (key: string) => {
+      return storage.getString(key) ?? null;
+    },
+    setItem: (key: string, value: string) => {
+      storage.set(key, value);
+    },
+    removeItem: (key: string) => {
+      storage.remove(key);
+    },
+    clear: () => {
+      storage.clearAll();
+    },
+    keys: () => {
+      return storage.getAllKeys();
+    },
+  };
+};
+```
+
+### AsyncStorage
+
+Asynchronous storage using AsyncStorage:
+
+```typescript
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { SupportedStorageFactory } from "@teardown/react-native";
+
+const createStorage: SupportedStorageFactory = (storageKey: string) => {
+  const prefix = `${storageKey}:`;
+  
+  // Note: AsyncStorage is async but interface is sync
+  // You may need to use a synchronous wrapper or cache
+  
+  return {
+    preload: () => {
+      // No preload needed for AsyncStorage
+    },
+    getItem: (key: string) => {
+      // This should be synchronous - use a cache or wrapper
+      const cached = cache.get(`${prefix}${key}`);
+      return cached ?? null;
+    },
+    setItem: (key: string, value: string) => {
+      AsyncStorage.setItem(`${prefix}${key}`, value);
+      cache.set(`${prefix}${key}`, value);
+    },
+    removeItem: (key: string) => {
+      AsyncStorage.removeItem(`${prefix}${key}`);
+      cache.delete(`${prefix}${key}`);
+    },
+    clear: async () => {
+      const keys = await AsyncStorage.getAllKeys();
+      const prefixedKeys = keys.filter(k => k.startsWith(prefix));
+      await AsyncStorage.multiRemove(prefixedKeys);
+      prefixedKeys.forEach(k => cache.delete(k));
+    },
+    keys: () => {
+      return Array.from(cache.keys())
+        .filter(k => k.startsWith(prefix))
+        .map(k => k.replace(prefix, ""));
+    },
+  };
+};
+```
+
+### In-Memory Storage (Testing)
+
+For testing or temporary storage:
+
+```typescript
+import type { SupportedStorageFactory } from "@teardown/react-native";
+
+const createStorage: SupportedStorageFactory = (storageKey: string) => {
+  const store = new Map<string, string>();
+
+  return {
+    preload: () => {},
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => store.set(key, value),
+    removeItem: (key: string) => store.delete(key),
+    clear: () => store.clear(),
+    keys: () => Array.from(store.keys()),
+  };
+};
+```
+
+## Using Storage Client
+
+### Creating Namespaced Storage
+
+```typescript
+const { core } = useTeardown();
+
+// Create a custom storage namespace
+const myStorage = core.storage.createStorage("myFeature");
+
+// Use it
+myStorage.setItem("setting1", "value1");
+myStorage.setItem("setting2", "value2");
+
+const value = myStorage.getItem("setting1");
+console.log(value); // "value1"
+
+// Get all keys in namespace
+const keys = myStorage.keys();
+console.log(keys); // ["setting1", "setting2"]
+
+// Clear namespace
+myStorage.clear();
+```
+
+### Storage Singleton Pattern
+
+Storage instances are cached per namespace:
+
+```typescript
+// First call creates storage
+const storage1 = core.storage.createStorage("myFeature");
+
+// Second call returns same instance
+const storage2 = core.storage.createStorage("myFeature");
+
+console.log(storage1 === storage2); // true
+```
+
+## Data Serialization
+
+Storage only supports string values. Serialize complex data:
+
+```typescript
+// Store object
+const data = { userId: "123", name: "John" };
+myStorage.setItem("user", JSON.stringify(data));
+
+// Retrieve object
+const stored = myStorage.getItem("user");
+const user = stored ? JSON.parse(stored) : null;
+```
+
+### Type-Safe Storage Wrapper
+
+```typescript
+class TypedStorage<T> {
+  constructor(
+    private storage: SupportedStorage,
+    private key: string
+  ) {}
+
+  get(): T | null {
+    const value = this.storage.getItem(this.key);
+    if (!value) return null;
+    
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  set(value: T): void {
+    this.storage.setItem(this.key, JSON.stringify(value));
+  }
+
+  remove(): void {
+    this.storage.removeItem(this.key);
+  }
+}
+
+// Usage
+type UserSettings = {
+  theme: "light" | "dark";
+  notifications: boolean;
+};
+
+const settingsStorage = new TypedStorage<UserSettings>(
+  core.storage.createStorage("settings"),
+  "userSettings"
+);
+
+settingsStorage.set({ theme: "dark", notifications: true });
+const settings = settingsStorage.get();
+```
+
+## Storage Lifecycle
+
+### Initialization
+
+```typescript
+// Storage is created on first access
+const storage = core.storage.createStorage("myFeature");
+
+// preload() is called automatically
+// This optimizes subsequent reads for some backends
+```
+
+### Cleanup
+
+```typescript
+// Clear specific namespace
+myStorage.clear();
+
+// Or shutdown entire StorageClient (clears all namespaces)
+core.shutdown();
+```
+
+## Migration Strategies
+
+### Version Migration
+
+```typescript
+const STORAGE_VERSION_KEY = "storageVersion";
+const CURRENT_VERSION = 2;
+
+const myStorage = core.storage.createStorage("myFeature");
+const storedVersion = parseInt(myStorage.getItem(STORAGE_VERSION_KEY) ?? "0");
+
+if (storedVersion < CURRENT_VERSION) {
+  // Migrate from v1 to v2
+  if (storedVersion === 1) {
+    const oldData = myStorage.getItem("oldKey");
+    if (oldData) {
+      myStorage.setItem("newKey", transformData(oldData));
+      myStorage.removeItem("oldKey");
+    }
+  }
+  
+  myStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION.toString());
+}
+```
+
+### Namespace Migration
+
+```typescript
+// Move data from old namespace to new
+const oldStorage = core.storage.createStorage("oldNamespace");
+const newStorage = core.storage.createStorage("newNamespace");
+
+const keys = oldStorage.keys();
+keys.forEach(key => {
+  const value = oldStorage.getItem(key);
+  if (value) {
+    newStorage.setItem(key, value);
+  }
+});
+
+oldStorage.clear();
+```
+
+## Best Practices
+
+1. **Use MMKV**: Prefer MMKV for production apps (fast, synchronous)
+2. **Namespace Everything**: Always use namespaced storage for isolation
+3. **Serialize Data**: Use JSON for complex objects
+4. **Version Data**: Include version keys for migration support
+5. **Handle Errors**: Wrap JSON.parse in try/catch
+6. **Validate Data**: Use Zod or similar for runtime validation
+7. **Clear Stale Data**: Implement data expiration if needed
+8. **Test Migrations**: Test storage migrations thoroughly
+
+## Advanced Patterns
+
+### Encrypted Storage
+
+```typescript
+import * as Crypto from "expo-crypto";
+
+const createEncryptedStorage: SupportedStorageFactory = (storageKey) => {
+  const storage = MMKV.createMMKV({ id: storageKey });
+  
+  const encrypt = (value: string) => {
+    // Implement encryption
+    return Crypto.encrypt(value, SECRET_KEY);
+  };
+  
+  const decrypt = (value: string) => {
+    // Implement decryption
+    return Crypto.decrypt(value, SECRET_KEY);
+  };
+
+  return {
+    preload: () => storage.getAllKeys(),
+    getItem: (key) => {
+      const encrypted = storage.getString(key);
+      return encrypted ? decrypt(encrypted) : null;
+    },
+    setItem: (key, value) => {
+      storage.set(key, encrypt(value));
+    },
+    removeItem: (key) => storage.remove(key),
+    clear: () => storage.clearAll(),
+    keys: () => storage.getAllKeys(),
+  };
+};
+```
+
+### TTL Storage
+
+```typescript
+type TTLValue = {
+  value: string;
+  expiresAt: number;
+};
+
+class TTLStorage {
+  constructor(private storage: SupportedStorage) {}
+
+  setItem(key: string, value: string, ttlMs: number) {
+    const data: TTLValue = {
+      value,
+      expiresAt: Date.now() + ttlMs,
+    };
+    this.storage.setItem(key, JSON.stringify(data));
+  }
+
+  getItem(key: string): string | null {
+    const stored = this.storage.getItem(key);
+    if (!stored) return null;
+
+    try {
+      const data: TTLValue = JSON.parse(stored);
+      
+      if (Date.now() > data.expiresAt) {
+        this.storage.removeItem(key);
+        return null;
+      }
+      
+      return data.value;
+    } catch {
+      return null;
+    }
+  }
+}
+```
+
+### Observable Storage
+
+```typescript
+import { EventEmitter } from "eventemitter3";
+
+class ObservableStorage {
+  private emitter = new EventEmitter();
+
+  constructor(private storage: SupportedStorage) {}
+
+  setItem(key: string, value: string) {
+    this.storage.setItem(key, value);
+    this.emitter.emit("change", { key, value });
+  }
+
+  onStorageChange(listener: (event: { key: string; value: string }) => void) {
+    this.emitter.on("change", listener);
+    return () => this.emitter.off("change", listener);
+  }
+}
+```

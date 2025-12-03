@@ -1,0 +1,450 @@
+# Hooks Reference
+
+Complete reference for React hooks provided by Teardown SDK.
+
+## useTeardown
+
+Access the TeardownCore instance from React components.
+
+### Signature
+
+```typescript
+function useTeardown(): { core: TeardownCore }
+```
+
+### Usage
+
+```typescript
+import { useTeardown } from "@teardown/react-native";
+
+function MyComponent() {
+  const { core } = useTeardown();
+  
+  // Access any client
+  const sessionState = core.identity.getSessionState();
+  const versionStatus = core.forceUpdate.getVersionStatus();
+  
+  return <View>...</View>;
+}
+```
+
+### Requirements
+
+- Must be used within a `TeardownProvider`
+- Throws error if used outside provider
+
+### Example: Identity Check
+
+```typescript
+function UserProfile() {
+  const { core } = useTeardown();
+  const [isIdentified, setIsIdentified] = useState(
+    core.identity.getSessionState().type === "identified"
+  );
+
+  useEffect(() => {
+    const unsubscribe = core.identity.onSessionStateChange((state) => {
+      setIsIdentified(state.type === "identified");
+    });
+    return unsubscribe;
+  }, [core.identity]);
+
+  if (!isIdentified) {
+    return <LoginPrompt />;
+  }
+
+  return <ProfileView />;
+}
+```
+
+## useForceUpdate
+
+Monitor app version status and update requirements.
+
+### Signature
+
+```typescript
+function useForceUpdate(): UseForceUpdateResult
+
+type UseForceUpdateResult = {
+  versionStatus: VersionStatus;
+  isUpdateAvailable: boolean;
+  isUpdateRequired: boolean;
+}
+```
+
+### Return Values
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `versionStatus` | `VersionStatus` | Current version status object |
+| `isUpdateAvailable` | `boolean` | True if optional update available |
+| `isUpdateRequired` | `boolean` | True if update is required (blocking) |
+
+### Usage
+
+```typescript
+import { useForceUpdate } from "@teardown/react-native";
+
+function App() {
+  const { versionStatus, isUpdateAvailable, isUpdateRequired } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  if (isUpdateAvailable) {
+    return (
+      <>
+        <UpdateBanner />
+        <MainApp />
+      </>
+    );
+  }
+
+  return <MainApp />;
+}
+```
+
+### Version Status Types
+
+```typescript
+type VersionStatus =
+  | { type: "unknown" }          // Not yet checked
+  | { type: "checking" }         // Check in progress
+  | { type: "up_to_date" }       // Current version OK
+  | { type: "update_available" } // Optional update
+  | { type: "update_required" }  // Blocking update
+```
+
+### Example: Conditional Rendering
+
+```typescript
+function VersionGate({ children }) {
+  const { versionStatus, isUpdateRequired } = useForceUpdate();
+
+  // Block everything if update required
+  if (isUpdateRequired) {
+    return (
+      <FullScreenBlocker>
+        <UpdateRequiredMessage />
+      </FullScreenBlocker>
+    );
+  }
+
+  // Show loading state while checking
+  if (versionStatus.type === "checking") {
+    return <LoadingSpinner />;
+  }
+
+  return children;
+}
+```
+
+### Example: Update Banner
+
+```typescript
+function UpdateBanner() {
+  const { isUpdateAvailable } = useForceUpdate();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!isUpdateAvailable || dismissed) {
+    return null;
+  }
+
+  return (
+    <Banner
+      message="New version available!"
+      onUpdate={handleUpdatePress}
+      onDismiss={() => setDismissed(true)}
+    />
+  );
+}
+```
+
+### Example: Analytics Tracking
+
+```typescript
+function VersionTracker() {
+  const { versionStatus } = useForceUpdate();
+
+  useEffect(() => {
+    analytics.track("version_status_changed", {
+      status: versionStatus.type,
+      timestamp: new Date().toISOString(),
+    });
+  }, [versionStatus.type]);
+
+  return null;
+}
+```
+
+## Custom Hooks
+
+Build your own hooks using Teardown SDK.
+
+### useSession
+
+Track session state with a custom hook:
+
+```typescript
+import { useTeardown } from "@teardown/react-native";
+import { useState, useEffect } from "react";
+
+function useSession() {
+  const { core } = useTeardown();
+  const [sessionState, setSessionState] = useState(
+    core.identity.getSessionState()
+  );
+
+  useEffect(() => {
+    const unsubscribe = core.identity.onSessionStateChange(setSessionState);
+    return unsubscribe;
+  }, [core.identity]);
+
+  const identify = async (persona?: Persona) => {
+    return await core.identity.identify(persona);
+  };
+
+  const logout = () => {
+    core.identity.reset();
+  };
+
+  return {
+    sessionState,
+    isIdentified: sessionState.type === "identified",
+    isIdentifying: sessionState.type === "identifying",
+    session: sessionState.type === "identified" ? sessionState.session : null,
+    identify,
+    logout,
+  };
+}
+
+// Usage
+function MyComponent() {
+  const { isIdentified, identify, logout, session } = useSession();
+
+  return (
+    <View>
+      {isIdentified ? (
+        <>
+          <Text>Session: {session.session_id}</Text>
+          <Button onPress={logout}>Logout</Button>
+        </>
+      ) : (
+        <Button onPress={() => identify()}>Login</Button>
+      )}
+    </View>
+  );
+}
+```
+
+### useDeviceInfo
+
+Access device information:
+
+```typescript
+import { useTeardown } from "@teardown/react-native";
+import { useState, useEffect } from "react";
+
+function useDeviceInfo() {
+  const { core } = useTeardown();
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      core.device.getDeviceId(),
+      core.device.getDeviceInfo(),
+    ]).then(([id, info]) => {
+      setDeviceId(id);
+      setDeviceInfo(info);
+    });
+  }, [core.device]);
+
+  return { deviceId, deviceInfo };
+}
+
+// Usage
+function DeviceDebug() {
+  const { deviceId, deviceInfo } = useDeviceInfo();
+
+  if (!deviceInfo) {
+    return <Text>Loading...</Text>;
+  }
+
+  return (
+    <View>
+      <Text>Device ID: {deviceId}</Text>
+      <Text>Platform: {deviceInfo.os.platform}</Text>
+      <Text>Version: {deviceInfo.application.version}</Text>
+    </View>
+  );
+}
+```
+
+### useIdentify
+
+Simplified identification hook:
+
+```typescript
+import { useTeardown } from "@teardown/react-native";
+import { useState } from "react";
+
+function useIdentify() {
+  const { core } = useTeardown();
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const identify = async (persona?: Persona) => {
+    setIsIdentifying(true);
+    setError(null);
+
+    const result = await core.identity.identify(persona);
+
+    setIsIdentifying(false);
+
+    if (!result.success) {
+      setError(result.error);
+      return null;
+    }
+
+    return result.data;
+  };
+
+  return { identify, isIdentifying, error };
+}
+
+// Usage
+function LoginForm() {
+  const { identify, isIdentifying, error } = useIdentify();
+
+  const handleSubmit = async (email: string, password: string) => {
+    // Authenticate with your backend
+    const user = await myApi.login(email, password);
+
+    // Identify with Teardown
+    await identify({
+      user_id: user.id,
+      email: user.email,
+      name: user.name,
+    });
+  };
+
+  return (
+    <Form onSubmit={handleSubmit}>
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+      {isIdentifying && <LoadingSpinner />}
+    </Form>
+  );
+}
+```
+
+### useVersionCheck
+
+Manual version checking:
+
+```typescript
+import { useTeardown } from "@teardown/react-native";
+import { useState } from "react";
+
+function useVersionCheck() {
+  const { core } = useTeardown();
+  const [isChecking, setIsChecking] = useState(false);
+
+  const checkVersion = async () => {
+    setIsChecking(true);
+    
+    const result = await core.identity.refresh();
+    
+    setIsChecking(false);
+    return result;
+  };
+
+  return { checkVersion, isChecking };
+}
+
+// Usage
+function SettingsScreen() {
+  const { checkVersion, isChecking } = useVersionCheck();
+
+  return (
+    <Button
+      onPress={checkVersion}
+      disabled={isChecking}
+    >
+      Check for Updates
+    </Button>
+  );
+}
+```
+
+## Best Practices
+
+1. **Single Source of Truth**: Use hooks to derive state, don't duplicate
+2. **Cleanup Subscriptions**: Always return cleanup functions from useEffect
+3. **Memoize Callbacks**: Use useCallback for event handlers
+4. **Error Boundaries**: Wrap components using hooks in error boundaries
+5. **Loading States**: Show loading UI while async operations complete
+6. **TypeScript**: Use TypeScript for better DX and type safety
+
+## Common Patterns
+
+### Loading State
+
+```typescript
+function useAsyncData<T>(fetcher: () => Promise<T>) {
+  const [data, setData] = useState<T | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    fetcher()
+      .then(setData)
+      .catch(setError)
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  return { data, isLoading, error };
+}
+```
+
+### Debounced Actions
+
+```typescript
+function useDebouncedIdentify(delay: number = 1000) {
+  const { core } = useTeardown();
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
+  const debouncedIdentify = useCallback((persona: Persona) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      core.identity.identify(persona);
+    }, delay);
+  }, [core.identity, delay]);
+
+  return debouncedIdentify;
+}
+```
+
+### Memoized Values
+
+```typescript
+function useSessionInfo() {
+  const { core } = useTeardown();
+  const sessionState = core.identity.getSessionState();
+
+  return useMemo(() => ({
+    isAuthenticated: sessionState.type === "identified",
+    sessionId: sessionState.type === "identified" 
+      ? sessionState.session.session_id 
+      : null,
+    personaId: sessionState.type === "identified"
+      ? sessionState.session.persona_id
+      : null,
+  }), [sessionState]);
+}
+```

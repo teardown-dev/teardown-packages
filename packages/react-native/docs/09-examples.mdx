@@ -1,0 +1,578 @@
+# Examples
+
+Practical examples and recipes for common use cases.
+
+## Complete App Setup
+
+Full example of integrating Teardown into a React Native/Expo app.
+
+```typescript
+// lib/teardown.ts
+import { TeardownCore, ExpoDeviceAdapter } from "@teardown/react-native";
+import * as MMKV from "react-native-mmkv";
+
+const createStorage = (storageKey: string) => {
+  const storage = MMKV.createMMKV({ id: storageKey });
+  return {
+    preload: () => storage.getAllKeys(),
+    getItem: (key: string) => storage.getString(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+    removeItem: (key: string) => storage.remove(key),
+    clear: () => storage.clearAll(),
+    keys: () => storage.getAllKeys(),
+  };
+};
+
+export const teardown = new TeardownCore({
+  api: {
+    org_id: process.env.EXPO_PUBLIC_TEARDOWN_ORG_ID!,
+    project_id: process.env.EXPO_PUBLIC_TEARDOWN_PROJECT_ID!,
+    api_key: process.env.EXPO_PUBLIC_TEARDOWN_API_KEY!,
+    environment_slug: __DEV__ ? "development" : "production",
+  },
+  storage: { createStorage },
+  device: { adapter: new ExpoDeviceAdapter() },
+  identity: { identifyOnLoad: true },
+  forceUpdate: {
+    throttleMs: 30000,
+    checkCooldownMs: 300000,
+    identifyAnonymousDevice: true,
+  },
+  logging: { debugEnabled: __DEV__ },
+});
+```
+
+```typescript
+// app/_layout.tsx
+import { TeardownProvider } from "@teardown/react-native";
+import { Stack } from "expo-router";
+import { teardown } from "../lib/teardown";
+import { ForceUpdateGate } from "../components/force-update-gate";
+
+export default function RootLayout() {
+  return (
+    <TeardownProvider core={teardown}>
+      <ForceUpdateGate>
+        <Stack />
+      </ForceUpdateGate>
+    </TeardownProvider>
+  );
+}
+```
+
+## Authentication Flow
+
+Complete authentication example with login/logout.
+
+```typescript
+// hooks/use-auth.ts
+import { useTeardown } from "@teardown/react-native";
+import { useState, useEffect } from "react";
+
+export function useAuth() {
+  const { core } = useTeardown();
+  const [sessionState, setSessionState] = useState(
+    core.identity.getSessionState()
+  );
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = core.identity.onSessionStateChange(setSessionState);
+    return unsubscribe;
+  }, [core.identity]);
+
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    
+    try {
+      // 1. Authenticate with your backend
+      const response = await fetch("https://api.example.com/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const user = await response.json();
+      
+      // 2. Identify with Teardown
+      const result = await core.identity.identify({
+        user_id: user.id,
+        email: user.email,
+        name: user.name,
+      });
+      
+      setIsLoading(false);
+      return result;
+    } catch (error) {
+      setIsLoading(false);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Login failed",
+      };
+    }
+  };
+
+  const logout = async () => {
+    // 1. Logout from your backend
+    await fetch("https://api.example.com/logout", { method: "POST" });
+    
+    // 2. Reset Teardown session
+    core.identity.reset();
+  };
+
+  return {
+    sessionState,
+    isAuthenticated: sessionState.type === "identified",
+    session: sessionState.type === "identified" ? sessionState.session : null,
+    login,
+    logout,
+    isLoading,
+  };
+}
+```
+
+```typescript
+// screens/login.tsx
+import { useAuth } from "../hooks/use-auth";
+
+export function LoginScreen() {
+  const { login, isLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async () => {
+    setError(null);
+    const result = await login(email, password);
+    
+    if (!result.success) {
+      setError(result.error);
+    }
+  };
+
+  return (
+    <View>
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email"
+        autoCapitalize="none"
+      />
+      <TextInput
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Password"
+        secureTextEntry
+      />
+      {error && <Text style={{ color: "red" }}>{error}</Text>}
+      <Button
+        title="Login"
+        onPress={handleLogin}
+        disabled={isLoading}
+      />
+    </View>
+  );
+}
+```
+
+## Force Update Screen
+
+Complete force update implementation.
+
+```typescript
+// components/force-update-gate.tsx
+import { useForceUpdate } from "@teardown/react-native";
+import { ForceUpdateScreen } from "./force-update-screen";
+
+export function ForceUpdateGate({ children }: { children: React.ReactNode }) {
+  const { isUpdateRequired } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  return <>{children}</>;
+}
+```
+
+```typescript
+// components/force-update-screen.tsx
+import { View, Text, Button, Linking, Platform } from "react-native";
+
+const STORE_URLS = {
+  ios: "https://apps.apple.com/app/your-app-id",
+  android: "https://play.google.com/store/apps/details?id=com.yourapp",
+};
+
+export function ForceUpdateScreen() {
+  const handleUpdate = () => {
+    const url = Platform.select(STORE_URLS);
+    if (url) {
+      Linking.openURL(url);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Update Required</Text>
+      <Text style={styles.message}>
+        A new version of the app is available. Please update to continue using the app.
+      </Text>
+      <Button title="Update Now" onPress={handleUpdate} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  message: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 32,
+    color: "#666",
+  },
+});
+```
+
+## Update Banner
+
+Optional update banner for non-blocking updates.
+
+```typescript
+// components/update-banner.tsx
+import { useState } from "react";
+import { View, Text, TouchableOpacity, Linking, Platform } from "react-native";
+import { useForceUpdate } from "@teardown/react-native";
+
+export function UpdateBanner() {
+  const { isUpdateAvailable } = useForceUpdate();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!isUpdateAvailable || dismissed) {
+    return null;
+  }
+
+  const handleUpdate = () => {
+    const url = Platform.select({
+      ios: "https://apps.apple.com/app/your-app-id",
+      android: "https://play.google.com/store/apps/details?id=com.yourapp",
+    });
+    if (url) {
+      Linking.openURL(url);
+    }
+  };
+
+  return (
+    <View style={styles.banner}>
+      <Text style={styles.text}>New version available!</Text>
+      <View style={styles.actions}>
+        <TouchableOpacity onPress={handleUpdate}>
+          <Text style={styles.updateButton}>Update</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setDismissed(true)}>
+          <Text style={styles.dismissButton}>Later</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  banner: {
+    backgroundColor: "#007AFF",
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  text: {
+    color: "#fff",
+    fontSize: 16,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  updateButton: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  dismissButton: {
+    color: "#fff",
+    opacity: 0.8,
+  },
+});
+```
+
+## Anonymous to Authenticated Flow
+
+Convert anonymous users to authenticated.
+
+```typescript
+// components/upgrade-to-auth.tsx
+import { useTeardown } from "@teardown/react-native";
+import { useState } from "react";
+
+export function UpgradeToAuth() {
+  const { core } = useTeardown();
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const handleSignUp = async (email: string, name: string) => {
+    setIsUpgrading(true);
+
+    // 1. Create account on your backend
+    const user = await myApi.createAccount({ email, name });
+
+    // 2. Upgrade anonymous session to authenticated
+    const result = await core.identity.identify({
+      user_id: user.id,
+      email: user.email,
+      name: user.name,
+    });
+
+    setIsUpgrading(false);
+
+    if (result.success) {
+      // Session upgraded, same device ID preserved
+      console.log("Upgraded session:", result.data.session_id);
+    }
+  };
+
+  return (
+    <SignUpForm
+      onSubmit={handleSignUp}
+      isLoading={isUpgrading}
+    />
+  );
+}
+```
+
+## Device Information Display
+
+Show device info for debugging.
+
+```typescript
+// screens/debug.tsx
+import { useTeardown } from "@teardown/react-native";
+import { useState, useEffect } from "react";
+
+export function DebugScreen() {
+  const { core } = useTeardown();
+  const [deviceId, setDeviceId] = useState<string>("");
+  const [deviceInfo, setDeviceInfo] = useState<DeviceInfo | null>(null);
+
+  useEffect(() => {
+    Promise.all([
+      core.device.getDeviceId(),
+      core.device.getDeviceInfo(),
+    ]).then(([id, info]) => {
+      setDeviceId(id);
+      setDeviceInfo(info);
+    });
+  }, [core.device]);
+
+  if (!deviceInfo) {
+    return <Text>Loading...</Text>;
+  }
+
+  return (
+    <ScrollView style={{ padding: 16 }}>
+      <Text style={styles.heading}>Device Information</Text>
+      
+      <InfoRow label="Device ID" value={deviceId} />
+      <InfoRow label="Platform" value={deviceInfo.os.platform} />
+      <InfoRow label="OS Version" value={deviceInfo.os.version} />
+      <InfoRow label="Device Brand" value={deviceInfo.hardware.device_brand} />
+      <InfoRow label="Device Name" value={deviceInfo.hardware.device_name} />
+      <InfoRow label="App Version" value={deviceInfo.application.version} />
+      <InfoRow 
+        label="Build Number" 
+        value={deviceInfo.application.build_number.toString()} 
+      />
+      
+      {deviceInfo.update && (
+        <>
+          <Text style={styles.heading}>Update Information</Text>
+          <InfoRow label="Update ID" value={deviceInfo.update.update_id} />
+          <InfoRow label="Channel" value={deviceInfo.update.update_channel} />
+          <InfoRow 
+            label="Runtime Version" 
+            value={deviceInfo.update.runtime_version} 
+          />
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.label}>{label}:</Text>
+      <Text style={styles.value}>{value}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  heading: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  row: {
+    flexDirection: "row",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  label: {
+    fontWeight: "600",
+    flex: 1,
+  },
+  value: {
+    flex: 2,
+    color: "#666",
+  },
+});
+```
+
+## Session Monitoring
+
+Track and log session changes.
+
+```typescript
+// components/session-monitor.tsx
+import { useEffect } from "react";
+import { useTeardown } from "@teardown/react-native";
+
+export function SessionMonitor() {
+  const { core } = useTeardown();
+
+  useEffect(() => {
+    const unsubscribe = core.identity.onSessionStateChange((state) => {
+      // Log to analytics
+      analytics.track("session_state_changed", {
+        state: state.type,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Log to console in dev
+      if (__DEV__) {
+        console.log("[SessionMonitor] State changed:", state);
+      }
+
+      // Handle specific states
+      if (state.type === "identified") {
+        console.log("User identified:", state.session.persona_id);
+      }
+    });
+
+    return unsubscribe;
+  }, [core.identity]);
+
+  return null; // Invisible monitoring component
+}
+```
+
+## Conditional Feature Access
+
+Gate features based on session state.
+
+```typescript
+// components/premium-feature.tsx
+import { useTeardown } from "@teardown/react-native";
+
+export function PremiumFeature({ children }: { children: React.ReactNode }) {
+  const { core } = useTeardown();
+  const sessionState = core.identity.getSessionState();
+
+  if (sessionState.type !== "identified") {
+    return (
+      <View>
+        <Text>Please sign in to access premium features</Text>
+        <Button title="Sign In" onPress={handleSignIn} />
+      </View>
+    );
+  }
+
+  // Check if user has premium access (from your backend)
+  const isPremium = checkPremiumStatus(sessionState.session.persona_id);
+
+  if (!isPremium) {
+    return (
+      <View>
+        <Text>Upgrade to premium to unlock this feature</Text>
+        <Button title="Upgrade" onPress={handleUpgrade} />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+```
+
+## Error Boundary Integration
+
+Handle SDK errors gracefully.
+
+```typescript
+// components/teardown-error-boundary.tsx
+import React from "react";
+import { View, Text, Button } from "react-native";
+
+export class TeardownErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Teardown Error:", error, errorInfo);
+    // Log to your error tracking service
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
+          <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+            Something went wrong
+          </Text>
+          <Text style={{ marginTop: 8, color: "#666" }}>
+            {this.state.error?.message}
+          </Text>
+          <Button
+            title="Reload"
+            onPress={() => this.setState({ hasError: false, error: null })}
+          />
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Usage
+<TeardownErrorBoundary>
+  <TeardownProvider core={teardown}>
+    <App />
+  </TeardownProvider>
+</TeardownErrorBoundary>
+```

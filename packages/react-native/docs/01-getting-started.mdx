@@ -1,0 +1,129 @@
+# Getting Started
+
+Teardown React Native SDK provides a complete solution for managing user identity, device information, force updates, and analytics in your React Native and Expo applications.
+
+## Installation
+
+```bash
+bun add @teardown/react-native
+```
+
+### Peer Dependencies
+
+Install the required peer dependencies:
+
+```bash
+# For React Native
+bun add react-native-device-info react-native-mmkv
+
+# For Expo
+bun add expo-application expo-device expo-updates
+```
+
+## Quick Start
+
+### 1. Create Teardown Instance
+
+Create a new file `lib/teardown.ts` to initialize the Teardown SDK:
+
+```typescript
+import { TeardownCore, type SupportedStorageFactory } from "@teardown/react-native";
+import * as MMKV from "react-native-mmkv";
+
+// Create a storage factory using MMKV
+const createStorage: SupportedStorageFactory = (storageKey: string) => {
+  const storage = MMKV.createMMKV({
+    id: storageKey,
+  });
+
+  return {
+    preload: () => storage.getAllKeys(),
+    getItem: (key: string) => storage.getString(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+    removeItem: (key: string) => storage.remove(key),
+    clear: () => storage.clearAll(),
+    keys: () => storage.getAllKeys(),
+  };
+};
+
+// Initialize Teardown
+export const teardown = new TeardownCore({
+  api: {
+    org_id: "your-org-id",
+    project_id: "your-project-id",
+    api_key: "your-api-key",
+    environment_slug: "production",
+  },
+  storage: {
+    createStorage,
+  },
+  device: {
+    adapter: new ExpoDeviceAdapter(), // or your custom adapter
+  },
+  identity: {
+    identifyOnLoad: true, // Auto-identify on startup
+  },
+  forceUpdate: {
+    throttleMs: 30000, // 30 seconds between checks
+    checkCooldownMs: 300000, // 5 minutes cooldown
+    identifyAnonymousDevice: false,
+  },
+  logging: {
+    debugEnabled: __DEV__, // Enable debug logs in development
+  },
+});
+```
+
+### 2. Add TeardownProvider
+
+Wrap your app with the `TeardownProvider` in your root layout:
+
+```typescript
+import { TeardownProvider } from "@teardown/react-native";
+import { teardown } from "./lib/teardown";
+
+export default function RootLayout() {
+  return (
+    <TeardownProvider core={teardown}>
+      {/* Your app components */}
+    </TeardownProvider>
+  );
+}
+```
+
+### 3. Use Teardown in Your Components
+
+Access Teardown functionality using the `useTeardown` hook:
+
+```typescript
+import { useTeardown } from "@teardown/react-native";
+
+export function MyComponent() {
+  const { core } = useTeardown();
+
+  const handleIdentify = async () => {
+    const result = await core.identity.identify({
+      user_id: "user-123",
+      email: "user@example.com",
+      name: "John Doe",
+    });
+
+    if (result.success) {
+      console.log("User identified:", result.data);
+    }
+  };
+
+  return (
+    <Button onPress={handleIdentify}>
+      Identify User
+    </Button>
+  );
+}
+```
+
+## Next Steps
+
+- [Core Concepts](./02-core-concepts.mdx) - Understand the architecture
+- [Configuration](./03-configuration.mdx) - Detailed configuration options
+- [Identity & Sessions](./04-identity-sessions.mdx) - Managing user identity
+- [Force Updates](./05-force-updates.mdx) - Version management

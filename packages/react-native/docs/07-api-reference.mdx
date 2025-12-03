@@ -1,0 +1,368 @@
+# API Reference
+
+Complete API reference for all Teardown SDK classes, types, and methods.
+
+## TeardownCore
+
+The main SDK orchestrator.
+
+```typescript
+class TeardownCore {
+  constructor(options: TeardownCoreOptions);
+  
+  // Public clients
+  readonly api: ApiClient;
+  readonly device: DeviceClient;
+  readonly identity: IdentityClient;
+  readonly forceUpdate: ForceUpdateClient;
+  
+  // Methods
+  shutdown(): void;
+}
+```
+
+### Types
+
+```typescript
+type TeardownCoreOptions = {
+  api: ApiClientOptions;
+  storage: StorageClientOptions;
+  device: DeviceClientOptions;
+  identity: IdentityClientOptions;
+  forceUpdate?: ForceUpdateClientOptions;
+  logging?: LoggingClientOptions;
+};
+```
+
+## ApiClient
+
+HTTP client for Teardown Ingest API.
+
+```typescript
+class ApiClient {
+  readonly client: IngestApi.Client;
+  
+  get orgId(): string;
+  get projectId(): string;
+  get apiKey(): string;
+  get environmentSlug(): string;
+}
+```
+
+### Types
+
+```typescript
+type ApiClientOptions = {
+  api_key: string;
+  org_id: string;
+  project_id: string;
+  environment_slug: string;
+  onRequest?: (
+    endpoint: IngestApi.Endpoints,
+    options: IngestApi.RequestOptions
+  ) => Promise<IngestApi.RequestOptions>;
+};
+```
+
+## IdentityClient
+
+User and device identity management.
+
+```typescript
+class IdentityClient {
+  // Methods
+  identify(persona?: Persona): AsyncResult<IdentityUser>;
+  refresh(): AsyncResult<IdentityUser>;
+  reset(): void;
+  shutdown(): void;
+  
+  getSessionState(): SessionState;
+  onSessionStateChange(
+    listener: (state: SessionState) => void
+  ): () => void;
+}
+```
+
+### Types
+
+```typescript
+type Persona = {
+  name?: string;
+  user_id?: string;
+  email?: string;
+};
+
+type IdentityUser = {
+  session_id: string;
+  device_id: string;
+  persona_id: string;
+  token: string;
+  version_status?: VersionStatus;
+};
+
+type SessionState =
+  | { type: "unidentified" }
+  | { type: "identifying" }
+  | { type: "identified"; session: Session; version_status: VersionStatus };
+
+type Session = {
+  session_id: string;
+  device_id: string;
+  persona_id: string;
+  token: string;
+};
+
+type IdentityClientOptions = {
+  identifyOnLoad?: boolean;
+};
+```
+
+## DeviceClient
+
+Device information and metadata.
+
+```typescript
+class DeviceClient {
+  getDeviceId(): Promise<string>;
+  getDeviceInfo(): Promise<DeviceInfo>;
+}
+```
+
+### Types
+
+```typescript
+type DeviceClientOptions = {
+  adapter: DeviceInfoAdapter;
+};
+
+type DeviceInfo = {
+  application: {
+    version: string;
+    build_number: number;
+  };
+  update: {
+    is_enabled: boolean;
+    update_id: string;
+    update_channel: string;
+    runtime_version: string;
+    emergency_launch: {
+      is_emergency_launch: boolean;
+      reason?: string;
+    };
+    is_embedded_launch: boolean;
+    created_at: string;
+  } | null;
+  hardware: {
+    device_name: string;
+    device_brand: string;
+    device_type: "ios" | "android" | "web";
+  };
+  os: {
+    platform: DevicePlatformEnum;
+    name: string;
+    version: string;
+  };
+  notifications: {
+    push: {
+      platform: NotificationPlatformEnum;
+      enabled: boolean;
+      granted: boolean;
+      token: string;
+    };
+  } | null;
+};
+```
+
+## ForceUpdateClient
+
+Version checking and force update management.
+
+```typescript
+class ForceUpdateClient {
+  getVersionStatus(): VersionStatus;
+  
+  onVersionStatusChange(
+    listener: (status: VersionStatus) => void
+  ): () => void;
+  
+  updateFromIdentifyResponse(user: IdentityUser): void;
+  shutdown(): void;
+}
+```
+
+### Types
+
+```typescript
+type VersionStatus =
+  | { type: "unknown" }
+  | { type: "checking" }
+  | { type: "up_to_date" }
+  | { type: "update_available" }
+  | { type: "update_required" };
+
+type ForceUpdateClientOptions = {
+  throttleMs?: number;
+  checkCooldownMs?: number;
+  identifyAnonymousDevice?: boolean;
+};
+```
+
+## StorageClient
+
+Namespaced persistent storage.
+
+```typescript
+class StorageClient {
+  createStorage(storageKey: string): SupportedStorage;
+  shutdown(): void;
+}
+```
+
+### Types
+
+```typescript
+type StorageClientOptions = {
+  createStorage: SupportedStorageFactory;
+};
+
+type SupportedStorageFactory = (
+  storageKey: string
+) => SupportedStorage;
+
+type SupportedStorage = {
+  preload: () => void;
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+  clear: () => void;
+  keys: () => string[];
+};
+```
+
+## LoggingClient
+
+Structured logging with debug support.
+
+```typescript
+class LoggingClient {
+  createLogger(options: LoggerOptions): Logger;
+}
+
+class Logger {
+  setDebugEnabled(enabled: boolean): void;
+  isDebugEnabled(): boolean;
+  
+  info(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
+  debug(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  trace(message: string, ...args: unknown[]): void;
+}
+```
+
+### Types
+
+```typescript
+type LoggingClientOptions = {
+  debugEnabled?: boolean;
+};
+
+type LoggerOptions = {
+  name: string;
+  debugEnabled?: boolean;
+};
+```
+
+## UtilsClient
+
+Utility functions.
+
+```typescript
+class UtilsClient {
+  generateRandomUUID(): Promise<string>;
+}
+```
+
+## React Components
+
+### TeardownProvider
+
+```typescript
+type TeardownProviderProps = {
+  children: React.ReactNode;
+  core: TeardownCore;
+};
+
+function TeardownProvider(props: TeardownProviderProps): JSX.Element;
+```
+
+## React Hooks
+
+### useTeardown
+
+Access the TeardownCore instance.
+
+```typescript
+function useTeardown(): { core: TeardownCore };
+```
+
+### useForceUpdate
+
+Access force update state.
+
+```typescript
+type UseForceUpdateResult = {
+  versionStatus: VersionStatus;
+  isUpdateAvailable: boolean;
+  isUpdateRequired: boolean;
+};
+
+function useForceUpdate(): UseForceUpdateResult;
+```
+
+## Utility Types
+
+```typescript
+type AsyncResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+```
+
+## Enums
+
+```typescript
+enum DevicePlatformEnum {
+  IOS = "IOS",
+  ANDROID = "ANDROID",
+  WEB = "WEB",
+}
+
+enum NotificationPlatformEnum {
+  APNS = "APNS",
+  FCM = "FCM",
+  EXPO = "EXPO",
+}
+
+enum IdentifyVersionStatusEnum {
+  UP_TO_DATE = "UP_TO_DATE",
+  UPDATE_AVAILABLE = "UPDATE_AVAILABLE",
+  UPDATE_REQUIRED = "UPDATE_REQUIRED",
+}
+```
+
+## Constants
+
+```typescript
+// Storage keys
+const SESSION_STORAGE_KEY = "SESSION_STATE";
+const VERSION_STATUS_STORAGE_KEY = "VERSION_STATUS";
+
+// API endpoints
+const TEARDOWN_INGEST_URL = "http://localhost:4880";
+
+// Headers
+const TEARDOWN_API_KEY_HEADER = "td-api-key";
+const TEARDOWN_ORG_ID_HEADER = "td-org-id";
+const TEARDOWN_PROJECT_ID_HEADER = "td-project-id";
+const TEARDOWN_ENVIRONMENT_SLUG_HEADER = "td-environment-slug";
+```
