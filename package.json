@@ -16,17 +16,15 @@
 		}
 	},
 	"scripts": {
-		"test": "bun run --filter='./packages/*' test",
-		"lint": "bun run --filter='./packages/*' lint",
 		"clean": "bun run --filter='./packages/*' clean",
-		"fmt": "bunx @biomejs/biome format --write .",
-		"biome:lint": "bunx @biomejs/biome lint --write .",
-		"biome:check": "bunx @biomejs/biome check --write .",
 		"app:prebuild": "bun run --cwd ./apps/app prebuild",
 		"app:ios": "bun run --cwd ./apps/app ios",
 		"app:android": "bun run --cwd ./apps/app android",
 		"typecheck": "bun x turbo typecheck",
 		"build": "bun x turbo build",
+		"lint": "bun x turbo lint",
+		"fmt": "bun x turbo fmt",
+		"test": "bun x turbo test",
 		"dev": "bun x turbo dev --ui=tui",
 		"nuke": "rm -rf node_modules ./apps/**/node_modules ./packages/**/node_modules && bun install --no-cache"
 	},

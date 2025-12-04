@@ -1,5 +1,6 @@
 {
 	"name": "@teardown/react-native",
+	"version": "2.0.0",
 	"private": false,
 	"publishConfig": {
 		"access": "public"
@@ -36,12 +37,20 @@
 			"types": "./src/exports/wix-notifications.ts",
 			"import": "./src/exports/wix-notifications.ts",
 			"default": "./src/exports/wix-notifications.ts"
+		},
+		"./mmkv": {
+			"types": "./src/exports/mmkv.ts",
+			"import": "./src/exports/mmkv.ts",
+			"default": "./src/exports/mmkv.ts"
 		}
 	},
 	"scripts": {
 		"build": "tsc --project ./tsconfig.json",
 		"dev": "bun run build && tsc --watch --project ./tsconfig.json",
 		"typecheck": "tsc --noEmit --project ./tsconfig.json",
+		"lint": "biome lint --write",
+		"fmt": "biome format --write",
+		"test": "bun test",
 		"prepublishOnly": "bun run build",
 		"nuke": "cd ../../ && bun run nuke"
 	},
@@ -69,6 +78,7 @@
 		"expo-notifications": "^0.29",
 		"@react-native-firebase/messaging": ">=18",
 		"react-native-notifications": ">=5",
+		"react-native-mmkv": "^3.0",
 		"zod": "^4"
 	},
 	"peerDependenciesMeta": {
@@ -85,6 +95,9 @@
 			"optional": true
 		},
 		"react-native-notifications": {
+			"optional": true
+		},
+		"react-native-mmkv": {
 			"optional": true
 		}
 	}

@@ -1,18 +1,20 @@
-import { ApiClient, type ApiClientOptions } from "./clients/api";
+import { ApiClient } from "./clients/api";
 import { DeviceClient, type DeviceClientOptions } from "./clients/device/device.client";
 import { ForceUpdateClient, type ForceUpdateClientOptions } from "./clients/force-update";
 import { IdentityClient } from "./clients/identity";
-import { type Logger, LoggingClient, type LoggingClientOptions, LogLevel } from "./clients/logging";
-import { StorageClient, type StorageClientOptions } from "./clients/storage";
+import { type Logger, LoggingClient, type LogLevel } from "./clients/logging";
+import { StorageClient, type SupportedStorageFactory } from "./clients/storage";
 import { UtilsClient } from "./clients/utils/utils.client";
 
-export interface TeardownCoreOptions {
-	logging?: LoggingClientOptions;
-	api: ApiClientOptions;
-	storage: StorageClientOptions;
-	device: DeviceClientOptions;
+export type TeardownCoreOptions = {
+	org_id: string;
+	project_id: string;
+	api_key: string;
+	// environment_slug: string; // TODO: add this back in
+	storageFactory: SupportedStorageFactory;
+	deviceAdapter: DeviceClientOptions["adapter"];
 	forceUpdate?: ForceUpdateClientOptions;
-}
+};
 
 export class TeardownCore {
 	private readonly logging: LoggingClient;
@@ -27,29 +29,29 @@ export class TeardownCore {
 	constructor(private readonly options: TeardownCoreOptions) {
 		this.options = options;
 
-		this.logging = new LoggingClient(this.options.logging);
-		this.setLogLevel("verbose");
+		this.logging = new LoggingClient();
+		// this.setLogLevel("verbose");
 
 		this.logger = this.logging.createLogger({
 			name: "TeardownCore",
 		});
 		this.utils = new UtilsClient(this.logging);
-		this.storage = new StorageClient(this.logging, this.options.storage);
-		this.api = new ApiClient(this.logging, this.storage, this.options.api);
-		this.device = new DeviceClient(this.logging, this.utils, this.storage, this.options.device);
-		this.identity = new IdentityClient(
-			this.logging,
-			this.utils,
-			this.storage,
-			this.api,
-			this.device
-		);
-		this.forceUpdate = new ForceUpdateClient(this.logging, this.storage, this.identity, this.options.forceUpdate)
+		this.storage = new StorageClient(this.logging, this.options.storageFactory);
+		this.api = new ApiClient(this.logging, this.storage, {
+			org_id: this.options.org_id,
+			project_id: this.options.project_id,
+			api_key: this.options.api_key,
+			environment_slug: "production",
+		});
+		this.device = new DeviceClient(this.logging, this.utils, this.storage, {
+			adapter: this.options.deviceAdapter,
+		});
+		this.identity = new IdentityClient(this.logging, this.utils, this.storage, this.api, this.device);
+		this.forceUpdate = new ForceUpdateClient(this.logging, this.storage, this.identity, this.options.forceUpdate);
 
 		void this.initialize().catch((error) => {
 			this.logger.error("Error initializing TeardownCore", { error });
 		});
-
 	}
 
 	async initialize(): Promise<void> {
