@@ -1,5 +1,6 @@
 {
 	"name": "@teardown/react-native",
+	"version": "2.0.0",
 	"private": false,
 	"publishConfig": {
 		"access": "public"
@@ -21,12 +22,20 @@
 			"types": "./src/exports/expo.ts",
 			"import": "./src/exports/expo.ts",
 			"default": "./src/exports/expo.ts"
+		},
+		"./mmkv": {
+			"types": "./src/exports/mmkv.ts",
+			"import": "./src/exports/mmkv.ts",
+			"default": "./src/exports/mmkv.ts"
 		}
 	},
 	"scripts": {
 		"build": "tsc --project ./tsconfig.json",
 		"dev": "bun run build && tsc --watch --project ./tsconfig.json",
 		"typecheck": "tsc --noEmit --project ./tsconfig.json",
+		"lint": "biome lint --write",
+		"fmt": "biome format --write",
+		"test": "bun test",
 		"prepublishOnly": "bun run build",
 		"nuke": "cd ../../ && bun run nuke"
 	},
@@ -52,6 +61,7 @@
 		"expo-application": "^7.0",
 		"expo-device": "^8.0",
 		"expo-notifications": "^0.29",
+		"react-native-mmkv": "^3.0",
 		"zod": "^4"
 	}
 }

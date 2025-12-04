@@ -133,6 +133,13 @@ export class IdentityClient {
 		return this.identifyState;
 	}
 
+	public getSessionState(): Session | null {
+		if (this.identifyState.type !== "identified") {
+			return null;
+		}
+		return this.identifyState.session;
+	}
+
 	public shutdown() {
 		this.emitter.removeAllListeners("IDENTIFY_STATE_CHANGED");
 	}

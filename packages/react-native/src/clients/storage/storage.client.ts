@@ -21,7 +21,7 @@ export class StorageClient {
 
   private readonly storage: Map<string, SupportedStorage> = new Map();
 
-  constructor(logging: LoggingClient, private readonly options: StorageClientOptions) {
+  constructor(logging: LoggingClient, private readonly factory: SupportedStorageFactory) {
     this.logger = logging.createLogger({
       name: "StorageClient",
     });
@@ -48,7 +48,7 @@ export class StorageClient {
     }
 
     this.logger.debug(`Creating new storage for ${fullStorageKey}`);
-    const newStorage = this.options.createStorage(fullStorageKey);
+    const newStorage = this.factory(fullStorageKey);
     newStorage.preload();
 
 

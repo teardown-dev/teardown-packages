@@ -1,7 +1,7 @@
 import { EventEmitter } from "eventemitter3";
 import { AppState, type AppStateStatus, type NativeEventSubscription } from "react-native";
 import { z } from "zod";
-import type { IdentityClient, IdentityUser } from "../identity";
+import type { IdentityClient } from "../identity";
 import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 
@@ -34,8 +34,9 @@ export const InitializingVersionStatusSchema = z.object({ type: z.literal("initi
 export const CheckingVersionStatusSchema = z.object({ type: z.literal("checking") });
 export const UpToDateVersionStatusSchema = z.object({ type: z.literal("up_to_date") });
 export const UpdateAvailableVersionStatusSchema = z.object({ type: z.literal("update_available") });
+export const UpdateRecommendedVersionStatusSchema = z.object({ type: z.literal("update_recommended") });
 export const UpdateRequiredVersionStatusSchema = z.object({ type: z.literal("update_required") });
-
+export const DisabledVersionStatusSchema = z.object({ type: z.literal("disabled") });
 /**
  * The version status schema.
  * - "initializing" - The version status is initializing.
@@ -49,14 +50,18 @@ export const VersionStatusSchema = z.discriminatedUnion("type", [
 	CheckingVersionStatusSchema,
 	UpToDateVersionStatusSchema,
 	UpdateAvailableVersionStatusSchema,
+	UpdateRecommendedVersionStatusSchema,
 	UpdateRequiredVersionStatusSchema,
+	DisabledVersionStatusSchema,
 ]);
 
 export type InitializingVersionStatus = z.infer<typeof InitializingVersionStatusSchema>;
 export type CheckingVersionStatus = z.infer<typeof CheckingVersionStatusSchema>;
 export type UpToDateVersionStatus = z.infer<typeof UpToDateVersionStatusSchema>;
 export type UpdateAvailableVersionStatus = z.infer<typeof UpdateAvailableVersionStatusSchema>;
+export type UpdateRecommendedVersionStatus = z.infer<typeof UpdateRecommendedVersionStatusSchema>;
 export type UpdateRequiredVersionStatus = z.infer<typeof UpdateRequiredVersionStatusSchema>;
+export type DisabledVersionStatus = z.infer<typeof DisabledVersionStatusSchema>;
 export type VersionStatus = z.infer<typeof VersionStatusSchema>;
 
 export type VersionStatusChangeEvents = {
@@ -68,16 +73,11 @@ export type ForceUpdateClientOptions = {
 	throttleMs?: number;
 	/** Min ms since last successful check before re-checking (default: 300000 = 5min) */
 	checkCooldownMs?: number;
-	/** If true, check version even when not identified by using anonymous device identification (default: false) */
-	identifyAnonymousDevice?: boolean;
-	/** If true, check version on load (default: false) */
-
 };
 
 const DEFAULT_OPTIONS: Required<ForceUpdateClientOptions> = {
 	throttleMs: 30_000, // 30 seconds
 	checkCooldownMs: 300_000, // 5 minutes
-	identifyAnonymousDevice: false,
 };
 
 export const VERSION_STATUS_STORAGE_KEY = "VERSION_STATUS";
@@ -141,8 +141,17 @@ export class ForceUpdateClient {
 			case "UPDATE_AVAILABLE":
 				this.setVersionStatus({ type: "update_available" });
 				break;
+			case "UPDATE_RECOMMENDED":
+				this.setVersionStatus({ type: "update_recommended" });
+				break;
 			case "UPDATE_REQUIRED":
 				this.setVersionStatus({ type: "update_required" });
+				break;
+			case "UP_TO_DATE":
+				this.setVersionStatus({ type: "up_to_date" });
+				break;
+			case "DISABLED":
+				this.setVersionStatus({ type: "disabled" });
 				break;
 			default:
 				this.setVersionStatus({ type: "up_to_date" });
