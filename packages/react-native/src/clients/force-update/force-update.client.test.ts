@@ -14,12 +14,12 @@ mock.module("react-native", () => ({
 
 // Import after mock
 const { ForceUpdateClient, IdentifyVersionStatusEnum } = await import("./force-update.client");
-type SessionState = import("../identity").SessionState;
-type SessionStateChangeEvents = import("../identity").SessionStateChangeEvents;
+type IdentifyState = import("../identity").IdentifyState;
+type IdentifyStateChangeEvents = import("../identity").IdentifyStateChangeEvents;
 type VersionStatus = import("./force-update.client").VersionStatus;
 
 function createMockIdentityClient() {
-	const emitter = new EventEmitter<SessionStateChangeEvents>();
+	const emitter = new EventEmitter<IdentifyStateChangeEvents>();
 	let identifyCallCount = 0;
 	let nextIdentifyResult: { success: boolean; data?: { version_info: { status: IdentifyVersionStatusEnum } } } = {
 		success: true,
@@ -28,14 +28,14 @@ function createMockIdentityClient() {
 
 	return {
 		emitter,
-		onSessionStateChange: (listener: (state: SessionState) => void) => {
-			emitter.addListener("SESSION_STATE_CHANGED", listener);
-			return () => emitter.removeListener("SESSION_STATE_CHANGED", listener);
+		onIdentifyStateChange: (listener: (state: IdentifyState) => void) => {
+			emitter.addListener("IDENTIFY_STATE_CHANGED", listener);
+			return () => emitter.removeListener("IDENTIFY_STATE_CHANGED", listener);
 		},
 		identify: async () => {
 			identifyCallCount++;
-			emitter.emit("SESSION_STATE_CHANGED", { type: "identifying" });
-			emitter.emit("SESSION_STATE_CHANGED", {
+			emitter.emit("IDENTIFY_STATE_CHANGED", { type: "identifying" });
+			emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: nextIdentifyResult.data?.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
@@ -92,9 +92,9 @@ describe("ForceUpdateClient", () => {
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
 
-			// Trigger identify via session state change
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", { type: "identifying" });
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", {
+			// Trigger identify via state change
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", { type: "identifying" });
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UPDATE_AVAILABLE, update: null },
@@ -164,7 +164,7 @@ describe("ForceUpdateClient", () => {
 			client.shutdown();
 
 			// After shutdown, emitting should not trigger listener
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", {
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UPDATE_AVAILABLE, update: null },
@@ -282,7 +282,7 @@ describe("ForceUpdateClient", () => {
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
 
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", {
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: apiStatus, update: null },
