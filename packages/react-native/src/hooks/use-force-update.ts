@@ -32,7 +32,7 @@ export const useForceUpdate = (): UseForceUpdateResult => {
   return {
     versionStatus,
     isUpdateRequired: versionStatus.type === "update_required",
-    isUpdateAvailable: versionStatus.type === "update_available",
+    isUpdateAvailable: versionStatus.type === "update_available" || versionStatus.type === "update_required" || versionStatus.type === "update_recommended",
   };
 };
 

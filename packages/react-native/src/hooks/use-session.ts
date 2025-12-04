@@ -1,38 +1,24 @@
 import { useEffect, useState } from "react";
-import type { IdentifiedSessionState, SessionState } from "../clients/identity/identity.client";
+import type { Session } from "../clients/identity/identity.client";
 import { useTeardown } from "../contexts/teardown.context";
 
-export interface UseSessionResult {
-  /**
-   * The current session state.
-   */
-  session: SessionState;
-}
+export type UseSessionResult = Session | null;
 
 export const useSession = (): UseSessionResult => {
-  const { core } = useTeardown();
+	const { core } = useTeardown();
 
-  const [session, setSession] = useState<IdentifiedSessionState>(
-    core.identity.getIdentifyState()
-  );
+	const [session, setSession] = useState<Session | null>(core.identity.getSessionState());
 
-  useEffect(() => {
-    const unsubscribe = core.identity.onIdentifyStateChange((state) => {
-      if (state.type === "identified") {
-        setSession(state.session);
-      } else {
-        setSession(null);
-      }
-    });
-    return unsubscribe;
-  }, [core.identity]);
+	useEffect(() => {
+		const unsubscribe = core.identity.onIdentifyStateChange((state) => {
+			if (state.type === "identified") {
+				setSession(state.session);
+			} else {
+				setSession(null);
+			}
+		});
+		return unsubscribe;
+	}, [core.identity]);
 
-  return {
-    session,
-  };
-};
-
-export const useValidSession = (): IdentifiedSessionState | null => {
-  const { session } = useSession();
-  return session.type === "identified" ? session : null;
+	return session;
 };

@@ -3,6 +3,10 @@
 	"include": [
 		"src/**/*"
 	],
+	"exclude": [
+		"src/**/*.test.ts",
+		"src/**/*.test.tsx"
+	],
 	"compilerOptions": {
 		"baseUrl": ".",
 		"rootDir": ".",
