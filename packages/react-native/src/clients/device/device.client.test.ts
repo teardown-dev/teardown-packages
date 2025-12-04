@@ -51,10 +51,6 @@ function createMockDeviceAdapter(): DeviceInfoAdapter {
 			name: "iOS",
 			version: "17.0",
 		},
-		notifications: {
-			push_token: null,
-			platform: null,
-		},
 		update: null,
 	};
 
@@ -62,7 +58,6 @@ function createMockDeviceAdapter(): DeviceInfoAdapter {
 		applicationInfo: mockDeviceInfo.application,
 		hardwareInfo: mockDeviceInfo.hardware,
 		osInfo: mockDeviceInfo.os,
-		notificationsInfo: mockDeviceInfo.notifications,
 		getDeviceInfo: async () => mockDeviceInfo,
 	} as DeviceInfoAdapter;
 }
