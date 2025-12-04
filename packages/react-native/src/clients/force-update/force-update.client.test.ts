@@ -52,10 +52,10 @@ function createMockIdentityClient() {
 function createMockLoggingClient() {
 	return {
 		createLogger: () => ({
-			info: () => {},
-			warn: () => {},
-			error: () => {},
-			debug: () => {},
+			info: () => { },
+			warn: () => { },
+			error: () => { },
+			debug: () => { },
 		}),
 	};
 }
@@ -285,8 +285,8 @@ describe("ForceUpdateClient", () => {
 			[IdentifyVersionStatusEnum.UP_TO_DATE, "up_to_date"],
 			[IdentifyVersionStatusEnum.UPDATE_AVAILABLE, "update_available"],
 			[IdentifyVersionStatusEnum.UPDATE_REQUIRED, "update_required"],
-			[IdentifyVersionStatusEnum.UPDATE_RECOMMENDED, "up_to_date"], // Falls through to default
-			[IdentifyVersionStatusEnum.DISABLED, "up_to_date"], // Falls through to default
+			[IdentifyVersionStatusEnum.UPDATE_RECOMMENDED, "update_recommended"],
+			[IdentifyVersionStatusEnum.DISABLED, "disabled"],
 		])("maps %s to %s", (apiStatus, expectedType) => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
