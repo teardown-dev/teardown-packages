@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { EventEmitter } from "eventemitter3";
+import { ForceUpdateClient, IdentifyVersionStatusEnum } from "./force-update.client";
 
 // Must mock react-native BEFORE any imports that use it
 const mockAppStateListeners: ((state: string) => void)[] = [];
@@ -12,8 +13,6 @@ mock.module("react-native", () => ({
 	},
 }));
 
-// Import after mock
-const { ForceUpdateClient, IdentifyVersionStatusEnum } = await import("./force-update.client");
 type IdentifyState = import("../identity").IdentifyState;
 type IdentifyStateChangeEvents = import("../identity").IdentifyStateChangeEvents;
 type VersionStatus = import("./force-update.client").VersionStatus;
