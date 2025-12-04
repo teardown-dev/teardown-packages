@@ -1,9 +1,10 @@
 import type {
 	ApplicationInfo,
+	DeviceInfo,
 	HardwareInfo,
 	NotificationsInfo,
 	OSInfo
-} from "@teardown/ingest-api/schemas";
+} from "@teardown/schemas";
 
 /**
  * An interface for a device adapter.
@@ -40,4 +41,17 @@ export abstract class DeviceInfoAdapter {
 	 * The information about the notifications of the device.
 	 */
 	abstract get notificationsInfo(): NotificationsInfo;
+
+	/**
+	 * The information about the device.
+	 */
+	public getDeviceInfo(): Promise<DeviceInfo> {
+		return Promise.resolve({
+			application: this.applicationInfo,
+			hardware: this.hardwareInfo,
+			os: this.osInfo,
+			notifications: this.notificationsInfo,
+			update: null,
+		});
+	}
 }

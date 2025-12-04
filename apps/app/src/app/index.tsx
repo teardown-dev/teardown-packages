@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { global_storage, teardown } from "../lib/teardown";
+import { useForceUpdate, useSession, useValidSession } from "@teardown/react-native";
 
 
 
@@ -47,6 +48,9 @@ export default function MainScreen() {
 		global_storage.set("identify_on_load", value);
 	};
 
+	const versionStatus = useForceUpdate();
+	const validSession = useValidSession();
+
 	return (
 		<View
 			style={[
@@ -55,6 +59,19 @@ export default function MainScreen() {
 			]}
 		>
 			<View style={styles.content}>
+				<View style={styles.infoContainer}>
+					<Text style={styles.infoText}>Version status: {versionStatus.versionStatus.type ?? "Unknown"}</Text>
+					<Text style={styles.infoText}>Device ID: {validSession?.session.device_id ?? "No device ID"}</Text>
+					<Text style={styles.infoText}>Persona ID: {validSession?.session.persona_id ?? "No persona ID"}</Text>
+					<Text style={styles.infoText}>Token: {`${validSession?.session.token?.slice(0, 10)}...` ?? "No token"}</Text>
+				</View>
+				<View style={{ flexDirection: "row", alignItems: "center", marginTop: 12 }}>
+					<Switch
+						value={identifyOnLoad}
+						onValueChange={onValueChangeIdentifyOnLoad}
+					/>
+					<Text style={{ fontSize: 16, color: "#1A1A1A", marginLeft: 8 }}>Identify on load</Text>
+				</View>
 				<TextInput
 					placeholder="Enter your user ID"
 					style={styles.input}
@@ -87,21 +104,9 @@ export default function MainScreen() {
 					</Button>
 				</View>
 
-				<View style={{ flexDirection: "row", alignItems: "center", marginTop: 12 }}>
-					<Switch
-						value={identifyOnLoad}
-						onValueChange={onValueChangeIdentifyOnLoad}
-					/>
-					<Text style={{ fontSize: 16, color: "#1A1A1A", marginLeft: 8 }}>Identify on load</Text>
-				</View>
 
-				<View style={styles.infoContainer}>
-					<Text style={styles.infoText}>Version status: {user?.version_status?.status ?? "Unknown"}</Text>
-					<Text style={styles.infoText}>Session ID: {user?.session_id ?? "No user"}</Text>
-					<Text style={styles.infoText}>Device ID: {user?.device_id ?? "No device"}</Text>
-					<Text style={styles.infoText}>Persona ID: {user?.persona_id ?? "No persona"}</Text>
-					<Text style={styles.infoText}>Token: {`${user?.token?.slice(0, 10)}...` ?? "No token"}</Text>
-				</View>
+
+
 			</View>
 		</View>
 	);

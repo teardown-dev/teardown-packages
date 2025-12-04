@@ -2,10 +2,19 @@
 	"name": "@teardown/source",
 	"private": true,
 	"packageManager": "bun@1.3.1",
-	"workspaces": [
-		"apps/*",
-		"packages/*"
-	],
+	"workspaces": {
+		"packages": [
+			"apps/*",
+			"packages/*"
+		],
+		"catalogs": {
+			"teardown": {
+				"@teardown/ingest-api": "0.1.36",
+				"@teardown/schemas": "0.1.36",
+				"@teardown/types": "0.1.36"
+			}
+		}
+	},
 	"scripts": {
 		"test": "bun run --filter='./packages/*' test",
 		"lint": "bun run --filter='./packages/*' lint",

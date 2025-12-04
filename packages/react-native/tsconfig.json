@@ -1,8 +1,7 @@
 {
 	"extends": "@teardown/tsconfig/tsconfig.react.json",
 	"include": [
-		"src/**/*",
-		"../../apps/app/src/components/fullscreen-takeover.tsx"
+		"src/**/*"
 	],
 	"compilerOptions": {
 		"baseUrl": ".",

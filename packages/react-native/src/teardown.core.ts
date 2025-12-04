@@ -1,16 +1,15 @@
 import { ApiClient, type ApiClientOptions } from "./clients/api";
-import { DeviceClient, type DeviceClientOptions } from "./clients/device";
-import { IdentityClient, type IdentityClientOptions } from "./clients/identity";
-import { type Logger, type LoggingClientOptions, LoggingClient } from "./clients/logging";
-import { StorageClient, type StorageClientOptions } from "./clients/storage";
+import { DeviceClient, type DeviceClientOptions } from "./clients/device/device.client";
 import { ForceUpdateClient, type ForceUpdateClientOptions } from "./clients/force-update";
+import { IdentityClient } from "./clients/identity";
+import { type Logger, LoggingClient, type LoggingClientOptions, LogLevel } from "./clients/logging";
+import { StorageClient, type StorageClientOptions } from "./clients/storage";
 import { UtilsClient } from "./clients/utils/utils.client";
 
 export type TeardownCoreOptions = {
 	logging?: LoggingClientOptions;
 	api: ApiClientOptions;
 	storage: StorageClientOptions;
-	identity: IdentityClientOptions;
 	device: DeviceClientOptions;
 	forceUpdate?: ForceUpdateClientOptions;
 };
@@ -29,6 +28,8 @@ export class TeardownCore {
 		this.options = options;
 
 		this.logging = new LoggingClient(this.options.logging);
+		this.setLogLevel("verbose");
+
 		this.logger = this.logging.createLogger({
 			name: "TeardownCore",
 		});
@@ -41,12 +42,23 @@ export class TeardownCore {
 			this.utils,
 			this.storage,
 			this.api,
-			this.device,
-			this.options.identity
+			this.device
 		);
 		this.forceUpdate = new ForceUpdateClient(this.logging, this.storage, this.identity, this.options.forceUpdate)
+
+		void this.initialize().catch((error) => {
+			this.logger.error("Error initializing TeardownCore", { error });
+		});
+
 	}
 
+	async initialize(): Promise<void> {
+		await this.identity.initialize();
+	}
+
+	setLogLevel(level: LogLevel): void {
+		this.logging.setLogLevel(level);
+	}
 
 	shutdown(): void {
 		this.logger.info("Shutting down TeardownCore");

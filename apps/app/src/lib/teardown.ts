@@ -1,4 +1,5 @@
 import { type SupportedStorageFactory, TeardownCore } from "@teardown/react-native";
+import { ExpoDeviceAdapter } from "@teardown/react-native/expo";
 import * as MMKV from "react-native-mmkv";
 
 const createStorage: SupportedStorageFactory = (storageKey: string) => {
@@ -43,12 +44,11 @@ export const teardown = new TeardownCore({
 		createStorage,
 	},
 	device: {
-		// adapter: new ExpoDeviceAdapter(),
-	},
-	identity: {
-		identifyOnLoad: true,
+		adapter: new ExpoDeviceAdapter(),
 	},
 	forceUpdate: {
+		throttleMs: 30_000, // 30 seconds
+		checkCooldownMs: 30_000, // 30 seconds
 		identifyAnonymousDevice: true,
 	},
 });
