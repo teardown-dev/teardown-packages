@@ -1,0 +1,563 @@
+# Advanced Usage
+
+Advanced patterns and techniques for the Teardown SDK.
+
+## Custom Storage Adapters
+
+Create platform-specific or specialized storage adapters.
+
+### In-Memory Storage (Testing)
+
+```typescript
+function createInMemoryStorageFactory(): SupportedStorageFactory {
+  return (storageKey: string) => {
+    const store = new Map<string, string>();
+    
+    return {
+      preload: () => {},
+      getItem: (key: string) => {
+        return store.get(`${storageKey}:${key}`) ?? null;
+      },
+      setItem: (key: string, value: string) => {
+        store.set(`${storageKey}:${key}`, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(`${storageKey}:${key}`);
+      },
+      clear: () => {
+        store.clear();
+      },
+      keys: () => {
+        return Array.from(store.keys());
+      },
+    };
+  };
+}
+
+// Use in tests
+const teardown = new TeardownCore({
+  storageFactory: createInMemoryStorageFactory(),
+  // ...
+});
+```
+
+### AsyncStorage Adapter
+
+```typescript
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+function createAsyncStorageFactory(): SupportedStorageFactory {
+  return (storageKey: string) => {
+    const cache = new Map<string, string>();
+    
+    return {
+      preload: () => {
+        // Optionally preload keys
+        AsyncStorage.getAllKeys().then((keys) => {
+          const relevantKeys = keys.filter(k => k.startsWith(storageKey));
+          AsyncStorage.multiGet(relevantKeys).then((entries) => {
+            entries.forEach(([key, value]) => {
+              if (value) cache.set(key, value);
+            });
+          });
+        });
+      },
+      getItem: (key: string) => {
+        const fullKey = `${storageKey}:${key}`;
+        return cache.get(fullKey) ?? null;
+      },
+      setItem: (key: string, value: string) => {
+        const fullKey = `${storageKey}:${key}`;
+        cache.set(fullKey, value);
+        AsyncStorage.setItem(fullKey, value).catch(console.error);
+      },
+      removeItem: (key: string) => {
+        const fullKey = `${storageKey}:${key}`;
+        cache.delete(fullKey);
+        AsyncStorage.removeItem(fullKey).catch(console.error);
+      },
+      clear: () => {
+        cache.clear();
+      },
+      keys: () => {
+        return Array.from(cache.keys());
+      },
+    };
+  };
+}
+```
+
+### Encrypted Storage
+
+```typescript
+import EncryptedStorage from 'react-native-encrypted-storage';
+
+function createEncryptedStorageFactory(): SupportedStorageFactory {
+  return (storageKey: string) => {
+    const cache = new Map<string, string>();
+    
+    return {
+      preload: async () => {
+        try {
+          const keys = await EncryptedStorage.getAllKeys();
+          const relevantKeys = keys.filter(k => k.startsWith(storageKey));
+          
+          for (const key of relevantKeys) {
+            const value = await EncryptedStorage.getItem(key);
+            if (value) cache.set(key, value);
+          }
+        } catch (error) {
+          console.error('Preload failed:', error);
+        }
+      },
+      getItem: (key: string) => {
+        return cache.get(`${storageKey}:${key}`) ?? null;
+      },
+      setItem: (key: string, value: string) => {
+        const fullKey = `${storageKey}:${key}`;
+        cache.set(fullKey, value);
+        EncryptedStorage.setItem(fullKey, value).catch(console.error);
+      },
+      removeItem: (key: string) => {
+        const fullKey = `${storageKey}:${key}`;
+        cache.delete(fullKey);
+        EncryptedStorage.removeItem(fullKey).catch(console.error);
+      },
+      clear: () => {
+        cache.clear();
+      },
+      keys: () => {
+        return Array.from(cache.keys());
+      },
+    };
+  };
+}
+```
+
+## Custom Device Adapters
+
+Create adapters for non-standard platforms.
+
+### Web Device Adapter
+
+```typescript
+import type { DeviceInfo } from '@teardown/schemas';
+import type { DeviceInfoAdapter } from '@teardown/react-native';
+
+class WebDeviceAdapter implements DeviceInfoAdapter {
+  async getDeviceInfo(): Promise<DeviceInfo> {
+    return {
+      app_version: this.getAppVersion(),
+      app_build: this.getAppBuild(),
+      app_bundle_id: window.location.hostname,
+      device_platform: this.getPlatform(),
+      device_os_version: navigator.userAgent,
+      device_model: this.getDeviceModel(),
+      device_manufacturer: this.getBrowser(),
+      update: null,
+    };
+  }
+  
+  private getAppVersion(): string {
+    // Read from meta tag or package.json
+    const meta = document.querySelector('meta[name="version"]');
+    return meta?.getAttribute('content') ?? '1.0.0';
+  }
+  
+  private getAppBuild(): string {
+    const meta = document.querySelector('meta[name="build"]');
+    return meta?.getAttribute('content') ?? '1';
+  }
+  
+  private getPlatform(): DevicePlatformEnum {
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('android')) return DevicePlatformEnum.ANDROID;
+    if (ua.includes('iphone') || ua.includes('ipad')) return DevicePlatformEnum.IOS;
+    return DevicePlatformEnum.WEB;
+  }
+  
+  private getDeviceModel(): string {
+    if (navigator.userAgentData?.mobile) return 'Mobile';
+    return 'Desktop';
+  }
+  
+  private getBrowser(): string {
+    const ua = navigator.userAgent;
+    if (ua.includes('Chrome')) return 'Chrome';
+    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('Safari')) return 'Safari';
+    return 'Unknown';
+  }
+}
+
+// Use it
+const teardown = new TeardownCore({
+  deviceAdapter: new WebDeviceAdapter(),
+  // ...
+});
+```
+
+## Multiple SDK Instances
+
+Use multiple SDK instances for different projects or environments.
+
+```typescript
+// Production instance
+const productionTeardown = new TeardownCore({
+  org_id: 'prod-org',
+  project_id: 'prod-project',
+  api_key: 'prod-key',
+  storageFactory: createMMKVStorageFactory('production'),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+
+// Staging instance
+const stagingTeardown = new TeardownCore({
+  org_id: 'staging-org',
+  project_id: 'staging-project',
+  api_key: 'staging-key',
+  storageFactory: createMMKVStorageFactory('staging'),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+
+// Use based on environment
+const teardown = __DEV__ ? stagingTeardown : productionTeardown;
+
+<TeardownProvider core={teardown}>
+  <App />
+</TeardownProvider>
+```
+
+## Environment-Based Configuration
+
+```typescript
+const config = {
+  development: {
+    org_id: process.env.DEV_ORG_ID!,
+    project_id: process.env.DEV_PROJECT_ID!,
+    api_key: process.env.DEV_API_KEY!,
+  },
+  staging: {
+    org_id: process.env.STAGING_ORG_ID!,
+    project_id: process.env.STAGING_PROJECT_ID!,
+    api_key: process.env.STAGING_API_KEY!,
+  },
+  production: {
+    org_id: process.env.PROD_ORG_ID!,
+    project_id: process.env.PROD_PROJECT_ID!,
+    api_key: process.env.PROD_API_KEY!,
+  },
+};
+
+const env = process.env.NODE_ENV as keyof typeof config;
+const teardown = new TeardownCore({
+  ...config[env],
+  storageFactory: createMMKVStorageFactory(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+```
+
+## Advanced Identity Patterns
+
+### Automatic Re-identification
+
+```typescript
+function useAutoReidentify(interval: number = 3600000) {
+  const { core } = useTeardown();
+  
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      await core.identity.refresh();
+    }, interval);
+    
+    return () => clearInterval(timer);
+  }, [core, interval]);
+}
+
+// Use in app
+function App() {
+  useAutoReidentify(3600000); // Re-identify every hour
+  return <YourApp />;
+}
+```
+
+### Session Persistence Across Launches
+
+```typescript
+function useRestoreSession() {
+  const { core } = useTeardown();
+  const [restored, setRestored] = useState(false);
+  
+  useEffect(() => {
+    const state = core.identity.getIdentifyState();
+    
+    if (state.type === 'identified') {
+      // Session already restored from storage
+      setRestored(true);
+    } else {
+      // Wait for auto-identification
+      const unsubscribe = core.identity.onIdentifyStateChange((newState) => {
+        if (newState.type === 'identified') {
+          setRestored(true);
+        }
+      });
+      
+      return unsubscribe;
+    }
+  }, [core]);
+  
+  return restored;
+}
+
+// Use for loading state
+function App() {
+  const restored = useRestoreSession();
+  
+  if (!restored) {
+    return <SplashScreen />;
+  }
+  
+  return <MainApp />;
+}
+```
+
+## Advanced Force Update Patterns
+
+### Custom Update UI with Animation
+
+```typescript
+function AnimatedUpdateBanner() {
+  const { isUpdateAvailable, isUpdateRequired } = useForceUpdate();
+  const slideAnim = useRef(new Animated.Value(-100)).current;
+  
+  useEffect(() => {
+    if (isUpdateAvailable && !isUpdateRequired) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: -100,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isUpdateAvailable, isUpdateRequired]);
+  
+  return (
+    <Animated.View style={[styles.banner, { transform: [{ translateY: slideAnim }] }]}>
+      <Text>Update Available</Text>
+      <Button title="Update" onPress={handleUpdate} />
+    </Animated.View>
+  );
+}
+```
+
+### Deferred Update Prompts
+
+```typescript
+function useDeferredUpdatePrompt(deferCount: number = 3) {
+  const { isUpdateAvailable, isUpdateRequired } = useForceUpdate();
+  const [dismissCount, setDismissCount] = useState(0);
+  
+  const shouldShow = isUpdateAvailable && (
+    isUpdateRequired || dismissCount < deferCount
+  );
+  
+  const dismiss = () => {
+    if (!isUpdateRequired) {
+      setDismissCount(c => c + 1);
+    }
+  };
+  
+  return { shouldShow, dismiss, isForced: isUpdateRequired };
+}
+
+// Use it
+function UpdatePrompt() {
+  const { shouldShow, dismiss, isForced } = useDeferredUpdatePrompt(3);
+  
+  if (!shouldShow) return null;
+  
+  return (
+    <Modal visible={true}>
+      <Text>Update Available</Text>
+      <Button title="Update Now" onPress={handleUpdate} />
+      {!isForced && (
+        <Button title="Remind Me Later" onPress={dismiss} />
+      )}
+    </Modal>
+  );
+}
+```
+
+## Monitoring and Analytics
+
+### Track SDK Events
+
+```typescript
+function useSDKAnalytics() {
+  const { core } = useTeardown();
+  
+  useEffect(() => {
+    // Track identity changes
+    const unsubscribeIdentity = core.identity.onIdentifyStateChange((state) => {
+      analytics.track('identity_state_changed', {
+        state: state.type,
+        timestamp: Date.now(),
+      });
+    });
+    
+    // Track version status changes
+    const unsubscribeVersion = core.forceUpdate.onVersionStatusChange((status) => {
+      analytics.track('version_status_changed', {
+        status: status.type,
+        timestamp: Date.now(),
+      });
+    });
+    
+    return () => {
+      unsubscribeIdentity();
+      unsubscribeVersion();
+    };
+  }, [core]);
+}
+```
+
+### Error Tracking
+
+```typescript
+function useSDKErrorTracking() {
+  const { core } = useTeardown();
+  
+  const trackError = async (operation: string, error: string) => {
+    const deviceId = await core.device.getDeviceId();
+    const session = core.identity.getSessionState();
+    
+    errorTracker.log(error, {
+      operation,
+      deviceId,
+      sessionId: session?.session_id,
+      personaId: session?.persona_id,
+    });
+  };
+  
+  return trackError;
+}
+```
+
+## Testing
+
+### Mock SDK for Tests
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+
+export function createMockTeardown(): TeardownCore {
+  return new TeardownCore({
+    org_id: 'test-org',
+    project_id: 'test-project',
+    api_key: 'test-key',
+    storageFactory: createInMemoryStorageFactory(),
+    deviceAdapter: {
+      getDeviceInfo: async () => ({
+        app_version: '1.0.0',
+        app_build: '1',
+        app_bundle_id: 'com.test.app',
+        device_platform: DevicePlatformEnum.IOS,
+        device_os_version: '17.0',
+        device_model: 'iPhone 14',
+        device_manufacturer: 'Apple',
+        update: null,
+      }),
+    },
+  });
+}
+
+// Use in tests
+import { render } from '@testing-library/react-native';
+
+it('renders with mock SDK', () => {
+  const mockTeardown = createMockTeardown();
+  
+  const { getByText } = render(
+    <TeardownProvider core={mockTeardown}>
+      <MyComponent />
+    </TeardownProvider>
+  );
+  
+  expect(getByText('Welcome')).toBeTruthy();
+});
+```
+
+### Test Hooks
+
+```typescript
+import { renderHook, waitFor } from '@testing-library/react-native';
+
+it('useSession returns session after identify', async () => {
+  const mockTeardown = createMockTeardown();
+  
+  const wrapper = ({ children }) => (
+    <TeardownProvider core={mockTeardown}>
+      {children}
+    </TeardownProvider>
+  );
+  
+  const { result } = renderHook(() => useSession(), { wrapper });
+  
+  // Initially null
+  expect(result.current).toBeNull();
+  
+  // Identify
+  await mockTeardown.identity.identify({ user_id: 'test-user' });
+  
+  // Wait for update
+  await waitFor(() => {
+    expect(result.current).not.toBeNull();
+  });
+  
+  expect(result.current?.persona_id).toBe('test-user');
+});
+```
+
+## Performance Optimization
+
+### Lazy Initialization
+
+```typescript
+function useLazyTeardown() {
+  const [teardown] = useState(() => {
+    // Only initialize once
+    return new TeardownCore({
+      // ... config
+    });
+  });
+  
+  return teardown;
+}
+```
+
+### Memoized Selectors
+
+```typescript
+function usePersonaId() {
+  const session = useSession();
+  return useMemo(() => session?.persona_id ?? null, [session]);
+}
+
+function useIsUpdateRequired() {
+  const { versionStatus } = useForceUpdate();
+  return useMemo(
+    () => versionStatus.type === 'update_required',
+    [versionStatus]
+  );
+}
+```
+
+## Next Steps
+
+- [API Reference](./07-api-reference.mdx)
+- [Hooks Reference](./08-hooks-reference.mdx)
+- [Getting Started](./01-getting-started.mdx)

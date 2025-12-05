@@ -1,0 +1,472 @@
+# API Reference
+
+Complete API documentation for the Teardown SDK.
+
+## TeardownCore
+
+Main SDK class.
+
+### Constructor
+
+```typescript
+new TeardownCore(options: TeardownCoreOptions)
+```
+
+#### Options
+
+```typescript
+type TeardownCoreOptions = {
+  org_id: string;
+  project_id: string;
+  api_key: string;
+  storageFactory: SupportedStorageFactory;
+  deviceAdapter: DeviceInfoAdapter;
+  forceUpdate?: ForceUpdateClientOptions;
+}
+```
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `org_id` | string | Yes | Organization ID from dashboard |
+| `project_id` | string | Yes | Project ID from dashboard |
+| `api_key` | string | Yes | API key from dashboard |
+| `storageFactory` | function | Yes | Storage adapter factory |
+| `deviceAdapter` | object | Yes | Device info adapter |
+| `forceUpdate` | object | No | Force update configuration |
+
+### Methods
+
+#### `setLogLevel(level: LogLevel): void`
+
+Set logging level.
+
+```typescript
+teardown.setLogLevel('verbose');
+```
+
+#### `shutdown(): void`
+
+Clean up resources. Called automatically by provider.
+
+```typescript
+teardown.shutdown();
+```
+
+### Properties
+
+All properties are readonly and accessed via core instance:
+
+```typescript
+const { core } = useTeardown();
+
+core.identity    // IdentityClient
+core.forceUpdate // ForceUpdateClient
+core.device      // DeviceClient
+core.api         // ApiClient
+```
+
+---
+
+## IdentityClient
+
+Manages user and device identity.
+
+### Methods
+
+#### `identify(persona?: Persona): AsyncResult<IdentityUser>`
+
+Identify device or user.
+
+```typescript
+// Anonymous
+const result = await core.identity.identify();
+
+// With user info
+const result = await core.identity.identify({
+  user_id: 'user-123',
+  email: 'user@example.com',
+  name: 'John Doe',
+});
+
+if (result.success) {
+  console.log(result.data.session_id);
+} else {
+  console.error(result.error);
+}
+```
+
+**Parameters:**
+- `persona` (optional): User information
+
+**Returns:** `AsyncResult<IdentityUser>`
+
+**Types:**
+```typescript
+type Persona = {
+  user_id?: string;
+  email?: string;
+  name?: string;
+}
+
+type IdentityUser = {
+  session_id: string;
+  device_id: string;
+  persona_id: string;
+  token: string;
+  version_info: {
+    status: IdentifyVersionStatusEnum;
+    update: null;
+  }
+}
+```
+
+#### `refresh(): AsyncResult<IdentityUser>`
+
+Re-identify current persona to refresh session.
+
+```typescript
+const result = await core.identity.refresh();
+```
+
+**Returns:** `AsyncResult<IdentityUser>` or error if not identified.
+
+#### `reset(): void`
+
+Reset identity to unidentified state.
+
+```typescript
+core.identity.reset();
+```
+
+#### `getIdentifyState(): IdentifyState`
+
+Get current identity state.
+
+```typescript
+const state = core.identity.getIdentifyState();
+
+if (state.type === 'identified') {
+  console.log(state.session);
+}
+```
+
+**Returns:** `IdentifyState`
+
+```typescript
+type IdentifyState = 
+  | { type: "unidentified" }
+  | { type: "identifying" }
+  | { type: "identified", session: Session, version_info: {...} }
+```
+
+#### `getSessionState(): Session | null`
+
+Get current session or null.
+
+```typescript
+const session = core.identity.getSessionState();
+
+if (session) {
+  console.log(session.session_id);
+}
+```
+
+**Returns:** `Session | null`
+
+#### `onIdentifyStateChange(listener: (state: IdentifyState) => void): () => void`
+
+Subscribe to identity state changes.
+
+```typescript
+const unsubscribe = core.identity.onIdentifyStateChange((state) => {
+  console.log('State changed:', state.type);
+});
+
+// Later
+unsubscribe();
+```
+
+**Returns:** Unsubscribe function
+
+---
+
+## ForceUpdateClient
+
+Manages app version checking and updates.
+
+### Methods
+
+#### `getVersionStatus(): VersionStatus`
+
+Get current version status.
+
+```typescript
+const status = core.forceUpdate.getVersionStatus();
+console.log(status.type); // "up_to_date" | "update_available" | etc.
+```
+
+**Returns:** `VersionStatus`
+
+```typescript
+type VersionStatus = 
+  | { type: "initializing" }
+  | { type: "checking" }
+  | { type: "up_to_date" }
+  | { type: "update_available" }
+  | { type: "update_recommended" }
+  | { type: "update_required" }
+  | { type: "disabled" }
+```
+
+#### `onVersionStatusChange(listener: (status: VersionStatus) => void): () => void`
+
+Subscribe to version status changes.
+
+```typescript
+const unsubscribe = core.forceUpdate.onVersionStatusChange((status) => {
+  if (status.type === 'update_required') {
+    // Show update UI
+  }
+});
+
+// Later
+unsubscribe();
+```
+
+**Returns:** Unsubscribe function
+
+---
+
+## DeviceClient
+
+Collects device information.
+
+### Methods
+
+#### `getDeviceId(): Promise<string>`
+
+Get unique device identifier.
+
+```typescript
+const deviceId = await core.device.getDeviceId();
+console.log(deviceId); // "uuid-v4-string"
+```
+
+**Returns:** `Promise<string>`
+
+#### `getDeviceInfo(): Promise<DeviceInfo>`
+
+Get comprehensive device information.
+
+```typescript
+const info = await core.device.getDeviceInfo();
+console.log(info.device_platform); // "IOS" | "ANDROID" | etc.
+console.log(info.app_version);     // "1.0.0"
+```
+
+**Returns:** `Promise<DeviceInfo>`
+
+```typescript
+type DeviceInfo = {
+  app_version: string;
+  app_build: string;
+  app_bundle_id: string;
+  device_platform: DevicePlatformEnum;
+  device_os_version: string;
+  device_model: string;
+  device_manufacturer: string;
+  update?: {
+    update_id: string;
+    channel: string;
+    created_at: string;
+    runtime_version: string;
+  } | null;
+}
+```
+
+---
+
+## ApiClient
+
+Type-safe API client.
+
+### Properties
+
+#### `client: Client`
+
+Eden Treaty client for type-safe API calls.
+
+```typescript
+const response = await core.api.client('/v1/identify', {
+  method: 'POST',
+  headers: {...},
+  body: {...},
+});
+```
+
+#### `orgId: string`
+
+Current organization ID.
+
+```typescript
+console.log(core.api.orgId);
+```
+
+#### `projectId: string`
+
+Current project ID.
+
+```typescript
+console.log(core.api.projectId);
+```
+
+#### `apiKey: string`
+
+Current API key.
+
+```typescript
+console.log(core.api.apiKey);
+```
+
+#### `environmentSlug: string`
+
+Current environment slug.
+
+```typescript
+console.log(core.api.environmentSlug);
+```
+
+---
+
+## TeardownProvider
+
+React provider component.
+
+### Props
+
+```typescript
+type TeardownProviderProps = {
+  children: React.ReactNode;
+  core: TeardownCore;
+}
+```
+
+### Usage
+
+```typescript
+<TeardownProvider core={teardown}>
+  <App />
+</TeardownProvider>
+```
+
+---
+
+## Types
+
+### AsyncResult
+
+```typescript
+type AsyncResult<T> = Promise<
+  | { success: true; data: T }
+  | { success: false; error: string }
+>
+```
+
+### Session
+
+```typescript
+type Session = {
+  session_id: string;
+  device_id: string;
+  persona_id: string;
+  token: string;
+}
+```
+
+### LogLevel
+
+```typescript
+type LogLevel = "none" | "error" | "warn" | "info" | "verbose"
+```
+
+### SupportedStorage
+
+```typescript
+type SupportedStorage = {
+  preload: () => void;
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+  clear: () => void;
+  keys: () => string[];
+}
+```
+
+### SupportedStorageFactory
+
+```typescript
+type SupportedStorageFactory = (storageKey: string) => SupportedStorage
+```
+
+### DeviceInfoAdapter
+
+```typescript
+interface DeviceInfoAdapter {
+  getDeviceInfo(): Promise<DeviceInfo>;
+}
+```
+
+### ForceUpdateClientOptions
+
+```typescript
+type ForceUpdateClientOptions = {
+  throttleMs?: number;        // Default: 30000
+  checkCooldownMs?: number;   // Default: 300000
+}
+```
+
+---
+
+## Enums
+
+### DevicePlatformEnum
+
+```typescript
+enum DevicePlatformEnum {
+  IOS = "IOS",
+  ANDROID = "ANDROID",
+  WEB = "WEB",
+  WINDOWS = "WINDOWS",
+  MACOS = "MACOS",
+  LINUX = "LINUX",
+  PHONE = "PHONE",
+  TABLET = "TABLET",
+  DESKTOP = "DESKTOP",
+  CONSOLE = "CONSOLE",
+  TV = "TV",
+  WEARABLE = "WEARABLE",
+  GAME_CONSOLE = "GAME_CONSOLE",
+  VR = "VR",
+  UNKNOWN = "UNKNOWN",
+  OTHER = "OTHER",
+}
+```
+
+### IdentifyVersionStatusEnum
+
+```typescript
+enum IdentifyVersionStatusEnum {
+  UPDATE_AVAILABLE = "UPDATE_AVAILABLE",
+  UPDATE_RECOMMENDED = "UPDATE_RECOMMENDED",
+  UPDATE_REQUIRED = "UPDATE_REQUIRED",
+  UP_TO_DATE = "UP_TO_DATE",
+  DISABLED = "DISABLED",
+}
+```
+
+---
+
+## Next Steps
+
+- [Hooks Reference](./08-hooks-reference.mdx)
+- [Advanced Usage](./09-advanced.mdx)

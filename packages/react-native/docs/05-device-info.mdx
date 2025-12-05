@@ -1,0 +1,324 @@
+# Device Information
+
+Collect comprehensive device, OS, and app information with the DeviceClient.
+
+## Overview
+
+The DeviceClient provides:
+- Unique device identification
+- Comprehensive device information
+- Platform-specific adapters
+- Automatic device fingerprinting
+
+## Device Adapters
+
+The SDK uses adapters to collect device information across different platforms.
+
+### Expo Adapter
+
+For Expo applications:
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/expo';
+
+const teardown = new TeardownCore({
+  // ... other options
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+```
+
+Required dependencies:
+```bash
+bun add expo-application expo-device expo-updates
+```
+
+### React Native Adapter
+
+For React Native CLI applications:
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ReactNativeDeviceAdapter } from '@teardown/react-native/device-info';
+
+const teardown = new TeardownCore({
+  // ... other options
+  deviceAdapter: new ReactNativeDeviceAdapter(),
+});
+```
+
+Required dependencies:
+```bash
+bun add react-native-device-info
+```
+
+## Device ID
+
+Every device gets a unique, persistent identifier.
+
+### Getting Device ID
+
+```typescript
+import { useTeardown } from '@teardown/react-native';
+
+function MyComponent() {
+  const { core } = useTeardown();
+  
+  const getDeviceId = async () => {
+    const deviceId = await core.device.getDeviceId();
+    console.log('Device ID:', deviceId);
+  };
+}
+```
+
+### How It Works
+
+1. On first launch, a random UUID is generated
+2. ID is persisted in namespaced storage
+3. Same ID is used for all subsequent sessions
+4. Survives app updates and reinstalls (depending on storage)
+
+## Device Information
+
+### Getting Device Info
+
+```typescript
+const deviceInfo = await core.device.getDeviceInfo();
+```
+
+### DeviceInfo Object
+
+```typescript
+type DeviceInfo = {
+  // App Information
+  app_version: string;          // e.g., "1.0.0"
+  app_build: string;           // e.g., "100"
+  app_bundle_id: string;       // e.g., "com.company.app"
+  
+  // Device Information
+  device_platform: DevicePlatformEnum;  // IOS, ANDROID, WEB, etc.
+  device_os_version: string;            // e.g., "17.0"
+  device_model: string;                 // e.g., "iPhone 14 Pro"
+  device_manufacturer: string;          // e.g., "Apple"
+  
+  // Update Information (Expo only)
+  update?: {
+    update_id: string;
+    channel: string;
+    created_at: string;
+    runtime_version: string;
+  } | null;
+}
+```
+
+## Platform Enums
+
+### DevicePlatformEnum
+
+```typescript
+enum DevicePlatformEnum {
+  IOS = "IOS",
+  ANDROID = "ANDROID",
+  WEB = "WEB",
+  WINDOWS = "WINDOWS",
+  MACOS = "MACOS",
+  LINUX = "LINUX",
+  PHONE = "PHONE",
+  TABLET = "TABLET",
+  DESKTOP = "DESKTOP",
+  CONSOLE = "CONSOLE",
+  TV = "TV",
+  WEARABLE = "WEARABLE",
+  GAME_CONSOLE = "GAME_CONSOLE",
+  VR = "VR",
+  UNKNOWN = "UNKNOWN",
+  OTHER = "OTHER",
+}
+```
+
+## Creating Custom Adapters
+
+You can create custom device adapters for specific platforms or needs.
+
+### Adapter Interface
+
+```typescript
+interface DeviceInfoAdapter {
+  getDeviceInfo(): Promise<DeviceInfo>;
+}
+```
+
+### Example: Custom Web Adapter
+
+```typescript
+class WebDeviceAdapter implements DeviceInfoAdapter {
+  async getDeviceInfo(): Promise<DeviceInfo> {
+    return {
+      app_version: '1.0.0',
+      app_build: '1',
+      app_bundle_id: 'com.yourapp.web',
+      device_platform: DevicePlatformEnum.WEB,
+      device_os_version: navigator.userAgent,
+      device_model: 'Web Browser',
+      device_manufacturer: this.getBrowserName(),
+      update: null,
+    };
+  }
+  
+  private getBrowserName(): string {
+    const ua = navigator.userAgent;
+    if (ua.includes('Chrome')) return 'Chrome';
+    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('Safari')) return 'Safari';
+    return 'Unknown';
+  }
+}
+
+// Use it
+const teardown = new TeardownCore({
+  deviceAdapter: new WebDeviceAdapter(),
+  // ...
+});
+```
+
+## Expo Update Information
+
+When using Expo with OTA updates, the SDK automatically includes update information:
+
+```typescript
+{
+  update: {
+    update_id: "abc123",
+    channel: "production",
+    created_at: "2024-01-01T00:00:00Z",
+    runtime_version: "1.0.0",
+  }
+}
+```
+
+This helps track which OTA update version users are running.
+
+## Usage in Identification
+
+Device information is automatically sent during identification:
+
+```typescript
+await core.identity.identify({
+  user_id: 'user-123',
+});
+
+// Automatically includes:
+// - Device ID
+// - Device platform
+// - OS version
+// - App version
+// - Device model
+// - Manufacturer
+// - Update info (if Expo)
+```
+
+This data is visible in your Teardown dashboard for analytics and debugging.
+
+## Platform Detection Examples
+
+### Check if iOS
+
+```typescript
+const deviceInfo = await core.device.getDeviceInfo();
+const isIOS = deviceInfo.device_platform === DevicePlatformEnum.IOS;
+
+if (isIOS) {
+  // iOS-specific logic
+}
+```
+
+### Check Version
+
+```typescript
+const deviceInfo = await core.device.getDeviceInfo();
+const version = deviceInfo.app_version;
+
+if (compareVersions(version, '2.0.0') < 0) {
+  // Running version older than 2.0.0
+}
+```
+
+### Check if Tablet
+
+```typescript
+const deviceInfo = await core.device.getDeviceInfo();
+const isTablet = deviceInfo.device_platform === DevicePlatformEnum.TABLET;
+
+if (isTablet) {
+  // Show tablet-optimized UI
+}
+```
+
+## Storage
+
+Device ID is stored in namespaced storage:
+
+```
+Key: teardown:v1:device:deviceId
+Value: "uuid-generated-on-first-launch"
+```
+
+## Best Practices
+
+### 1. Cache Device Info If Needed Frequently
+
+```typescript
+// ❌ Bad - fetches every render
+function MyComponent() {
+  const deviceInfo = await core.device.getDeviceInfo();
+}
+
+// ✅ Good - fetch once and cache
+function MyComponent() {
+  const [deviceInfo, setDeviceInfo] = useState(null);
+  
+  useEffect(() => {
+    core.device.getDeviceInfo().then(setDeviceInfo);
+  }, []);
+}
+```
+
+### 2. Use Platform-Specific Code When Needed
+
+```typescript
+const deviceInfo = await core.device.getDeviceInfo();
+
+if (deviceInfo.device_platform === DevicePlatformEnum.IOS) {
+  // iOS-specific behavior
+} else if (deviceInfo.device_platform === DevicePlatformEnum.ANDROID) {
+  // Android-specific behavior
+}
+```
+
+### 3. Don't Manually Generate Device IDs
+
+```typescript
+// ❌ Bad - inconsistent with SDK
+const myDeviceId = uuid.v4();
+
+// ✅ Good - use SDK's device ID
+const deviceId = await core.device.getDeviceId();
+```
+
+## Privacy Considerations
+
+The SDK collects:
+- ✅ Device model and OS (for compatibility)
+- ✅ App version (for update management)
+- ✅ Generated device ID (for analytics)
+- ❌ No personal information
+- ❌ No advertising IDs
+- ❌ No contacts or photos
+
+Device ID is randomly generated and not tied to hardware identifiers.
+
+## Next Steps
+
+- [Storage](./06-storage.mdx)
+- [Logging](./06-logging.mdx)
+- [API Reference](./07-api-reference.mdx)
