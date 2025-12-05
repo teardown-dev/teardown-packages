@@ -1,0 +1,188 @@
+# Core Concepts
+
+Understanding the architecture and design principles of the Teardown SDK.
+
+## Architecture Overview
+
+The Teardown SDK is built around a central `TeardownCore` instance that manages several specialized clients:
+
+```
+TeardownCore
+├── IdentityClient    - User and device identity
+├── ForceUpdateClient - Version management
+├── DeviceClient      - Device information
+├── StorageClient     - Persistent storage
+├── LoggingClient     - Structured logging
+└── ApiClient         - API communication
+```
+
+## Core Principles
+
+### 1. Single Source of Truth
+
+The `TeardownCore` instance is your single entry point to all SDK functionality. It's initialized once and passed through your app via the `TeardownProvider`.
+
+```typescript
+const teardown = new TeardownCore({...});
+
+// Use throughout your app
+<TeardownProvider core={teardown}>
+  <App />
+</TeardownProvider>
+```
+
+### 2. Automatic Initialization
+
+The SDK automatically initializes when the `TeardownProvider` mounts:
+
+- Loads persisted session data
+- Identifies the device
+- Checks version status
+- Subscribes to app lifecycle events
+
+### 3. Reactive State Management
+
+All clients use event emitters to notify of state changes. React hooks automatically subscribe to these events:
+
+```typescript
+// Hooks automatically subscribe and cleanup
+const session = useSession();
+const { versionStatus } = useForceUpdate();
+```
+
+### 4. Namespaced Storage
+
+Each client gets its own namespaced storage to prevent key collisions:
+
+```typescript
+// Storage is automatically namespaced
+teardown:v1:identity:IDENTIFY_STATE
+teardown:v1:device:deviceId
+teardown:v1:version:VERSION_STATUS
+```
+
+## Client Responsibilities
+
+### IdentityClient
+
+Manages device and user identity:
+
+- Generates unique device IDs
+- Tracks user sessions
+- Persists authentication state
+- Provides persona management (anonymous or identified users)
+
+### ForceUpdateClient
+
+Handles version management:
+
+- Checks app version against backend
+- Monitors app state changes
+- Throttles version checks
+- Emits update status changes
+
+### DeviceClient
+
+Collects device information:
+
+- OS version and platform
+- Device model and manufacturer
+- App version and build number
+- Uses platform adapters for consistency
+
+### StorageClient
+
+Provides persistent storage:
+
+- Namespaced key-value storage
+- Platform-agnostic interface
+- Support for multiple adapters (MMKV, AsyncStorage, etc.)
+- Automatic cleanup on shutdown
+
+### LoggingClient
+
+Structured logging system:
+
+- Configurable log levels
+- Named loggers for each client
+- Console binding preservation
+- Debug mode support
+
+### ApiClient
+
+Handles API communication:
+
+- Type-safe API client
+- Automatic header injection
+- Request/response logging
+- Error handling
+
+## Lifecycle Management
+
+### Initialization
+
+```typescript
+const teardown = new TeardownCore({...});
+// Automatically initializes identity client
+```
+
+### Runtime
+
+The SDK operates automatically:
+- Listens for app state changes
+- Checks version on foreground
+- Persists state changes
+
+### Cleanup
+
+```typescript
+// Automatic cleanup when provider unmounts
+useEffect(() => {
+  return () => {
+    core.shutdown();
+  };
+}, [core]);
+```
+
+## State Persistence
+
+All critical state is automatically persisted:
+
+```typescript
+// Identity state
+{ type: "identified", session: {...}, version_info: {...} }
+
+// Version status
+{ type: "up_to_date" | "update_available" | "update_required" | ... }
+```
+
+State is restored on app restart for seamless user experience.
+
+## Error Handling
+
+The SDK uses `AsyncResult` pattern for predictable error handling:
+
+```typescript
+const result = await core.identity.identify({...});
+
+if (result.success) {
+  // Handle success
+  console.log(result.data);
+} else {
+  // Handle error
+  console.error(result.error);
+}
+```
+
+## Type Safety
+
+Full TypeScript support with:
+- Runtime validation using Zod schemas
+- Discriminated unions for state types
+- Exported types for all public APIs
+
+## Next Steps
+
+- [Identity & Authentication](./03-identity.mdx)
+- [Force Updates](./04-force-updates.mdx)
+- [API Reference](./07-api-reference.mdx)

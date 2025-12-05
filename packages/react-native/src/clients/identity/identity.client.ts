@@ -208,6 +208,7 @@ export class IdentityClient {
 			});
 
 			if (response.error != null) {
+				console.log("identify error", response.error.status, response.error.value);
 				this.setIdentifyState(previousState);
 
 				if (response.error.status === 422) {

@@ -71,7 +71,11 @@ export type VersionStatusChangeEvents = {
 export type ForceUpdateClientOptions = {
 	/** Min ms between foreground checks (default: 30000) */
 	throttleMs?: number;
-	/** Min ms since last successful check before re-checking (default: 300000 = 5min) */
+	/** 
+	 * Min ms since last successful check before re-checking (default: 300000 = 5min)
+	 * Set this to 0 to disable cooldown and check immediately on every foreground transition.
+	 * Set to -1 disable checking entirely.
+	 */
 	checkCooldownMs?: number;
 };
 
@@ -164,9 +168,22 @@ export class ForceUpdateClient {
 
 	private handleAppStateChange = (nextState: AppStateStatus) => {
 		if (nextState === "active") {
+			console.log("App state changed to active");
+
+			// If checkCooldownMs is -1, disable checking entirely
+			if (this.options.checkCooldownMs === -1) {
+				this.logger.info("Version checking disabled (checkCooldownMs = -1)");
+				return;
+			}
+
 			const now = Date.now();
 			const throttleOk = !this.lastForegroundTime || now - this.lastForegroundTime >= this.options.throttleMs;
-			const cooldownOk = !this.lastCheckTime || now - this.lastCheckTime >= this.options.checkCooldownMs;
+
+			// If checkCooldownMs is 0, always allow check (no cooldown)
+			// Otherwise, check if enough time has passed since last successful check
+			const cooldownOk = this.options.checkCooldownMs === 0
+				|| !this.lastCheckTime
+				|| now - this.lastCheckTime >= this.options.checkCooldownMs;
 
 			this.lastForegroundTime = now;
 

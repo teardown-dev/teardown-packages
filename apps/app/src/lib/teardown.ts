@@ -10,6 +10,6 @@ export const teardown = new TeardownCore({
 	deviceAdapter: new ExpoDeviceAdapter(),
 	forceUpdate: {
 		throttleMs: 30_000, // 30 seconds
-		checkCooldownMs: 10_000, // 30 seconds
+		checkCooldownMs: 10_000, // 10 seconds
 	},
 });

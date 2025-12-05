@@ -1,0 +1,349 @@
+# Storage
+
+Persistent, namespaced storage with platform adapters.
+
+## Overview
+
+The StorageClient provides:
+- Namespaced key-value storage
+- Platform-agnostic interface
+- Multiple storage adapters
+- Automatic cleanup
+
+## Storage Adapters
+
+### MMKV Adapter (Recommended)
+
+Fast, encrypted storage using react-native-mmkv:
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { createMMKVStorageFactory } from '@teardown/react-native/mmkv';
+
+const teardown = new TeardownCore({
+  // ... other options
+  storageFactory: createMMKVStorageFactory(),
+});
+```
+
+Install dependency:
+```bash
+bun add react-native-mmkv
+```
+
+Benefits:
+- ⚡ Extremely fast (synchronous)
+- 🔒 Encrypted by default
+- 📦 Small bundle size
+- 💾 Persistent across app restarts
+
+### Custom Storage Adapter
+
+Create your own storage adapter:
+
+```typescript
+import type { SupportedStorage } from '@teardown/react-native';
+
+function createCustomStorageFactory() {
+  return (storageKey: string): SupportedStorage => {
+    // Your storage implementation
+    return {
+      preload: () => {
+        // Load data into memory if needed
+      },
+      getItem: (key: string) => {
+        // Return value or null
+        return localStorage.getItem(`${storageKey}:${key}`);
+      },
+      setItem: (key: string, value: string) => {
+        // Store value
+        localStorage.setItem(`${storageKey}:${key}`, value);
+      },
+      removeItem: (key: string) => {
+        // Remove value
+        localStorage.removeItem(`${storageKey}:${key}`);
+      },
+      clear: () => {
+        // Clear all keys for this namespace
+      },
+      keys: () => {
+        // Return all keys
+        return Object.keys(localStorage);
+      },
+    };
+  };
+}
+```
+
+## Storage Interface
+
+```typescript
+type SupportedStorage = {
+  preload: () => void;
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+  clear: () => void;
+  keys: () => string[];
+}
+```
+
+## Namespacing
+
+Storage is automatically namespaced to prevent key collisions:
+
+```typescript
+// Internal storage keys are prefixed
+teardown:v1:identity:IDENTIFY_STATE
+teardown:v1:device:deviceId
+teardown:v1:version:VERSION_STATUS
+```
+
+This prevents conflicts with:
+- Your app's storage
+- Other libraries
+- Multiple Teardown instances
+
+## How It Works
+
+### 1. Storage Factory
+
+The storage factory creates namespaced storage instances:
+
+```typescript
+// You provide the factory
+storageFactory: createMMKVStorageFactory()
+
+// SDK calls it for each client
+const identityStorage = storage.createStorage('identity');
+const deviceStorage = storage.createStorage('device');
+```
+
+### 2. Client Storage
+
+Each client gets its own namespaced storage:
+
+```typescript
+class IdentityClient {
+  constructor(storage: StorageClient) {
+    // Creates "teardown:v1:identity" namespace
+    this.storage = storage.createStorage('identity');
+  }
+  
+  saveSession(session: Session) {
+    // Actually saves to "teardown:v1:identity:IDENTIFY_STATE"
+    this.storage.setItem('IDENTIFY_STATE', JSON.stringify(session));
+  }
+}
+```
+
+### 3. Automatic Persistence
+
+The SDK automatically persists critical state:
+
+- Identity state (session data)
+- Version status
+- Device ID
+
+## Internal Storage Keys
+
+The SDK uses these storage keys internally:
+
+| Client | Key | Data |
+|--------|-----|------|
+| Identity | `IDENTIFY_STATE` | User session and identity state |
+| Device | `deviceId` | Generated device UUID |
+| ForceUpdate | `VERSION_STATUS` | Current version status |
+
+## Creating Storage Instances
+
+You typically don't create storage instances directly - clients do it internally:
+
+```typescript
+// Internal SDK code
+class MyClient {
+  constructor(storage: StorageClient) {
+    this.storage = storage.createStorage('my-namespace');
+  }
+}
+```
+
+If you need custom storage:
+
+```typescript
+import { useTeardown } from '@teardown/react-native';
+
+function MyComponent() {
+  const { core } = useTeardown();
+  
+  // Access internal storage (not recommended)
+  // Better to use your own storage solution for app data
+}
+```
+
+## Data Format
+
+All data is stored as JSON strings:
+
+```typescript
+// Stored
+storage.setItem('key', JSON.stringify({ foo: 'bar' }));
+
+// Retrieved
+const data = JSON.parse(storage.getItem('key'));
+```
+
+## Cleanup
+
+Storage is automatically cleaned up on SDK shutdown:
+
+```typescript
+// Happens automatically when TeardownProvider unmounts
+core.shutdown();
+```
+
+This clears all namespaced storage instances.
+
+## Best Practices
+
+### 1. Use MMKV for Production
+
+```typescript
+// ✅ Recommended - fast and encrypted
+storageFactory: createMMKVStorageFactory()
+
+// ⚠️ Avoid in production - slow and unencrypted
+storageFactory: createAsyncStorageFactory()
+```
+
+### 2. Don't Access Internal Storage Directly
+
+```typescript
+// ❌ Bad - bypasses SDK abstractions
+MMKV.set('teardown:v1:identity:IDENTIFY_STATE', '...');
+
+// ✅ Good - use SDK methods
+await core.identity.identify({...});
+```
+
+### 3. Use Your Own Storage for App Data
+
+```typescript
+// ❌ Bad - mixing SDK and app data
+core.storage.setItem('user-preferences', '...');
+
+// ✅ Good - separate storage for app
+import { MMKV } from 'react-native-mmkv';
+const appStorage = new MMKV({ id: 'app-storage' });
+appStorage.set('user-preferences', '...');
+```
+
+### 4. Handle Storage Errors
+
+```typescript
+// Storage operations can throw
+try {
+  const value = storage.getItem('key');
+} catch (error) {
+  console.error('Storage error:', error);
+  // Handle error (fallback, retry, etc.)
+}
+```
+
+## Migrations
+
+If you need to migrate storage data:
+
+```typescript
+function migrateStorage() {
+  const oldKey = 'old-app:session';
+  const newKey = 'teardown:v1:identity:IDENTIFY_STATE';
+  
+  const oldData = localStorage.getItem(oldKey);
+  if (oldData) {
+    // Transform data if needed
+    const newData = transformData(oldData);
+    localStorage.setItem(newKey, newData);
+    localStorage.removeItem(oldKey);
+  }
+}
+
+// Run before initializing Teardown
+migrateStorage();
+const teardown = new TeardownCore({...});
+```
+
+## Storage Size
+
+The SDK stores minimal data:
+
+- Identity state: ~500 bytes
+- Device ID: ~36 bytes (UUID)
+- Version status: ~50 bytes
+
+Total: Less than 1KB for all SDK data.
+
+## Encryption
+
+### MMKV
+
+MMKV encrypts data by default:
+
+```typescript
+// Already encrypted
+storageFactory: createMMKVStorageFactory()
+```
+
+### Custom Encryption
+
+For custom adapters, implement encryption:
+
+```typescript
+import CryptoJS from 'crypto-js';
+
+function createEncryptedStorage(encryptionKey: string) {
+  return (namespace: string) => ({
+    getItem: (key: string) => {
+      const encrypted = localStorage.getItem(`${namespace}:${key}`);
+      if (!encrypted) return null;
+      return CryptoJS.AES.decrypt(encrypted, encryptionKey).toString();
+    },
+    setItem: (key: string, value: string) => {
+      const encrypted = CryptoJS.AES.encrypt(value, encryptionKey).toString();
+      localStorage.setItem(`${namespace}:${key}`, encrypted);
+    },
+    // ... other methods
+  });
+}
+```
+
+## Testing
+
+Mock storage for testing:
+
+```typescript
+function createMockStorageFactory() {
+  const store = new Map<string, string>();
+  
+  return (namespace: string) => ({
+    preload: () => {},
+    getItem: (key: string) => store.get(`${namespace}:${key}`) ?? null,
+    setItem: (key: string, value: string) => store.set(`${namespace}:${key}`, value),
+    removeItem: (key: string) => store.delete(`${namespace}:${key}`),
+    clear: () => store.clear(),
+    keys: () => Array.from(store.keys()),
+  });
+}
+
+// Use in tests
+const teardown = new TeardownCore({
+  storageFactory: createMockStorageFactory(),
+  // ...
+});
+```
+
+## Next Steps
+
+- [Logging](./06-logging.mdx)
+- [API Reference](./07-api-reference.mdx)
+- [Advanced Usage](./09-advanced.mdx)
