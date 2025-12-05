@@ -1,0 +1,476 @@
+# Hooks Reference
+
+React hooks for accessing Teardown SDK functionality.
+
+## useTeardown
+
+Access the TeardownCore instance.
+
+### Usage
+
+```typescript
+import { useTeardown } from '@teardown/react-native';
+
+function MyComponent() {
+  const { core } = useTeardown();
+  
+  return <Button onPress={() => core.identity.reset()} />;
+}
+```
+
+### Return Value
+
+```typescript
+type UseTeardownResult = {
+  core: TeardownCore;
+}
+```
+
+### When to Use
+
+- Accessing clients directly
+- Calling SDK methods
+- Setting configuration
+
+### Example: Manual Identification
+
+```typescript
+function LoginButton() {
+  const { core } = useTeardown();
+  
+  const handleLogin = async () => {
+    const result = await core.identity.identify({
+      user_id: 'user-123',
+      email: 'user@example.com',
+    });
+    
+    if (result.success) {
+      console.log('Logged in:', result.data.session_id);
+    }
+  };
+  
+  return <Button onPress={handleLogin} title="Login" />;
+}
+```
+
+### Example: Enable Debug Logging
+
+```typescript
+function DebugToggle() {
+  const { core } = useTeardown();
+  const [enabled, setEnabled] = useState(false);
+  
+  const toggle = () => {
+    const newValue = !enabled;
+    setEnabled(newValue);
+    core.setLogLevel(newValue ? 'verbose' : 'none');
+  };
+  
+  return <Switch value={enabled} onValueChange={toggle} />;
+}
+```
+
+---
+
+## useSession
+
+Get current user session with automatic updates.
+
+### Usage
+
+```typescript
+import { useSession } from '@teardown/react-native';
+
+function UserProfile() {
+  const session = useSession();
+  
+  if (!session) {
+    return <LoginPrompt />;
+  }
+  
+  return <Text>Session: {session.session_id}</Text>;
+}
+```
+
+### Return Value
+
+```typescript
+type UseSessionResult = Session | null
+
+type Session = {
+  session_id: string;
+  device_id: string;
+  persona_id: string;
+  token: string;
+}
+```
+
+Returns `null` when:
+- User is not identified
+- Identity state is "unidentified" or "identifying"
+
+Returns `Session` when:
+- Identity state is "identified"
+
+### Reactivity
+
+The hook automatically re-renders when:
+- User is identified
+- User is logged out
+- Session is refreshed
+
+### Example: Conditional Rendering
+
+```typescript
+function App() {
+  const session = useSession();
+  
+  if (!session) {
+    return <LoginScreen />;
+  }
+  
+  return <MainApp session={session} />;
+}
+```
+
+### Example: Display Session Info
+
+```typescript
+function SessionInfo() {
+  const session = useSession();
+  
+  return (
+    <View>
+      <Text>Session ID: {session?.session_id ?? 'Not logged in'}</Text>
+      <Text>Device ID: {session?.device_id ?? 'Unknown'}</Text>
+      <Text>Persona ID: {session?.persona_id ?? 'Anonymous'}</Text>
+    </View>
+  );
+}
+```
+
+### Example: Protected Route
+
+```typescript
+function ProtectedScreen() {
+  const session = useSession();
+  const navigation = useNavigation();
+  
+  useEffect(() => {
+    if (!session) {
+      navigation.navigate('Login');
+    }
+  }, [session]);
+  
+  if (!session) {
+    return <ActivityIndicator />;
+  }
+  
+  return <SecureContent />;
+}
+```
+
+---
+
+## useForceUpdate
+
+Get version update status with automatic updates.
+
+### Usage
+
+```typescript
+import { useForceUpdate } from '@teardown/react-native';
+
+function UpdateBanner() {
+  const { versionStatus, isUpdateRequired, isUpdateAvailable } = useForceUpdate();
+  
+  if (isUpdateRequired) {
+    return <UpdateRequiredScreen />;
+  }
+  
+  return null;
+}
+```
+
+### Return Value
+
+```typescript
+type UseForceUpdateResult = {
+  versionStatus: VersionStatus;
+  isUpdateAvailable: boolean;
+  isUpdateRequired: boolean;
+}
+
+type VersionStatus = 
+  | { type: "initializing" }
+  | { type: "checking" }
+  | { type: "up_to_date" }
+  | { type: "update_available" }
+  | { type: "update_recommended" }
+  | { type: "update_required" }
+  | { type: "disabled" }
+```
+
+### Fields
+
+#### `versionStatus`
+
+Current version status object with discriminated union type.
+
+#### `isUpdateAvailable`
+
+Boolean indicating if any update exists (available, recommended, or required).
+
+```typescript
+isUpdateAvailable = 
+  versionStatus.type === "update_available" ||
+  versionStatus.type === "update_recommended" ||
+  versionStatus.type === "update_required"
+```
+
+#### `isUpdateRequired`
+
+Boolean indicating if update is mandatory.
+
+```typescript
+isUpdateRequired = versionStatus.type === "update_required"
+```
+
+### Reactivity
+
+The hook automatically re-renders when:
+- Version status changes
+- App returns to foreground
+- User is identified/re-identified
+
+### Example: Update Required Modal
+
+```typescript
+function UpdateRequiredModal() {
+  const { isUpdateRequired } = useForceUpdate();
+  
+  if (!isUpdateRequired) return null;
+  
+  return (
+    <Modal visible={true} animationType="slide">
+      <View style={styles.container}>
+        <Text>Update Required</Text>
+        <Text>Please update to continue</Text>
+        <Button 
+          title="Update Now"
+          onPress={() => Linking.openURL(STORE_URL)}
+        />
+      </View>
+    </Modal>
+  );
+}
+```
+
+### Example: Optional Update Banner
+
+```typescript
+function UpdateBanner() {
+  const { isUpdateAvailable, isUpdateRequired } = useForceUpdate();
+  const [dismissed, setDismissed] = useState(false);
+  
+  // Don't show if required (use modal instead) or dismissed
+  if (isUpdateRequired || !isUpdateAvailable || dismissed) {
+    return null;
+  }
+  
+  return (
+    <View style={styles.banner}>
+      <Text>New version available</Text>
+      <Button title="Update" onPress={() => Linking.openURL(STORE_URL)} />
+      <Button title="Later" onPress={() => setDismissed(true)} />
+    </View>
+  );
+}
+```
+
+### Example: Status-Based UI
+
+```typescript
+function VersionStatusIndicator() {
+  const { versionStatus } = useForceUpdate();
+  
+  switch (versionStatus.type) {
+    case 'checking':
+      return <ActivityIndicator />;
+    case 'update_required':
+      return <Badge color="red">Update Required</Badge>;
+    case 'update_recommended':
+      return <Badge color="orange">Update Recommended</Badge>;
+    case 'update_available':
+      return <Badge color="blue">Update Available</Badge>;
+    case 'up_to_date':
+      return <Badge color="green">Up to Date</Badge>;
+    default:
+      return null;
+  }
+}
+```
+
+### Example: Full Screen Takeover
+
+```typescript
+function FullscreenTakeover() {
+  const { isUpdateRequired } = useForceUpdate();
+  
+  if (!isUpdateRequired) return null;
+  
+  return (
+    <Modal 
+      visible={true} 
+      animationType="fade"
+      presentationStyle="overFullScreen"
+    >
+      <SafeAreaView style={styles.container}>
+        <Image source={appIcon} />
+        <Text style={styles.title}>Update Required</Text>
+        <Text style={styles.body}>
+          A new version of the app is required to continue.
+        </Text>
+        <Button 
+          title="Update Now"
+          onPress={() => Linking.openURL(STORE_URL)}
+        />
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+// In root layout
+<TeardownProvider core={teardown}>
+  <App />
+  <FullscreenTakeover />
+</TeardownProvider>
+```
+
+---
+
+## Hook Patterns
+
+### Combining Hooks
+
+```typescript
+function AppShell() {
+  const session = useSession();
+  const { isUpdateRequired } = useForceUpdate();
+  
+  if (isUpdateRequired) {
+    return <UpdateRequiredScreen />;
+  }
+  
+  if (!session) {
+    return <LoginScreen />;
+  }
+  
+  return <MainApp />;
+}
+```
+
+### Custom Hooks
+
+```typescript
+function useIsAuthenticated(): boolean {
+  const session = useSession();
+  return session !== null;
+}
+
+function useRequireAuth() {
+  const session = useSession();
+  const navigation = useNavigation();
+  
+  useEffect(() => {
+    if (!session) {
+      navigation.navigate('Login');
+    }
+  }, [session, navigation]);
+  
+  return session;
+}
+```
+
+### Memoization
+
+```typescript
+function UserDashboard() {
+  const session = useSession();
+  
+  const personaId = useMemo(() => {
+    return session?.persona_id ?? 'anonymous';
+  }, [session]);
+  
+  return <Dashboard personaId={personaId} />;
+}
+```
+
+---
+
+## Best Practices
+
+### 1. Use Hooks for Reactive UI
+
+```typescript
+// ✅ Good - automatic updates
+const session = useSession();
+
+// ❌ Bad - manual subscription
+const [session, setSession] = useState(null);
+useEffect(() => {
+  const unsubscribe = core.identity.onIdentifyStateChange(/* ... */);
+  return unsubscribe;
+}, []);
+```
+
+### 2. Handle Null States
+
+```typescript
+// ✅ Good - null check
+const session = useSession();
+if (!session) return <LoginPrompt />;
+
+// ❌ Bad - assumes session exists
+const session = useSession();
+return <Text>{session.session_id}</Text>; // Can crash!
+```
+
+### 3. Combine Conditions Properly
+
+```typescript
+// ✅ Good - correct priority
+if (isUpdateRequired) return <UpdateModal />;
+if (!session) return <LoginScreen />;
+return <App />;
+
+// ❌ Bad - wrong priority
+if (!session) return <LoginScreen />;
+if (isUpdateRequired) return <UpdateModal />; // Never shown!
+```
+
+### 4. Don't Call Hooks Conditionally
+
+```typescript
+// ✅ Good - hooks at top level
+function MyComponent() {
+  const session = useSession();
+  
+  if (!session) return null;
+  return <Content />;
+}
+
+// ❌ Bad - conditional hook
+function MyComponent() {
+  if (someCondition) {
+    const session = useSession(); // Error!
+  }
+}
+```
+
+---
+
+## Next Steps
+
+- [Advanced Usage](./09-advanced.mdx)
+- [API Reference](./07-api-reference.mdx)

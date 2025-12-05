@@ -67,19 +67,24 @@ export interface VersionStatusChangeEvents {
 	VERSION_STATUS_CHANGED: (status: VersionStatus) => void;
 }
 
-export interface ForceUpdateClientOptions {
-	/** Min ms between version checks. Values below 30s are coerced to 30s. (default: 30000) */
-	checkIntervalMs?: number;
-	/** Always check on foreground, ignoring interval (default: true) */
+export type ForceUpdateClientOptions = {
+	/** Min ms between foreground checks (default: 30000) */
+	throttleMs?: number;
+	/**
+	 * Min ms since last successful check before re-checking (default: 300000 = 5min)
+	 * Set this to 0 to disable cooldown and check immediately on every foreground transition.
+	 * Set to -1 disable checking entirely.
+	 */
+	checkCooldownMs?: number;
+	/** Always check on foreground, ignoring throttle (default: true) */
 	checkOnForeground?: boolean;
 	/** If true, check version even when not identified by using anonymous device identification (default: false) */
 	identifyAnonymousDevice?: boolean;
-}
-
-const MIN_CHECK_INTERVAL_MS = 30_000; // 30 seconds minimum
+};
 
 const DEFAULT_OPTIONS: Required<ForceUpdateClientOptions> = {
-	checkIntervalMs: 30_000, // 30 seconds
+	throttleMs: 30_000, // 30 seconds
+	checkCooldownMs: 300_000, // 5 minutes
 	checkOnForeground: true,
 	identifyAnonymousDevice: false,
 };
@@ -92,6 +97,7 @@ export class ForceUpdateClient {
 	private unsubscribe: (() => void) | null = null;
 	private appStateSubscription: NativeEventSubscription | null = null;
 	private lastCheckTime: number | null = null;
+	private lastForegroundTime: number | null = null;
 
 	private readonly logger: Logger;
 	private readonly storage: SupportedStorage;
@@ -108,7 +114,6 @@ export class ForceUpdateClient {
 		this.options = {
 			...DEFAULT_OPTIONS,
 			...options,
-			checkIntervalMs: Math.max(options.checkIntervalMs ?? DEFAULT_OPTIONS.checkIntervalMs, MIN_CHECK_INTERVAL_MS),
 		};
 		this.versionStatus = this.getVersionStatusFromStorage();
 		this.subscribeToIdentity();
@@ -171,10 +176,24 @@ export class ForceUpdateClient {
 
 	private handleAppStateChange = (nextState: AppStateStatus) => {
 		if (nextState === "active") {
-			const now = Date.now();
-			const intervalOk = !this.lastCheckTime || now - this.lastCheckTime >= this.options.checkIntervalMs;
+			// If checkCooldownMs is -1, disable checking entirely
+			if (this.options.checkCooldownMs === -1) {
+				this.logger.info("Version checking disabled (checkCooldownMs = -1)");
+				return;
+			}
 
-			if (this.options.checkOnForeground || intervalOk) {
+			const now = Date.now();
+			const throttleOk = !this.lastForegroundTime || now - this.lastForegroundTime >= this.options.throttleMs;
+
+			// If checkCooldownMs is 0, always allow check (no cooldown)
+			// Otherwise, check if enough time has passed since last successful check
+			const cooldownOk =
+				this.options.checkCooldownMs === 0 ||
+				!this.lastCheckTime ||
+				now - this.lastCheckTime >= this.options.checkCooldownMs;
+
+			if (this.options.checkOnForeground || (throttleOk && cooldownOk)) {
+				this.lastForegroundTime = now;
 				this.checkVersionOnForeground();
 			}
 		}

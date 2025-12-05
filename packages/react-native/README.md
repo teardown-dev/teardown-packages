@@ -28,32 +28,46 @@ bun add react-native-device-info
 
 ## Quick Start
 
+### 1. Initialize the SDK
+
 ```tsx
-import { TeardownCore, TeardownProvider, useTeardown } from '@teardown/react-native';
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/expo';
+import { createMMKVStorageFactory } from '@teardown/react-native/mmkv';
 
-// Initialize
-const teardown = new TeardownCore({
-  api: {
-    api_key: 'your-api-key',
-    org_id: 'your-org-id',
-    project_id: 'your-project-id',
-    environment_slug: 'production',
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageFactory: createMMKVStorageFactory(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+  forceUpdate: {
+    throttleMs: 30_000, // 30 seconds
+    checkCooldownMs: 10_000, // 10 seconds
   },
-  storage: { /* ... */ },
-  device: { /* ... */ },
-  identity: { identifyOnLoad: true },
 });
+```
 
-// Wrap your app
-export default function App() {
+### 2. Wrap your app with TeardownProvider
+
+```tsx
+import { TeardownProvider } from '@teardown/react-native';
+import { teardown } from './lib/teardown';
+
+export default function RootLayout() {
   return (
     <TeardownProvider core={teardown}>
       <YourApp />
     </TeardownProvider>
   );
 }
+```
 
-// Use in components
+### 3. Use in components
+
+```tsx
+import { useTeardown } from '@teardown/react-native';
+
 function YourComponent() {
   const { core } = useTeardown();
   
@@ -78,10 +92,10 @@ Complete documentation is available in the [docs](./docs) folder:
 - [Force Updates](./docs/04-force-updates.mdx) - Version management
 - [Device Information](./docs/05-device-info.mdx) - Device data collection
 - [Storage](./docs/06-storage.mdx) - Persistent storage
-- [Logging](./docs/06-logging.mdx) - Structured logging
-- [API Reference](./docs/07-api-reference.mdx) - Complete API docs
-- [Hooks Reference](./docs/08-hooks-reference.mdx) - React hooks
-- [Advanced Usage](./docs/09-advanced.mdx) - Advanced patterns
+- [Logging](./docs/07-logging.mdx) - Structured logging
+- [API Reference](./docs/08-api-reference.mdx) - Complete API docs
+- [Hooks Reference](./docs/09-hooks-reference.mdx) - React hooks
+- [Advanced Usage](./docs/10-advanced.mdx) - Advanced patterns
 
 ## License
 

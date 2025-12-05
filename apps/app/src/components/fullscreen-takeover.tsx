@@ -36,7 +36,6 @@ export const FullscreenTakeover = memo(() => {
     return context.isUpdateRequired || context.isUpdateAvailable;
   }, [context.isUpdateRequired, context.isUpdateAvailable]);
 
-  console.log("context", context);
   if (!showTakeover) {
     return null;
   }

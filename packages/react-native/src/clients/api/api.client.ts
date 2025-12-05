@@ -5,19 +5,52 @@ import type { StorageClient } from "../storage";
 
 export { Eden, IngestApi };
 
-const TEARDOWN_INGEST_URL = "http://localhost:4880";
+const TEARDOWN_INGEST_URL = "https://ingest.teardown.dev";
 const TEARDOWN_API_KEY_HEADER = "td-api-key";
 const TEARDOWN_ORG_ID_HEADER = "td-org-id";
 const TEARDOWN_PROJECT_ID_HEADER = "td-project-id";
 const TEARDOWN_ENVIRONMENT_SLUG_HEADER = "td-environment-slug";
 
+<<<<<<< HEAD
 export interface ApiClientOptions {
+=======
+export type ApiClientOptions = {
+	/**
+	 * The API key.
+	 */
+>>>>>>> 117538707 (feat: implement checkCooldownMs rules for force update client)
 	api_key: string;
+	/**
+	 * The ID of the organization.
+	 */
 	org_id: string;
+	/**
+	 * The ID of the project.
+	 */
 	project_id: string;
+	/**
+	 * The slug of the environment.
+	 */
 	environment_slug: string;
+	/**
+	 * A function that will be called before each request.
+	 * @param endpoint The endpoint being requested.
+	 * @param options The options for the request.
+	 * @returns The options for the request.
+	 */
 	onRequest?: (endpoint: IngestApi.Endpoints, options: IngestApi.RequestOptions) => Promise<IngestApi.RequestOptions>;
+<<<<<<< HEAD
 }
+=======
+
+
+	/**
+	 * The URL of the ingest API.
+	 * @default https://ingest.teardown.dev
+	 */
+	ingestUrl?: string;
+};
+>>>>>>> 117538707 (feat: implement checkCooldownMs rules for force update client)
 
 export class ApiClient {
 	public client: IngestApi.Client;
@@ -27,7 +60,7 @@ export class ApiClient {
 		_storage: StorageClient,
 		private readonly options: ApiClientOptions
 	) {
-		this.client = IngestApi.client(TEARDOWN_INGEST_URL, {
+		this.client = IngestApi.client(options.ingestUrl ?? TEARDOWN_INGEST_URL, {
 			headers: {
 				[TEARDOWN_API_KEY_HEADER]: `Bearer ${this.options.api_key}`,
 				[TEARDOWN_ORG_ID_HEADER]: this.options.org_id,
