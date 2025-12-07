@@ -21,7 +21,7 @@ function createMockIdentityClient(initialState?: IdentifyState) {
 	const emitter = new EventEmitter<IdentifyStateChangeEvents>();
 	let identifyCallCount = 0;
 	let currentState: IdentifyState = initialState ?? { type: "unidentified" };
-	let nextIdentifyResult: { success: boolean; data?: { version_info: { status: IdentifyVersionStatusEnum } } } = {
+	let nextIdentifyResult: { success: boolean; data?: { version_info: { status: IdentifyVersionStatusEnum } } } | null = {
 		success: true,
 		data: { version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE } },
 	};
@@ -35,6 +35,9 @@ function createMockIdentityClient(initialState?: IdentifyState) {
 		getIdentifyState: () => currentState,
 		identify: async () => {
 			identifyCallCount++;
+			if (nextIdentifyResult === null) {
+				return null;
+			}
 			currentState = { type: "identifying" };
 			emitter.emit("IDENTIFY_STATE_CHANGED", currentState);
 			currentState = {
@@ -271,6 +274,58 @@ describe("ForceUpdateClient", () => {
 	});
 
 	describe("throttle and cooldown", () => {
+		test("skips version check when identify returns null", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			mockIdentity.setNextIdentifyResult(null);
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never,
+				{ throttleMs: 0, checkCooldownMs: 0 }
+			);
+
+			const statusChanges: VersionStatus[] = [];
+			client.onVersionStatusChange((status) => statusChanges.push(status));
+
+			const foregroundHandler = mockAppStateListeners[0];
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			// Should have called identify but no status changes (null result)
+			expect(mockIdentity.getIdentifyCallCount()).toBe(1);
+			expect(statusChanges).toHaveLength(0);
+
+			client.shutdown();
+		});
+
+		test("checkCooldownMs -1 disables version checking entirely", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never,
+				{ throttleMs: 0, checkCooldownMs: -1 }
+			);
+
+			const foregroundHandler = mockAppStateListeners[0];
+
+			// Trigger foreground
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			// Should not have called identify at all
+			expect(mockIdentity.getIdentifyCallCount()).toBe(0);
+
+			client.shutdown();
+		});
+
 		test("throttle prevents rapid foreground checks", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();

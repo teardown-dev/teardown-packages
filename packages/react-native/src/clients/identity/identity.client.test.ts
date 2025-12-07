@@ -424,6 +424,75 @@ describe("IdentityClient", () => {
 		});
 	});
 
+	describe("initialize", () => {
+		test("calls identify on initialize", async () => {
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+			const mockUtils = createMockUtilsClient();
+			const mockApi = createMockApiClient();
+			const mockDevice = createMockDeviceClient();
+
+			const client = new IdentityClient(
+				mockLogging as never,
+				mockUtils as never,
+				mockStorage as never,
+				mockApi as never,
+				mockDevice as never
+			);
+
+			expect(client.getIdentifyState().type).toBe("unidentified");
+
+			await client.initialize();
+
+			expect(client.getIdentifyState().type).toBe("identified");
+		});
+	});
+
+	describe("getSessionState", () => {
+		test("returns null when not identified", () => {
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+			const mockUtils = createMockUtilsClient();
+			const mockApi = createMockApiClient();
+			const mockDevice = createMockDeviceClient();
+
+			const client = new IdentityClient(
+				mockLogging as never,
+				mockUtils as never,
+				mockStorage as never,
+				mockApi as never,
+				mockDevice as never
+			);
+
+			expect(client.getSessionState()).toBeNull();
+		});
+
+		test("returns session when identified", async () => {
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+			const mockUtils = createMockUtilsClient();
+			const mockApi = createMockApiClient();
+			const mockDevice = createMockDeviceClient();
+
+			const client = new IdentityClient(
+				mockLogging as never,
+				mockUtils as never,
+				mockStorage as never,
+				mockApi as never,
+				mockDevice as never
+			);
+
+			await client.identify();
+
+			const session = client.getSessionState();
+			expect(session).not.toBeNull();
+			expect(session?.session_id).toBe("session-123");
+			expect(session?.device_id).toBe("device-123");
+			expect(session?.persona_id).toBe("persona-123");
+			expect(session?.token).toBe("token-123");
+		});
+	});
+
 	describe("shutdown", () => {
 		test("removes all listeners", async () => {
 			const mockLogging = createMockLoggingClient();
