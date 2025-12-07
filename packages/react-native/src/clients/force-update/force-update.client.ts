@@ -93,7 +93,7 @@ export const VERSION_STATUS_STORAGE_KEY = "VERSION_STATUS";
 
 export class ForceUpdateClient {
 	private emitter = new EventEmitter<VersionStatusChangeEvents>();
-	private versionStatus: VersionStatus;
+	private versionStatus: VersionStatus = { type: "initializing" };
 	private unsubscribe: (() => void) | null = null;
 	private appStateSubscription: NativeEventSubscription | null = null;
 	private lastCheckTime: number | null = null;
@@ -117,7 +117,15 @@ export class ForceUpdateClient {
 		};
 		this.versionStatus = this.getVersionStatusFromStorage();
 		this.subscribeToIdentity();
+		this.initializeFromCurrentIdentityState();
 		this.subscribeToAppState();
+	}
+
+	private initializeFromCurrentIdentityState() {
+		const currentState = this.identity.getIdentifyState();
+		if (currentState.type === "identified") {
+			this.updateFromVersionStatus(currentState.version_info.status);
+		}
 	}
 
 	private getVersionStatusFromStorage(): VersionStatus {
@@ -135,10 +143,14 @@ export class ForceUpdateClient {
 
 	private subscribeToIdentity() {
 		this.unsubscribe = this.identity.onIdentifyStateChange((state) => {
-			if (state.type === "identifying") {
-				this.setVersionStatus({ type: "checking" });
-			} else if (state.type === "identified") {
-				this.updateFromVersionStatus(state.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE);
+			this.logger.debug(`Identity state changed: ${state.type}`);
+			switch (state.type) {
+				case "identifying":
+					this.setVersionStatus({ type: "checking" });
+					break;
+				case "identified":
+					this.updateFromVersionStatus(state.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE);
+					break;
 			}
 		});
 	}
@@ -176,6 +188,8 @@ export class ForceUpdateClient {
 
 	private handleAppStateChange = (nextState: AppStateStatus) => {
 		if (nextState === "active") {
+			this.logger.info("App state changed to active");
+
 			// If checkCooldownMs is -1, disable checking entirely
 			if (this.options.checkCooldownMs === -1) {
 				this.logger.info("Version checking disabled (checkCooldownMs = -1)");

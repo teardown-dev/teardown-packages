@@ -12,7 +12,11 @@ export interface UseForceUpdateResult {
    */
   isUpdateAvailable: boolean;
   /**
-   * Whether the the current version is out of date and is forced to be updated. "force_update" - isUpdateAvailable will also be true if this is true.
+   * Whether an update is recommended for this version, but is not required.
+   */
+  isUpdateRecommended: boolean;
+  /**
+   * Whether the the current version is out of date and is forced to be updated. 
    */
   isUpdateRequired: boolean;
 }
@@ -29,10 +33,15 @@ export const useForceUpdate = (): UseForceUpdateResult => {
     return unsubscribe;
   }, [core.forceUpdate]);
 
+  const isUpdateRequired = versionStatus.type === "update_required";
+  const isUpdateRecommended = versionStatus.type === "update_recommended";
+  const isUpdateAvailable = isUpdateRequired || isUpdateRecommended || (versionStatus.type === "update_available");
+
   return {
     versionStatus,
-    isUpdateRequired: versionStatus.type === "update_required",
-    isUpdateAvailable: versionStatus.type === "update_available" || versionStatus.type === "update_required" || versionStatus.type === "update_recommended",
+    isUpdateRequired,
+    isUpdateRecommended,
+    isUpdateAvailable,
   };
 };
 

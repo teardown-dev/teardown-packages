@@ -54,11 +54,14 @@ export class DeviceClient {
 
 		this.logger.debug("Getting device ID");
 		const deviceId = this.storage.getItem("deviceId");
+		this.logger.debug(`Device ID found in storage: ${deviceId}`);
 		if (deviceId) {
+			this.logger.debug(`Device ID found in storage: ${deviceId}`);
 			return deviceId;
 		}
 
 		const newDeviceId = await this.utils.generateRandomUUID();
+		await this.storage.setItem("deviceId", newDeviceId);
 
 		return newDeviceId;
 	}
