@@ -30,13 +30,18 @@ export class TeardownCore {
 		this.options = options;
 
 		this.logging = new LoggingClient();
-		// this.setLogLevel("verbose");
+		this.setLogLevel("verbose");
 
 		this.logger = this.logging.createLogger({
 			name: "TeardownCore",
 		});
 		this.utils = new UtilsClient(this.logging);
-		this.storage = new StorageClient(this.logging, this.options.storageFactory);
+		this.storage = new StorageClient(
+			this.logging,
+			this.options.org_id,
+			this.options.project_id,
+			this.options.storageFactory
+		);
 		this.api = new ApiClient(this.logging, this.storage, {
 			org_id: this.options.org_id,
 			project_id: this.options.project_id,

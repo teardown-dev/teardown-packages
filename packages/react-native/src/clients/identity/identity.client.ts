@@ -116,6 +116,12 @@ export class IdentityClient {
 	}
 
 	private setIdentifyState(newState: IdentifyState): void {
+
+		if (this.identifyState.type === newState.type) {
+			this.logger.debug(`Identify state already set: ${this.identifyState.type}`);
+			return;
+		}
+
 		this.logger.info(`Identify state: ${this.identifyState.type} -> ${newState.type}`);
 		this.identifyState = newState;
 		this.saveIdentifyStateToStorage(newState);
@@ -195,18 +201,18 @@ export class IdentityClient {
 				},
 				body: {
 					persona,
+					// @ts-expect-error - notifications is not yet implemented
 					device: {
-						...deviceInfo,
-						update: deviceInfo.update
-							? {
-								...deviceInfo.update,
-								created_at: deviceInfo.update.created_at,
-							}
-							: null,
+						timestamp: deviceInfo.timestamp,
+						os: deviceInfo.os,
+						application: deviceInfo.application,
+						hardware: deviceInfo.hardware,
+						update: null,
 					},
 				},
 			});
 
+			this.logger.debug(`Identify response: ${JSON.stringify(response)}`);
 			if (response.error != null) {
 				console.log("identify error", response.error.status, response.error.value);
 				this.setIdentifyState(previousState);

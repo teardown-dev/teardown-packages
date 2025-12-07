@@ -58,10 +58,10 @@
 		"react": "*",
 		"react-native": "*",
 		"typescript": "*",
-		"expo-application": "^7.0",
-		"expo-device": "^8.0",
-		"expo-notifications": "^0.29",
-		"react-native-mmkv": "^3.0",
+		"expo-application": "*",
+		"expo-device": "*",
+		"expo-notifications": "*",
+		"react-native-mmkv": "*",
 		"zod": "^4"
 	}
 }

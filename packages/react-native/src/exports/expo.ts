@@ -1,1 +1,1 @@
-export * from "../clients/device/expo-adapter";
+export * from "../clients/device/expo.adapter";
