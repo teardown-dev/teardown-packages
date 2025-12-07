@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, mock } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { EventEmitter } from "eventemitter3";
 import { ForceUpdateClient, IdentifyVersionStatusEnum } from "./force-update.client";
 
@@ -21,10 +21,11 @@ function createMockIdentityClient(initialState?: IdentifyState) {
 	const emitter = new EventEmitter<IdentifyStateChangeEvents>();
 	let identifyCallCount = 0;
 	let currentState: IdentifyState = initialState ?? { type: "unidentified" };
-	let nextIdentifyResult: { success: boolean; data?: { version_info: { status: IdentifyVersionStatusEnum } } } = {
-		success: true,
-		data: { version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE } },
-	};
+	let nextIdentifyResult: { success: boolean; data?: { version_info: { status: IdentifyVersionStatusEnum } } } | null =
+		{
+			success: true,
+			data: { version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE } },
+		};
 
 	return {
 		emitter,
@@ -35,12 +36,18 @@ function createMockIdentityClient(initialState?: IdentifyState) {
 		getIdentifyState: () => currentState,
 		identify: async () => {
 			identifyCallCount++;
+			if (nextIdentifyResult === null) {
+				return null;
+			}
 			currentState = { type: "identifying" };
 			emitter.emit("IDENTIFY_STATE_CHANGED", currentState);
 			currentState = {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
-				version_info: { status: nextIdentifyResult.data?.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
+				version_info: {
+					status: nextIdentifyResult.data?.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE,
+					update: null,
+				},
 			};
 			emitter.emit("IDENTIFY_STATE_CHANGED", currentState);
 			return nextIdentifyResult;
@@ -55,10 +62,10 @@ function createMockIdentityClient(initialState?: IdentifyState) {
 function createMockLoggingClient() {
 	return {
 		createLogger: () => ({
-			info: () => { },
-			warn: () => { },
-			error: () => { },
-			debug: () => { },
+			info: () => {},
+			warn: () => {},
+			error: () => {},
+			debug: () => {},
 		}),
 	};
 }
@@ -89,11 +96,7 @@ describe("ForceUpdateClient", () => {
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never);
 
 			// Should immediately have update_required status from initialization
 			expect(client.getVersionStatus().type).toBe("update_required");
@@ -106,11 +109,7 @@ describe("ForceUpdateClient", () => {
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never);
 
 			// Should stay in initializing since not yet identified
 			expect(client.getVersionStatus().type).toBe("initializing");
@@ -129,11 +128,7 @@ describe("ForceUpdateClient", () => {
 
 			const statusChanges: VersionStatus[] = [];
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never);
 
 			// Subscribe after construction to verify initial status was set
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -159,12 +154,9 @@ describe("ForceUpdateClient", () => {
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never,
-				{ checkOnForeground: true }
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: true,
+			});
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -195,12 +187,9 @@ describe("ForceUpdateClient", () => {
 				data: { version_info: { status: IdentifyVersionStatusEnum.UPDATE_REQUIRED } },
 			});
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never,
-				{ checkOnForeground: true }
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: true,
+			});
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -229,11 +218,7 @@ describe("ForceUpdateClient", () => {
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never);
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -256,11 +241,7 @@ describe("ForceUpdateClient", () => {
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never);
 
 			expect(mockAppStateListeners).toHaveLength(1);
 
@@ -270,18 +251,65 @@ describe("ForceUpdateClient", () => {
 		});
 	});
 
-	describe("checkIntervalMs and checkOnForeground", () => {
-		test("checkOnForeground: true always checks on foreground", async () => {
+	describe("throttle and cooldown", () => {
+		test("skips version check when identify returns null", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never,
-				{ checkOnForeground: true }
-			);
+			mockIdentity.setNextIdentifyResult(null);
+
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				throttleMs: 0,
+				checkCooldownMs: 0,
+			});
+
+			const statusChanges: VersionStatus[] = [];
+			client.onVersionStatusChange((status) => statusChanges.push(status));
+
+			const foregroundHandler = mockAppStateListeners[0];
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			// Should have called identify but no status changes (null result)
+			expect(mockIdentity.getIdentifyCallCount()).toBe(1);
+			expect(statusChanges).toHaveLength(0);
+
+			client.shutdown();
+		});
+
+		test("checkCooldownMs -1 disables version checking entirely", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				throttleMs: 0,
+				checkCooldownMs: -1,
+			});
+
+			const foregroundHandler = mockAppStateListeners[0];
+
+			// Trigger foreground
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			// Should not have called identify at all
+			expect(mockIdentity.getIdentifyCallCount()).toBe(0);
+
+			client.shutdown();
+		});
+
+		test("throttle prevents rapid foreground checks", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: false,
+				throttleMs: 100,
+				checkCooldownMs: 0,
+			});
 
 			const foregroundHandler = mockAppStateListeners[0];
 
@@ -291,7 +319,38 @@ describe("ForceUpdateClient", () => {
 
 			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
 
-			// Second foreground immediately
+			// Second foreground immediately (within throttle window)
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
+
+			// Only first call should have triggered identify (throttle blocks second)
+			expect(callsAfterFirst).toBe(1);
+			expect(callsAfterSecond).toBe(1);
+
+			client.shutdown();
+		});
+
+		test("checkOnForeground: true always checks on foreground", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: true,
+				throttleMs: 100_000,
+			});
+
+			const foregroundHandler = mockAppStateListeners[0];
+
+			// First foreground
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
+
+			// Second foreground immediately (within throttle window)
 			await foregroundHandler("active");
 			await new Promise((r) => setTimeout(r, 10));
 
@@ -304,17 +363,16 @@ describe("ForceUpdateClient", () => {
 			client.shutdown();
 		});
 
-		test("checkOnForeground: false respects checkIntervalMs", async () => {
+		test("cooldown prevents checks too soon after successful check", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never,
-				{ checkOnForeground: false, checkIntervalMs: 60_000 }
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: false,
+				throttleMs: 0,
+				checkCooldownMs: 100_000,
+			});
 
 			const foregroundHandler = mockAppStateListeners[0];
 
@@ -324,34 +382,15 @@ describe("ForceUpdateClient", () => {
 
 			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
 
-			// Second foreground (within interval window)
+			// Second foreground immediately (within cooldown window)
 			await foregroundHandler("active");
 			await new Promise((r) => setTimeout(r, 10));
 
 			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
 
-			// Only first call should have triggered identify (interval blocks second)
+			// Only first call should have triggered identify (cooldown blocks second)
 			expect(callsAfterFirst).toBe(1);
 			expect(callsAfterSecond).toBe(1);
-
-			client.shutdown();
-		});
-
-		test("checkIntervalMs values below 30s are coerced to 30s", () => {
-			const mockIdentity = createMockIdentityClient();
-			const mockLogging = createMockLoggingClient();
-			const mockStorage = createMockStorageClient();
-
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never,
-				{ checkIntervalMs: 5_000 } // 5 seconds - should be coerced to 30s
-			);
-
-			// Access private options via any cast to verify coercion
-			const options = (client as unknown as { options: { checkIntervalMs: number } }).options;
-			expect(options.checkIntervalMs).toBe(30_000);
 
 			client.shutdown();
 		});
@@ -369,11 +408,7 @@ describe("ForceUpdateClient", () => {
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
-			const client = new ForceUpdateClient(
-				mockLogging as never,
-				mockStorage as never,
-				mockIdentity as never
-			);
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never);
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));

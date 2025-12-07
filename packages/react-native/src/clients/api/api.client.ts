@@ -11,14 +11,10 @@ const TEARDOWN_ORG_ID_HEADER = "td-org-id";
 const TEARDOWN_PROJECT_ID_HEADER = "td-project-id";
 const TEARDOWN_ENVIRONMENT_SLUG_HEADER = "td-environment-slug";
 
-<<<<<<< HEAD
-export interface ApiClientOptions {
-=======
 export type ApiClientOptions = {
 	/**
 	 * The API key.
 	 */
->>>>>>> 117538707 (feat: implement checkCooldownMs rules for force update client)
 	api_key: string;
 	/**
 	 * The ID of the organization.
@@ -39,18 +35,12 @@ export type ApiClientOptions = {
 	 * @returns The options for the request.
 	 */
 	onRequest?: (endpoint: IngestApi.Endpoints, options: IngestApi.RequestOptions) => Promise<IngestApi.RequestOptions>;
-<<<<<<< HEAD
-}
-=======
-
-
 	/**
 	 * The URL of the ingest API.
 	 * @default https://ingest.teardown.dev
 	 */
 	ingestUrl?: string;
 };
->>>>>>> 117538707 (feat: implement checkCooldownMs rules for force update client)
 
 export class ApiClient {
 	public client: IngestApi.Client;
