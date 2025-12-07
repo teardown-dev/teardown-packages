@@ -21,14 +21,18 @@ export class StorageClient {
 
   private readonly storage: Map<string, SupportedStorage> = new Map();
 
-  constructor(logging: LoggingClient, private readonly factory: SupportedStorageFactory) {
+  constructor(
+    logging: LoggingClient,
+    private readonly orgId: string,
+    private readonly projectId: string,
+    private readonly factory: SupportedStorageFactory) {
     this.logger = logging.createLogger({
       name: "StorageClient",
     });
   }
 
   private createStorageKey(storageKey: string): string {
-    return `teardown:v1:${storageKey}`;
+    return `teardown:v1:${this.orgId}:${this.projectId}:${storageKey}`;
   }
 
   createStorage(storageKey: string): SupportedStorage {

@@ -17,9 +17,10 @@ type IdentifyState = import("../identity").IdentifyState;
 type IdentifyStateChangeEvents = import("../identity").IdentifyStateChangeEvents;
 type VersionStatus = import("./force-update.client").VersionStatus;
 
-function createMockIdentityClient() {
+function createMockIdentityClient(initialState?: IdentifyState) {
 	const emitter = new EventEmitter<IdentifyStateChangeEvents>();
 	let identifyCallCount = 0;
+	let currentState: IdentifyState = initialState ?? { type: "unidentified" };
 	let nextIdentifyResult: { success: boolean; data?: { version_info: { status: IdentifyVersionStatusEnum } } } = {
 		success: true,
 		data: { version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE } },
@@ -31,14 +32,17 @@ function createMockIdentityClient() {
 			emitter.addListener("IDENTIFY_STATE_CHANGED", listener);
 			return () => emitter.removeListener("IDENTIFY_STATE_CHANGED", listener);
 		},
+		getIdentifyState: () => currentState,
 		identify: async () => {
 			identifyCallCount++;
-			emitter.emit("IDENTIFY_STATE_CHANGED", { type: "identifying" });
-			emitter.emit("IDENTIFY_STATE_CHANGED", {
+			currentState = { type: "identifying" };
+			emitter.emit("IDENTIFY_STATE_CHANGED", currentState);
+			currentState = {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: nextIdentifyResult.data?.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
-			});
+			};
+			emitter.emit("IDENTIFY_STATE_CHANGED", currentState);
 			return nextIdentifyResult;
 		},
 		getIdentifyCallCount: () => identifyCallCount,
@@ -73,6 +77,80 @@ function createMockStorageClient() {
 describe("ForceUpdateClient", () => {
 	beforeEach(() => {
 		mockAppStateListeners.length = 0;
+	});
+
+	describe("initialization from current identity state", () => {
+		test("initializes version status when identity is already identified", () => {
+			const mockIdentity = createMockIdentityClient({
+				type: "identified",
+				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				version_info: { status: IdentifyVersionStatusEnum.UPDATE_REQUIRED, update: null },
+			});
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never
+			);
+
+			// Should immediately have update_required status from initialization
+			expect(client.getVersionStatus().type).toBe("update_required");
+
+			client.shutdown();
+		});
+
+		test("stays in initializing when identity is unidentified", () => {
+			const mockIdentity = createMockIdentityClient({ type: "unidentified" });
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never
+			);
+
+			// Should stay in initializing since not yet identified
+			expect(client.getVersionStatus().type).toBe("initializing");
+
+			client.shutdown();
+		});
+
+		test("emits status change during initialization when already identified", () => {
+			const mockIdentity = createMockIdentityClient({
+				type: "identified",
+				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
+			});
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const statusChanges: VersionStatus[] = [];
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never
+			);
+
+			// Subscribe after construction to verify initial status was set
+			client.onVersionStatusChange((status) => statusChanges.push(status));
+
+			// Trigger another identify to verify no duplicate
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
+				type: "identified",
+				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
+			});
+
+			// Should only have one change from the second emit (initial was before subscription)
+			expect(statusChanges).toHaveLength(1);
+			expect(client.getVersionStatus().type).toBe("up_to_date");
+
+			client.shutdown();
+		});
 	});
 
 	describe("updateFromVersionStatus single emission", () => {

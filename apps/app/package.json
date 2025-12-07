@@ -21,7 +21,6 @@
 		"@react-navigation/bottom-tabs": "^7.4.0",
 		"@react-navigation/elements": "^2.6.3",
 		"@react-navigation/native": "^7.1.8",
-		"@teardown/ingest-api": "^0.1.23",
 		"@teardown/react-native": "workspace:*",
 		"@teardown/types": "0.0.2",
 		"expo": "~54.0.12",
