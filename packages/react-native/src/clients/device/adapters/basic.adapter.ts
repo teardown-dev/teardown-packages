@@ -9,7 +9,7 @@ import * as Device from "expo-device";
 import { Platform } from "react-native";
 
 import { DeviceInfoAdapter } from "./device.adpater-interface";
-import { DevicePlatformEnum, NotificationPlatformEnum } from "./device.client";
+import { DevicePlatformEnum, NotificationPlatformEnum } from "../device.client";
 
 /**
  * Maps expo-device DeviceType to a string representation

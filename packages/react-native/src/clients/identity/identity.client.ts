@@ -75,7 +75,8 @@ export const IDENTIFY_STORAGE_KEY = "IDENTIFY_STATE";
 
 export class IdentityClient {
 	private emitter = new EventEmitter<IdentifyStateChangeEvents>();
-	private identifyState: IdentifyState;
+	private identifyState: IdentifyState = { type: "unidentified" };
+	private initialized = false;
 
 	public readonly logger: Logger;
 	public readonly utils: UtilsClient;
@@ -93,22 +94,47 @@ export class IdentityClient {
 		});
 		this.storage = storage.createStorage("identity");
 		this.utils = utils;
-		this.identifyState = this.getIdentifyStateFromStorage();
+		// Don't load from storage here - defer to initialize()
 	}
 
 	async initialize(): Promise<void> {
+		this.logger.debug("Initializing IdentityClient");
+		if (this.initialized) {
+			this.logger.debug("IdentityClient already initialized");
+			return;
+		}
+		this.initialized = true;
+
+		// Load state from storage first (for fallback if identify fails)
+		this.identifyState = this.getIdentifyStateFromStorage();
+		this.logger.debug(`Initialized with state: ${this.identifyState.type}`);
+
+		// Always identify on app boot to refresh version status
 		await this.identify();
 	}
 
 	private getIdentifyStateFromStorage(): IdentifyState {
 		const stored = this.storage.getItem(IDENTIFY_STORAGE_KEY);
+		this.logger.debug(`Raw storage value for ${IDENTIFY_STORAGE_KEY}: ${stored}`);
+
 		if (stored == null) {
-			// console.log("no stored session state");
+			this.logger.debug("No stored identity state, returning unidentified");
 			return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
 		}
 
-		// console.log("stored session state", stored);
-		return IdentifyStateSchema.parse(JSON.parse(stored));
+		const parsed = IdentifyStateSchema.parse(JSON.parse(stored));
+		this.logger.debug(`Parsed identity state from storage: ${parsed.type}`);
+
+		// "identifying" is a transient state - if we restore it, treat as unidentified
+		// This can happen if the app was killed during an identify call
+		if (parsed.type === "identifying") {
+			this.logger.debug("Found stale 'identifying' state in storage, resetting to unidentified");
+			// Clear the stale state from storage immediately
+			this.storage.removeItem(IDENTIFY_STORAGE_KEY);
+			return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
+		}
+
+		return parsed;
 	}
 
 	private saveIdentifyStateToStorage(identifyState: IdentifyState): void {
@@ -122,7 +148,7 @@ export class IdentityClient {
 			return;
 		}
 
-		this.logger.info(`Identify state: ${this.identifyState.type} -> ${newState.type}`);
+		this.logger.debug(`Identify state: ${this.identifyState.type} -> ${newState.type}`);
 		this.identifyState = newState;
 		this.saveIdentifyStateToStorage(newState);
 		this.emitter.emit("IDENTIFY_STATE_CHANGED", newState);
@@ -171,11 +197,14 @@ export class IdentityClient {
 	 * @param fn - The function to try
 	 * @returns An {@link AsyncResult}
 	 */
-	private async tryCatch<T>(fn: () => AsyncResult<T>): AsyncResult<T> {
+	private async tryCatch<T>(fn: () => AsyncResult<T>, onError?: (error: Error) => void): AsyncResult<T> {
 		try {
 			const result = await fn();
 			return result;
 		} catch (error) {
+			if (onError) {
+				onError(error instanceof Error ? error : new Error(String(error)));
+			}
 			return {
 				success: false,
 				error: error instanceof Error ? error.message : "Unknown error",
@@ -184,12 +213,15 @@ export class IdentityClient {
 	}
 
 	async identify(persona?: Persona): AsyncResult<IdentityUser> {
+		this.logger.debug(`Identifying user with persona: ${persona?.name ?? "none"}`);
 		const previousState = this.identifyState;
 		this.setIdentifyState({ type: "identifying" });
 
 		return this.tryCatch(async () => {
+			this.logger.debug("Getting device ID...");
 			const deviceId = await this.device.getDeviceId();
 			const deviceInfo = await this.device.getDeviceInfo();
+			this.logger.debug("Calling identify API...");
 			const response = await this.api.client("/v1/identify", {
 				method: "POST",
 				headers: {
@@ -212,9 +244,9 @@ export class IdentityClient {
 				},
 			});
 
-			this.logger.debug(`Identify response: ${JSON.stringify(response)}`);
+			this.logger.debug(`Identify API response received`);
 			if (response.error != null) {
-				console.log("identify error", response.error.status, response.error.value);
+				this.logger.warn("Identify API error", response.error.status, response.error.value);
 				this.setIdentifyState(previousState);
 
 				if (response.error.status === 422) {
@@ -250,6 +282,13 @@ export class IdentityClient {
 						update: null,
 					},
 				},
+			};
+		}, (error) => {
+			this.logger.error("Error identifying user", error);
+			this.setIdentifyState(previousState);
+			return {
+				success: false,
+				error: error.message,
 			};
 		});
 	}

@@ -1,6 +1,6 @@
 import type { DeviceInfo } from "@teardown/schemas";
 import { describe, expect, test } from "bun:test";
-import type { DeviceInfoAdapter } from "./device.adpater-interface";
+import type { DeviceInfoAdapter } from "./adapters/device.adpater-interface";
 import { DeviceClient } from "./device.client";
 
 function createMockLoggingClient() {

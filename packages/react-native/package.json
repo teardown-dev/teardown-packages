@@ -18,15 +18,20 @@
 			"import": "./src/exports/index.ts",
 			"default": "./src/exports/index.ts"
 		},
-		"./expo": {
-			"types": "./src/exports/expo.ts",
-			"import": "./src/exports/expo.ts",
-			"default": "./src/exports/expo.ts"
+		"./adapters/expo": {
+			"types": "./src/exports/adapters/expo.ts",
+			"import": "./src/exports/adapters/expo.ts",
+			"default": "./src/exports/adapters/expo.ts"
 		},
-		"./mmkv": {
-			"types": "./src/exports/mmkv.ts",
-			"import": "./src/exports/mmkv.ts",
-			"default": "./src/exports/mmkv.ts"
+		"./adapters/mmkv": {
+			"types": "./src/exports/adapters/mmkv.ts",
+			"import": "./src/exports/adapters/mmkv.ts",
+			"default": "./src/exports/adapters/mmkv.ts"
+		},
+		"./adapters/async-storage": {
+			"types": "./src/exports/adapters/async-storage.ts",
+			"import": "./src/exports/adapters/async-storage.ts",
+			"default": "./src/exports/adapters/async-storage.ts"
 		}
 	},
 	"scripts": {
@@ -44,7 +49,9 @@
 		"@teardown/schemas": "catalog:teardown",
 		"@teardown/types": "catalog:teardown",
 		"eventemitter3": "^5.0.1",
-		"uuid": "^13.0.0"
+		"react-native-get-random-values": "^2.0.0",
+		"uuid": "^13.0.0",
+		"zod": "^4.1.13"
 	},
 	"devDependencies": {
 		"@elysiajs/eden": "^1.4.5",
@@ -55,13 +62,34 @@
 		"expo-updates": "^29.0.12"
 	},
 	"peerDependencies": {
+		"@react-native-async-storage/async-storage": "^1.21.0 || ^2.0.0",
 		"react": "*",
 		"react-native": "*",
 		"typescript": "*",
 		"expo-application": "*",
 		"expo-device": "*",
 		"expo-notifications": "*",
-		"react-native-mmkv": "*",
-		"zod": "^4"
+		"expo-secure-store": "*",
+		"react-native-mmkv": "*"
+	},
+	"peerDependenciesMeta": {
+		"@react-native-async-storage/async-storage": {
+			"optional": true
+		},
+		"react-native-mmkv": {
+			"optional": true
+		},
+		"expo-application": {
+			"optional": true
+		},
+		"expo-device": {
+			"optional": true
+		},
+		"expo-notifications": {
+			"optional": true
+		},
+		"expo-secure-store": {
+			"optional": true
+		}
 	}
 }

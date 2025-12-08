@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from "bun:test";
 import { EventEmitter } from "eventemitter3";
-import { ForceUpdateClient, IdentifyVersionStatusEnum } from "./force-update.client";
+import { ForceUpdateClient, IdentifyVersionStatusEnum, VERSION_STATUS_STORAGE_KEY } from "./force-update.client";
 
 // Must mock react-native BEFORE any imports that use it
 const mockAppStateListeners: ((state: string) => void)[] = [];
@@ -74,6 +74,7 @@ function createMockStorageClient() {
 			setItem: (key: string, value: string) => storage.set(key, value),
 			removeItem: (key: string) => storage.delete(key),
 		}),
+		getStorage: () => storage,
 	};
 }
 
@@ -97,6 +98,7 @@ describe("ForceUpdateClient", () => {
 				mockStorage as never,
 				mockIdentity as never
 			);
+			client.initialize();
 
 			// Should immediately have update_required status from initialization
 			expect(client.getVersionStatus().type).toBe("update_required");
@@ -114,6 +116,7 @@ describe("ForceUpdateClient", () => {
 				mockStorage as never,
 				mockIdentity as never
 			);
+			client.initialize();
 
 			// Should stay in initializing since not yet identified
 			expect(client.getVersionStatus().type).toBe("initializing");
@@ -137,6 +140,7 @@ describe("ForceUpdateClient", () => {
 				mockStorage as never,
 				mockIdentity as never
 			);
+			client.initialize();
 
 			// Subscribe after construction to verify initial status was set
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -168,6 +172,7 @@ describe("ForceUpdateClient", () => {
 				mockIdentity as never,
 				{ throttleMs: 0, checkCooldownMs: 0 }
 			);
+			client.initialize();
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -204,6 +209,7 @@ describe("ForceUpdateClient", () => {
 				mockIdentity as never,
 				{ throttleMs: 0, checkCooldownMs: 0 }
 			);
+			client.initialize();
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -237,6 +243,7 @@ describe("ForceUpdateClient", () => {
 				mockStorage as never,
 				mockIdentity as never
 			);
+			client.initialize();
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -264,6 +271,7 @@ describe("ForceUpdateClient", () => {
 				mockStorage as never,
 				mockIdentity as never
 			);
+			client.initialize();
 
 			expect(mockAppStateListeners).toHaveLength(1);
 
@@ -287,6 +295,7 @@ describe("ForceUpdateClient", () => {
 				mockIdentity as never,
 				{ throttleMs: 0, checkCooldownMs: 0 }
 			);
+			client.initialize();
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
@@ -313,6 +322,7 @@ describe("ForceUpdateClient", () => {
 				mockIdentity as never,
 				{ throttleMs: 0, checkCooldownMs: -1 }
 			);
+			client.initialize();
 
 			const foregroundHandler = mockAppStateListeners[0];
 
@@ -337,6 +347,7 @@ describe("ForceUpdateClient", () => {
 				mockIdentity as never,
 				{ throttleMs: 1000, checkCooldownMs: 0 }
 			);
+			client.initialize();
 
 			const foregroundHandler = mockAppStateListeners[0];
 
@@ -370,6 +381,7 @@ describe("ForceUpdateClient", () => {
 				mockIdentity as never,
 				{ throttleMs: 0, checkCooldownMs: 5000 }
 			);
+			client.initialize();
 
 			const foregroundHandler = mockAppStateListeners[0];
 
@@ -393,6 +405,92 @@ describe("ForceUpdateClient", () => {
 		});
 	});
 
+	describe("stale storage state reset", () => {
+		test("resets stale 'checking' state from storage to initializing", () => {
+			const mockIdentity = createMockIdentityClient({ type: "unidentified" });
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			// Pre-populate storage with stale "checking" state
+			mockStorage.getStorage().set(VERSION_STATUS_STORAGE_KEY, JSON.stringify({ type: "checking" }));
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never
+			);
+			client.initialize();
+
+			// Should reset to initializing, not stay in checking
+			expect(client.getVersionStatus().type).toBe("initializing");
+
+			client.shutdown();
+		});
+
+		test("resets stale 'initializing' state from storage to initializing", () => {
+			const mockIdentity = createMockIdentityClient({ type: "unidentified" });
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			// Pre-populate storage with stale "initializing" state
+			mockStorage.getStorage().set(VERSION_STATUS_STORAGE_KEY, JSON.stringify({ type: "initializing" }));
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never
+			);
+			client.initialize();
+
+			// Should reset to initializing (which it already is, but storage should be cleared)
+			expect(client.getVersionStatus().type).toBe("initializing");
+
+			client.shutdown();
+		});
+
+		test("preserves valid 'up_to_date' state from storage", () => {
+			const mockIdentity = createMockIdentityClient({ type: "unidentified" });
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			// Pre-populate storage with valid state
+			mockStorage.getStorage().set(VERSION_STATUS_STORAGE_KEY, JSON.stringify({ type: "up_to_date" }));
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never
+			);
+			client.initialize();
+
+			// Should keep up_to_date from storage
+			expect(client.getVersionStatus().type).toBe("up_to_date");
+
+			client.shutdown();
+		});
+
+		test("preserves valid 'update_required' state from storage", () => {
+			const mockIdentity = createMockIdentityClient({ type: "unidentified" });
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			// Pre-populate storage with valid state
+			mockStorage.getStorage().set(VERSION_STATUS_STORAGE_KEY, JSON.stringify({ type: "update_required" }));
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never
+			);
+			client.initialize();
+
+			// Should keep update_required from storage
+			expect(client.getVersionStatus().type).toBe("update_required");
+
+			client.shutdown();
+		});
+	});
+
 	describe("version status mapping", () => {
 		test.each([
 			[IdentifyVersionStatusEnum.UP_TO_DATE, "up_to_date"],
@@ -410,6 +508,7 @@ describe("ForceUpdateClient", () => {
 				mockStorage as never,
 				mockIdentity as never
 			);
+			client.initialize();
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
