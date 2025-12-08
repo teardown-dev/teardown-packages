@@ -45,7 +45,6 @@ export class StorageClient {
     const remappedStorage = {
       ...newStorage,
       clear: () => {
-        this.logger.debug(`Clearing storage for ${fullStorageKey}`);
         this.storage.delete(fullStorageKey);
       },
     }

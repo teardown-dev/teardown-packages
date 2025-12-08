@@ -13,10 +13,13 @@ export const useSession = (): UseSessionResult => {
 
   useEffect(() => {
     const unsubscribe = core.identity.onIdentifyStateChange((state) => {
-      if (state.type === "identified") {
-        setSession(state.session);
-      } else {
-        setSession(null);
+      switch (state.type) {
+        case "identified":
+          setSession(state.session);
+          break;
+        case "unidentified":
+          setSession(null);
+          break;
       }
     });
     return unsubscribe;
