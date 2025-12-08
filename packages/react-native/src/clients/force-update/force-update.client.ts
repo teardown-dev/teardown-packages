@@ -146,7 +146,6 @@ export class ForceUpdateClient {
 
 	private getVersionStatusFromStorage(): VersionStatus {
 		const stored = this.storage.getItem(VERSION_STATUS_STORAGE_KEY);
-		this.logger.debug(`Raw storage value for ${VERSION_STATUS_STORAGE_KEY}: ${stored}`);
 
 		if (stored == null) {
 			this.logger.debug("No stored version status, returning initializing");
