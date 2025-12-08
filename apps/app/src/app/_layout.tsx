@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/complexity/noUselessFragments: allow for now */
-import "../styles/global.css";
-import { Stack } from "expo-router";
 import { TeardownProvider } from "@teardown/react-native";
-import { teardown } from "../lib/teardown";
+import { Stack } from "expo-router";
 import { FullscreenTakeover } from "../components/fullscreen-takeover";
+import { teardown } from "../lib/teardown";
+import "../styles/global.css";
 
 
 export default function RootLayout() {

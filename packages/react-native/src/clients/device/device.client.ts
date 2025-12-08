@@ -2,7 +2,7 @@ import type { DeviceInfo } from "@teardown/schemas";
 import type { Logger, LoggingClient } from "../logging/";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils/utils.client";
-import type { DeviceInfoAdapter } from "./device.adpater-interface";
+import type { DeviceInfoAdapter } from "./adapters/device.adpater-interface";
 
 // TODO: sort out why importing these enuims from schemas is not working - @teardown/schemas
 export enum NotificationPlatformEnum {
@@ -56,7 +56,6 @@ export class DeviceClient {
 		const deviceId = this.storage.getItem("deviceId");
 		this.logger.debug(`Device ID found in storage: ${deviceId}`);
 		if (deviceId) {
-			this.logger.debug(`Device ID found in storage: ${deviceId}`);
 			return deviceId;
 		}
 
@@ -69,4 +68,6 @@ export class DeviceClient {
 	async getDeviceInfo(): Promise<DeviceInfo> {
 		return this.options.adapter.getDeviceInfo();
 	}
+
+
 }

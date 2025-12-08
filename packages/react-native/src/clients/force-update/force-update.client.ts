@@ -98,6 +98,7 @@ export class ForceUpdateClient {
 	private appStateSubscription: NativeEventSubscription | null = null;
 	private lastCheckTime: number | null = null;
 	private lastForegroundTime: number | null = null;
+	private initialized = false;
 
 	private readonly logger: Logger;
 	private readonly storage: SupportedStorage;
@@ -111,11 +112,20 @@ export class ForceUpdateClient {
 	) {
 		this.logger = logging.createLogger({ name: "ForceUpdateClient" });
 		this.storage = storage.createStorage("version");
-		this.options = {
-			...DEFAULT_OPTIONS,
-			...options,
-		};
+		this.options = { ...DEFAULT_OPTIONS, ...options };
+		// Don't initialize here - defer to initialize()
+	}
+
+	initialize(): void {
+		if (this.initialized) {
+			this.logger.debug("ForceUpdateClient already initialized");
+			return;
+		}
+		this.initialized = true;
+
+		// Load from storage, subscribe to events, and sync with current identity state
 		this.versionStatus = this.getVersionStatusFromStorage();
+		this.logger.debug(`Initialized with version status: ${this.versionStatus.type}`);
 		this.subscribeToIdentity();
 		this.initializeFromCurrentIdentityState();
 		this.subscribeToAppState();
@@ -123,18 +133,38 @@ export class ForceUpdateClient {
 
 	private initializeFromCurrentIdentityState() {
 		const currentState = this.identity.getIdentifyState();
+		this.logger.debug(`Current identity state during init: ${currentState.type}`);
 		if (currentState.type === "identified") {
+			this.logger.debug(
+				`Identity already identified, syncing version status from: ${currentState.version_info.status}`
+			);
 			this.updateFromVersionStatus(currentState.version_info.status);
+		} else {
+			this.logger.debug(`Identity not yet identified (${currentState.type}), waiting for identify event`);
 		}
 	}
 
 	private getVersionStatusFromStorage(): VersionStatus {
 		const stored = this.storage.getItem(VERSION_STATUS_STORAGE_KEY);
+		this.logger.debug(`Raw storage value for ${VERSION_STATUS_STORAGE_KEY}: ${stored}`);
+
 		if (stored == null) {
+			this.logger.debug("No stored version status, returning initializing");
 			return InitializingVersionStatusSchema.parse({ type: "initializing" });
 		}
 
-		return VersionStatusSchema.parse(JSON.parse(stored));
+		const parsed = VersionStatusSchema.parse(JSON.parse(stored));
+		this.logger.debug(`Parsed version status from storage: ${parsed.type}`);
+
+		// "checking" and "initializing" are transient states - if we restore them, reset to initializing
+		// This can happen if the app was killed during a version check
+		if (parsed.type === "checking" || parsed.type === "initializing") {
+			this.logger.debug(`Found stale '${parsed.type}' state in storage, resetting to initializing`);
+			this.storage.removeItem(VERSION_STATUS_STORAGE_KEY);
+			return InitializingVersionStatusSchema.parse({ type: "initializing" });
+		}
+
+		return parsed;
 	}
 
 	private saveVersionStatusToStorage(status: VersionStatus): void {
@@ -149,6 +179,7 @@ export class ForceUpdateClient {
 					this.setVersionStatus({ type: "checking" });
 					break;
 				case "identified":
+					this.logger.debug(`Identified with version_info.status: ${state.version_info.status}`);
 					this.updateFromVersionStatus(state.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE);
 					break;
 			}
@@ -188,11 +219,11 @@ export class ForceUpdateClient {
 
 	private handleAppStateChange = (nextState: AppStateStatus) => {
 		if (nextState === "active") {
-			this.logger.info("App state changed to active");
+			this.logger.debug("App state changed to active");
 
 			// If checkCooldownMs is -1, disable checking entirely
 			if (this.options.checkCooldownMs === -1) {
-				this.logger.info("Version checking disabled (checkCooldownMs = -1)");
+				this.logger.debug("Version checking disabled (checkCooldownMs = -1)");
 				return;
 			}
 
@@ -214,11 +245,11 @@ export class ForceUpdateClient {
 	};
 
 	private async checkVersionOnForeground() {
-		this.logger.info("Checking version status on foreground");
+		this.logger.debug("Checking version status on foreground");
 		const result = await this.identity.identify();
 
 		if (!result) {
-			this.logger.info("Skipping version check - not identified");
+			this.logger.debug("Skipping version check - not identified");
 			return;
 		}
 
@@ -240,7 +271,7 @@ export class ForceUpdateClient {
 	}
 
 	private setVersionStatus(newStatus: VersionStatus) {
-		this.logger.info(`Version status changing: ${this.versionStatus.type} -> ${newStatus.type}`);
+		this.logger.debug(`Version status changing: ${this.versionStatus.type} -> ${newStatus.type}`);
 		this.versionStatus = newStatus;
 		this.saveVersionStatusToStorage(newStatus);
 		this.emitter.emit("VERSION_STATUS_CHANGED", newStatus);

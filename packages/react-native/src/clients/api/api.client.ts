@@ -1,9 +1,9 @@
-import * as Eden from "@elysiajs/eden";
+import type * as Eden from "@elysiajs/eden";
 import * as IngestApi from "@teardown/ingest-api";
 import type { LoggingClient } from "../logging";
 import type { StorageClient } from "../storage";
 
-export { Eden, IngestApi };
+export type { Eden, IngestApi };
 
 const TEARDOWN_INGEST_URL = "https://ingest.teardown.dev";
 const TEARDOWN_API_KEY_HEADER = "td-api-key";

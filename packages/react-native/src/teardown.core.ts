@@ -2,8 +2,13 @@ import { ApiClient } from "./clients/api";
 import { DeviceClient, type DeviceClientOptions } from "./clients/device/device.client";
 import { ForceUpdateClient, type ForceUpdateClientOptions } from "./clients/force-update";
 import { IdentityClient } from "./clients/identity";
+<<<<<<< HEAD
 import { type Logger, LoggingClient, type LogLevel } from "./clients/logging";
 import { StorageClient, type SupportedStorageFactory } from "./clients/storage";
+=======
+import { LoggingClient, type LogLevel, type Logger } from "./clients/logging";
+import { StorageClient, type StorageAdapter } from "./clients/storage";
+>>>>>>> c8f9b9310 (✨ feat: enhance teardown functionality and improve client structure)
 import { UtilsClient } from "./clients/utils/utils.client";
 
 export type TeardownCoreOptions = {
@@ -11,7 +16,7 @@ export type TeardownCoreOptions = {
 	project_id: string;
 	api_key: string;
 	// environment_slug: string; // TODO: add this back in
-	storageFactory: SupportedStorageFactory;
+	storageAdapter: StorageAdapter;
 	deviceAdapter: DeviceClientOptions["adapter"];
 	forceUpdate?: ForceUpdateClientOptions;
 };
@@ -40,7 +45,7 @@ export class TeardownCore {
 			this.logging,
 			this.options.org_id,
 			this.options.project_id,
-			this.options.storageFactory
+			this.options.storageAdapter
 		);
 		this.api = new ApiClient(this.logging, this.storage, {
 			org_id: this.options.org_id,
@@ -56,11 +61,16 @@ export class TeardownCore {
 
 		void this.initialize().catch((error) => {
 			this.logger.error("Error initializing TeardownCore", { error });
+		}).then(() => {
+			this.logger.debug("TeardownCore initialized");
 		});
 	}
 
 	async initialize(): Promise<void> {
+		// Initialize identity first (loads from storage, then identifies if needed)
 		await this.identity.initialize();
+		// Then initialize force update (subscribes to identity events)
+		this.forceUpdate.initialize();
 	}
 
 	setLogLevel(level: LogLevel): void {
@@ -68,7 +78,7 @@ export class TeardownCore {
 	}
 
 	shutdown(): void {
-		this.logger.info("Shutting down TeardownCore");
+		this.logger.debug("Shutting down TeardownCore");
 		this.storage.shutdown();
 	}
 }
