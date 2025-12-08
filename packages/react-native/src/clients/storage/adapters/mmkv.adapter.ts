@@ -1,14 +1,10 @@
-import type { SupportedStorageFactory } from "./storage.client";
 import * as MMKV from "react-native-mmkv";
+import { StorageAdapter, type SupportedStorage } from "./storage.adpater-interface";
 
-/**
- * Creates a storage factory that uses MMKV for persistence.
- * Each storage key gets its own MMKV instance.
- */
-export const createMMKVStorageFactory = (): SupportedStorageFactory => {
-	return (storageKey: string) => {
+
+export class MMKVStorageAdapter extends StorageAdapter {
+	createStorage(storageKey: string): SupportedStorage {
 		const storage = MMKV.createMMKV({ id: storageKey });
-
 		return {
 			preload: () => {
 				storage.getAllKeys();
@@ -19,5 +15,6 @@ export const createMMKVStorageFactory = (): SupportedStorageFactory => {
 			clear: () => storage.clearAll(),
 			keys: () => storage.getAllKeys(),
 		};
-	};
-};
+	}
+
+}

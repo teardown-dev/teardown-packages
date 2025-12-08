@@ -1,5 +1,7 @@
 import type { Logger, LoggingClient } from "../logging";
+import type { StorageAdapter, SupportedStorage } from "./adapters/storage.adpater-interface";
 
+<<<<<<< HEAD
 export interface SupportedStorage {
   preload: () => void;
   getItem: (key: string) => string | null;
@@ -14,6 +16,8 @@ export type SupportedStorageFactory = (storageKey: string) => SupportedStorage;
 export interface StorageClientOptions {
   createStorage: SupportedStorageFactory;
 }
+=======
+>>>>>>> c8f9b9310 (✨ feat: enhance teardown functionality and improve client structure)
 
 export class StorageClient {
 
@@ -25,7 +29,7 @@ export class StorageClient {
     logging: LoggingClient,
     private readonly orgId: string,
     private readonly projectId: string,
-    private readonly factory: SupportedStorageFactory) {
+    private readonly storageAdapter: StorageAdapter) {
     this.logger = logging.createLogger({
       name: "StorageClient",
     });
@@ -52,9 +56,8 @@ export class StorageClient {
     }
 
     this.logger.debug(`Creating new storage for ${fullStorageKey}`);
-    const newStorage = this.factory(fullStorageKey);
+    const newStorage = this.storageAdapter.createStorage(fullStorageKey);
     newStorage.preload();
-
 
     const remappedStorage = {
       ...newStorage,
@@ -65,7 +68,7 @@ export class StorageClient {
     }
 
     this.storage.set(fullStorageKey, remappedStorage);
-    this.logger.info(`Storage created for ${fullStorageKey}`);
+    this.logger.debug(`Storage created for ${fullStorageKey}`);
 
     return remappedStorage;
   }
