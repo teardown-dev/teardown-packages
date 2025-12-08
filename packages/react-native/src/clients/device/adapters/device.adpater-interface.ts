@@ -16,32 +16,18 @@ import type {
  *
  */
 export abstract class DeviceInfoAdapter {
-	// -- Application Information --
 	/**
 	 * The information about the application running.
 	 */
 	abstract get applicationInfo(): ApplicationInfo;
-	// -- Updates Information --
-	/**
-	 * The information about the update running.
-	 */
-	// abstract get updateInfo(): UpdateInfo | null;
-	// -- Hardware Information --
 	/**
 	 * The information about the hardware of the device.
 	 */
 	abstract get hardwareInfo(): HardwareInfo;
-	// -- OS Information --
 	/**
 	 * The information about the operating system of the device.
 	 */
 	abstract get osInfo(): OSInfo;
-
-	/**
-	 * The information about the notifications of the device.
-	 */
-	abstract get notificationsInfo(): NotificationsInfo;
-
 	/**
 	 * The information about the device.
 	 */
