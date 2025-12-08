@@ -115,7 +115,6 @@ export class IdentityClient {
 
 	private getIdentifyStateFromStorage(): IdentifyState {
 		const stored = this.storage.getItem(IDENTIFY_STORAGE_KEY);
-		this.logger.debug(`Raw storage value for ${IDENTIFY_STORAGE_KEY}: ${stored}`);
 
 		if (stored == null) {
 			this.logger.debug("No stored identity state, returning unidentified");
