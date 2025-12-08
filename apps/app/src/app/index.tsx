@@ -31,7 +31,7 @@ export default function MainScreen() {
 			name: name,
 			user_id: userId,
 		}).then((result) => {
-			console.log(result);
+			console.log("Identify result", result);
 		});
 	};
 

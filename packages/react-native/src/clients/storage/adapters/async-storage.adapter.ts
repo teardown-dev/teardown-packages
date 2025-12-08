@@ -1,6 +1,5 @@
-import * as MMKV from "react-native-mmkv";
-import { StorageAdapter, type SupportedStorage } from "./storage.adpater-interface";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StorageAdapter, type SupportedStorage } from "./storage.adpater-interface";
 
 
 /**
@@ -14,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  * Until hydration completes, reads return null for persisted values.
  */
 
-export class MMKVStorageAdapter extends StorageAdapter {
+export class AsyncStorageAdapter extends StorageAdapter {
 	createStorage(storageKey: string): SupportedStorage {
 		let cache: Record<string, string> = {};
 		let hydrated = false;
