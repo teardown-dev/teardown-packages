@@ -27,7 +27,7 @@ function createMockLoggingClient() {
 			debug: (message: string, ...args: unknown[]) => logs.push({ level: "debug", message, args }),
 		}),
 		getLogs: () => logs,
-		clearLogs: () => logs.length = 0,
+		clearLogs: () => { logs.length = 0; },
 	};
 }
 
