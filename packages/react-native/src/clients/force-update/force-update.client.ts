@@ -69,12 +69,31 @@ export type VersionStatusChangeEvents = {
 };
 
 export type ForceUpdateClientOptions = {
-	/** Min ms between foreground checks (default: 30000) */
+	/** 
+	 * Minimum time (ms) between foreground transitions to prevent rapid-fire checks.
+	 * Measured from the last time the app came to foreground.
+	 * Prevents checking when user quickly switches apps back and forth.
+	 * Default: 30000 (30 seconds)
+	 * 
+	 * Special values:
+	 * - -1: Disable throttling, check on every foreground (respects checkCooldownMs)
+	 * 
+	 * Example: If throttleMs is 30s and user backgrounds then foregrounds the app
+	 * twice within 20s, only the first transition triggers a check.
+	 */
 	throttleMs?: number;
 	/** 
-	 * Min ms since last successful check before re-checking (default: 300000 = 5min)
-	 * Set this to 0 to disable cooldown and check immediately on every foreground transition.
-	 * Set to -1 disable checking entirely.
+	 * Minimum time (ms) since the last successful version check before checking again.
+	 * Measured from when the last check completed successfully (not when it started).
+	 * Prevents unnecessary API calls after we already have fresh version data.
+	 * Default: 300000 (5 minutes)
+	 * 
+	 * Special values:
+	 * - 0: Disable cooldown, check on every foreground (respects throttleMs)
+	 * - -1: Disable all automatic version checking
+	 * 
+	 * Example: If checkCooldownMs is 5min and a check completes at 12:00pm,
+	 * no new checks occur until 12:05pm, even if user foregrounds the app multiple times.
 	 */
 	checkCooldownMs?: number;
 };
@@ -84,7 +103,7 @@ const DEFAULT_OPTIONS: Required<ForceUpdateClientOptions> = {
 	checkCooldownMs: 300_000, // 5 minutes
 };
 
-export const VERSION_STATUS_STORAGE_KEY = "VERSION_STATUS";
+export const VERSION_STATUS_STORAGE_KEY = "version_status";
 
 export class ForceUpdateClient {
 	private emitter = new EventEmitter<VersionStatusChangeEvents>();
@@ -220,7 +239,12 @@ export class ForceUpdateClient {
 			}
 
 			const now = Date.now();
-			const throttleOk = !this.lastForegroundTime || now - this.lastForegroundTime >= this.options.throttleMs;
+
+			// If throttleMs is -1, disable throttling (always pass)
+			// Otherwise, check if enough time has passed since last foreground
+			const throttleOk = this.options.throttleMs === -1
+				|| !this.lastForegroundTime
+				|| now - this.lastForegroundTime >= this.options.throttleMs;
 
 			// If checkCooldownMs is 0, always allow check (no cooldown)
 			// Otherwise, check if enough time has passed since last successful check
