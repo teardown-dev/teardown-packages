@@ -79,5 +79,3 @@ export class TeardownCore {
 		this.storage.shutdown();
 	}
 }
-}
-}

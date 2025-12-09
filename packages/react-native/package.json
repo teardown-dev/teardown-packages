@@ -33,6 +33,11 @@
 			"import": "./src/exports/adapters/async-storage.ts",
 			"default": "./src/exports/adapters/async-storage.ts"
 		},
+		"./adapters/device-info": {
+			"types": "./src/exports/adapters/device-info.ts",
+			"import": "./src/exports/adapters/device-info.ts",
+			"default": "./src/exports/adapters/device-info.ts"
+		},
 		"./expo-notifications": {
 			"types": "./src/exports/expo-notifications.ts",
 			"import": "./src/exports/expo-notifications.ts",
@@ -77,21 +82,25 @@
 		"expo-updates": "^29.0.12"
 	},
 	"peerDependencies": {
-		"@react-native-async-storage/async-storage": "^1.21.0 || ^2.0.0",
-		"react": "*",
-		"react-native": "*",
-		"typescript": "*",
+		"@react-native-async-storage/async-storage": "^1.21 || ^2.0",
 		"expo-application": "*",
 		"expo-device": "*",
 		"expo-notifications": "*",
 		"expo-secure-store": "*",
 		"@react-native-firebase/messaging": "*",
+		"react": "*",
+		"react-native": "*",
+		"react-native-device-info": "^15",
+		"react-native-mmkv": "^4.0.0",
 		"react-native-notifications": "*",
-		"react-native-mmkv": "*",
+		"typescript": "*",
 		"zod": "*"
 	},
 	"peerDependenciesMeta": {
 		"@react-native-async-storage/async-storage": {
+			"optional": true
+		},
+		"react-native-device-info": {
 			"optional": true
 		},
 		"react-native-mmkv": {
