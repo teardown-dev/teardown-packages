@@ -1,11 +1,11 @@
-import {
-	DevicePlatformEnum,
-	type ApplicationInfo,
-	type DeviceInfo,
-	type HardwareInfo,
-	type OSInfo
+import type {
+	ApplicationInfo,
+	DeviceInfo,
+	HardwareInfo,
+	OSInfo
 } from "@teardown/schemas";
-import { Platform } from "react-native";
+import type { Platform } from "react-native";
+import { DevicePlatformEnum } from "../device.client";
 
 /**
  * An interface for a device adapter.
