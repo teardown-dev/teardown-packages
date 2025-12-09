@@ -27,7 +27,7 @@ function createMockLoggingClient() {
 			debug: (message: string, ...args: unknown[]) => logs.push({ level: "debug", message, args }),
 		}),
 		getLogs: () => logs,
-		clearLogs: () => logs.length = 0,
+		clearLogs: () => { logs.length = 0; },
 	};
 }
 
@@ -605,7 +605,7 @@ describe("IdentityClient", () => {
 
 			// Should have debug log about state already being 'identifying' (first setIdentifyState call)
 			// Then transitions to identified
-			const debugLogs = mockLogging.getLogs().filter(l => l.level === "debug");
+			const debugLogs = mockLogging.getLogs().filter((l) => l.level === "debug");
 			// The "identifying" to "identifying" won't happen since we start from "identified"
 			// But we can check that state changes are logged properly
 			expect(mockLogging.getLogs().some(l => l.level === "info")).toBe(true);

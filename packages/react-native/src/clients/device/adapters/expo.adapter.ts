@@ -1,15 +1,13 @@
 import type {
   ApplicationInfo,
   HardwareInfo,
-  NotificationsInfo,
-  OSInfo,
+  OSInfo
 } from "@teardown/schemas";
 import * as Application from "expo-application";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 
 import { DeviceInfoAdapter } from "./device.adpater-interface";
-import { DevicePlatformEnum, NotificationPlatformEnum } from "../device.client";
 
 /**
  * Maps expo-device DeviceType to a string representation
@@ -26,26 +24,6 @@ function mapDeviceType(deviceType: Device.DeviceType | null): string {
       return "tv";
     default:
       return "unknown";
-  }
-}
-
-/**
- * Maps React Native Platform.OS to DevicePlatformEnum
- */
-function mapPlatform(platform: typeof Platform.OS): DevicePlatformEnum {
-  switch (platform) {
-    case "ios":
-      return DevicePlatformEnum.IOS;
-    case "android":
-      return DevicePlatformEnum.ANDROID;
-    case "web":
-      return DevicePlatformEnum.WEB;
-    case "macos":
-      return DevicePlatformEnum.MACOS;
-    case "windows":
-      return DevicePlatformEnum.WINDOWS;
-    default:
-      return DevicePlatformEnum.UNKNOWN;
   }
 }
 
@@ -70,21 +48,9 @@ export class ExpoDeviceAdapter extends DeviceInfoAdapter {
 
   get osInfo(): OSInfo {
     return {
-      platform: mapPlatform(Platform.OS),
+      platform: this.mapPlatform(Platform.OS),
       name: Device.osName ?? Platform.OS,
       version: Device.osVersion ?? "0.0.0",
     };
   }
-
-  get notificationsInfo(): NotificationsInfo {
-    return {
-      push: {
-        enabled: false,
-        granted: false,
-        token: null,
-        platform: NotificationPlatformEnum.EXPO,
-      },
-    };
-  }
-
 }
