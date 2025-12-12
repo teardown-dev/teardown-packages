@@ -42,7 +42,7 @@ export default function MainScreen() {
 				<Text style={styles.infoText}>
 					Session: {session?.session_id ?? "Unknown"}	</Text>
 				<Text style={styles.infoText}>Device ID: {session?.device_id ?? "Unknown"}	</Text>
-				<Text style={styles.infoText}>Persona ID: {session?.persona_id ?? "Unknown"}	</Text>
+				<Text style={styles.infoText}>Persona ID: {session?.user_id ?? "Unknown"}	</Text>
 				<Text style={styles.infoText}>Version status: {forceUpdate.versionStatus.type ?? "Unknown"}
 				</Text>
 			</View>
