@@ -64,7 +64,9 @@ export class TeardownCore {
 	}
 
 	async initialize(): Promise<void> {
-		// Initialize identity first (loads from storage, then identifies if needed)
+		// Wait for all storage hydration to complete
+		await this.storage.whenReady();
+		// Initialize identity (loads from storage, then identifies if needed)
 		await this.identity.initialize();
 		// Then initialize force update (subscribes to identity events)
 		this.forceUpdate.initialize();
