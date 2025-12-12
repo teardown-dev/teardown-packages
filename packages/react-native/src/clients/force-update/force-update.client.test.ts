@@ -43,7 +43,7 @@ function createMockIdentityClient(initialState?: IdentifyState) {
 			emitter.emit("IDENTIFY_STATE_CHANGED", currentState);
 			currentState = {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: {
 					status: nextIdentifyResult.data?.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE,
 					update: null,
@@ -91,7 +91,7 @@ describe("ForceUpdateClient", () => {
 		test("initializes version status when identity is already identified", () => {
 			const mockIdentity = createMockIdentityClient({
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UPDATE_REQUIRED, update: null },
 			});
 			const mockLogging = createMockLoggingClient();
@@ -123,7 +123,7 @@ describe("ForceUpdateClient", () => {
 		test("emits status change during initialization when already identified", () => {
 			const mockIdentity = createMockIdentityClient({
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
 			});
 			const mockLogging = createMockLoggingClient();
@@ -140,7 +140,7 @@ describe("ForceUpdateClient", () => {
 			// Trigger another identify to verify no duplicate
 			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
 			});
 
@@ -170,7 +170,7 @@ describe("ForceUpdateClient", () => {
 			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", { type: "identifying" });
 			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UPDATE_AVAILABLE, update: null },
 			});
 
@@ -235,7 +235,7 @@ describe("ForceUpdateClient", () => {
 			// After shutdown, emitting should not trigger listener
 			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UPDATE_AVAILABLE, update: null },
 			});
 
@@ -499,7 +499,7 @@ describe("ForceUpdateClient", () => {
 
 			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: apiStatus, update: null },
 			});
 

@@ -3,7 +3,7 @@ import { describe, expect, mock, test, beforeEach } from "bun:test";
 // Mock react-native before any imports that use it
 mock.module("react-native", () => ({
 	AppState: {
-		addEventListener: () => ({ remove: () => { } }),
+		addEventListener: () => ({ remove: () => {} }),
 	},
 }));
 
@@ -27,7 +27,9 @@ function createMockLoggingClient() {
 			debug: (message: string, ...args: unknown[]) => logs.push({ level: "debug", message, args }),
 		}),
 		getLogs: () => logs,
-		clearLogs: () => { logs.length = 0; },
+		clearLogs: () => {
+			logs.length = 0;
+		},
 	};
 }
 
@@ -48,19 +50,23 @@ function createMockUtilsClient() {
 	let uuidCounter = 0;
 	return {
 		generateRandomUUID: async () => `mock-uuid-${++uuidCounter}`,
-		resetCounter: () => uuidCounter = 0,
+		resetCounter: () => {
+			uuidCounter = 0;
+		},
 	};
 }
 
-function createMockDeviceClient(overrides: Partial<{
-	deviceId: string;
-	timestamp: string;
-	application: { name: string; version: string; build: string; bundle_id: string };
-	hardware: { brand: string; model: string; device_type: string };
-	os: { name: string; version: string };
-	notifications: { push_token: string | null; platform: string | null };
-	update: null;
-}> = {}) {
+function createMockDeviceClient(
+	overrides: Partial<{
+		deviceId: string;
+		timestamp: string;
+		application: { name: string; version: string; build: string; bundle_id: string };
+		hardware: { brand: string; model: string; device_type: string };
+		os: { name: string; version: string };
+		notifications: { push_token: string | null; platform: string | null };
+		update: null;
+	}> = {}
+) {
 	const defaultDeviceInfo = {
 		timestamp: new Date().toISOString(),
 		application: { name: "TestApp", version: "1.0.0", build: "100", bundle_id: "com.test.app" },
@@ -88,17 +94,19 @@ type ApiCallRecord = {
 	};
 };
 
-function createMockApiClient(options: {
-	success?: boolean;
-	versionStatus?: IdentifyVersionStatusEnum;
-	errorStatus?: number;
-	errorMessage?: string;
-	sessionId?: string;
-	deviceId?: string;
-	personaId?: string;
-	token?: string;
-	throwError?: Error;
-} = {}) {
+function createMockApiClient(
+	options: {
+		success?: boolean;
+		versionStatus?: (typeof IdentifyVersionStatusEnum)[keyof typeof IdentifyVersionStatusEnum];
+		errorStatus?: number;
+		errorMessage?: string;
+		sessionId?: string;
+		deviceId?: string;
+		user_id?: string;
+		token?: string;
+		throwError?: Error;
+	} = {}
+) {
 	const {
 		success = true,
 		versionStatus = IdentifyVersionStatusEnum.UP_TO_DATE,
@@ -106,7 +114,7 @@ function createMockApiClient(options: {
 		errorMessage,
 		sessionId = "session-123",
 		deviceId = "device-123",
-		personaId = "persona-123",
+		user_id = "user-123",
 		token = "token-123",
 		throwError,
 	} = options;
@@ -143,7 +151,7 @@ function createMockApiClient(options: {
 					data: {
 						session_id: sessionId,
 						device_id: deviceId,
-						persona_id: personaId,
+						user_id: user_id,
 						token: token,
 						version_info: { status: versionStatus },
 					},
@@ -152,18 +160,22 @@ function createMockApiClient(options: {
 		},
 		getCalls: () => calls,
 		getLastCall: () => calls[calls.length - 1],
-		clearCalls: () => calls.length = 0,
+		clearCalls: () => {
+			calls.length = 0;
+		},
 	};
 }
 
 // Helper to create a standard client instance
-function createTestClient(overrides: {
-	logging?: ReturnType<typeof createMockLoggingClient>;
-	storage?: ReturnType<typeof createMockStorageClient>;
-	utils?: ReturnType<typeof createMockUtilsClient>;
-	api?: ReturnType<typeof createMockApiClient>;
-	device?: ReturnType<typeof createMockDeviceClient>;
-} = {}) {
+function createTestClient(
+	overrides: {
+		logging?: ReturnType<typeof createMockLoggingClient>;
+		storage?: ReturnType<typeof createMockStorageClient>;
+		utils?: ReturnType<typeof createMockUtilsClient>;
+		api?: ReturnType<typeof createMockApiClient>;
+		device?: ReturnType<typeof createMockDeviceClient>;
+	} = {}
+) {
 	const mockLogging = overrides.logging ?? createMockLoggingClient();
 	const mockStorage = overrides.storage ?? createMockStorageClient();
 	const mockUtils = overrides.utils ?? createMockUtilsClient();
@@ -214,7 +226,7 @@ describe("IdentityClient", () => {
 			const mockStorage = createMockStorageClient();
 			const storedState = {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
 			};
 			mockStorage.getStorage().set(IDENTIFY_STORAGE_KEY, JSON.stringify(storedState));
@@ -227,7 +239,7 @@ describe("IdentityClient", () => {
 			if (state.type === "identified") {
 				expect(state.session.session_id).toBe("s1");
 				expect(state.session.device_id).toBe("d1");
-				expect(state.session.persona_id).toBe("p1");
+				expect(state.session.user_id).toBe("p1");
 				expect(state.session.token).toBe("t1");
 			}
 		});
@@ -296,7 +308,7 @@ describe("IdentityClient", () => {
 				versionStatus: IdentifyVersionStatusEnum.UPDATE_AVAILABLE,
 				sessionId: "custom-session",
 				deviceId: "custom-device",
-				personaId: "custom-persona",
+				user_id: "custom-user_id",
 				token: "custom-token",
 			});
 			const { client } = createTestClient({ api: mockApi });
@@ -307,7 +319,7 @@ describe("IdentityClient", () => {
 			if (result.success) {
 				expect(result.data.session_id).toBe("custom-session");
 				expect(result.data.device_id).toBe("custom-device");
-				expect(result.data.persona_id).toBe("custom-persona");
+				expect(result.data.user_id).toBe("custom-user_id");
 				expect(result.data.token).toBe("custom-token");
 				expect(result.data.version_info.status).toBe(IdentifyVersionStatusEnum.UPDATE_AVAILABLE);
 				expect(result.data.version_info.update).toBeNull();
@@ -360,7 +372,7 @@ describe("IdentityClient", () => {
 			const mockStorage = createMockStorageClient();
 			const storedState = {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
 			};
 			mockStorage.getStorage().set(IDENTIFY_STORAGE_KEY, JSON.stringify(storedState));
@@ -484,14 +496,14 @@ describe("IdentityClient", () => {
 
 			const persona: Persona = {
 				name: "John Doe",
-				user_id: "user-456",
+				user_id: "user-123",
 				email: "john@example.com",
 			};
 
 			await client.identify(persona);
 
 			const lastCall = mockApi.getLastCall();
-			expect((lastCall.config.body as { persona?: Persona }).persona).toEqual(persona);
+			expect((lastCall.config.body as { user?: Persona }).user).toEqual(persona);
 		});
 
 		test("passes undefined persona when not provided", async () => {
@@ -500,7 +512,7 @@ describe("IdentityClient", () => {
 			await client.identify();
 
 			const lastCall = mockApi.getLastCall();
-			expect((lastCall.config.body as { persona?: Persona }).persona).toBeUndefined();
+			expect((lastCall.config.body as { user?: Persona }).user).toBeUndefined();
 		});
 
 		test("passes partial persona data", async () => {
@@ -511,7 +523,7 @@ describe("IdentityClient", () => {
 			await client.identify(persona);
 
 			const lastCall = mockApi.getLastCall();
-			expect((lastCall.config.body as { persona?: Persona }).persona).toEqual({ email: "only-email@test.com" });
+			expect((lastCall.config.body as { user?: Persona }).user).toEqual({ email: "only-email@test.com" });
 		});
 
 		test("calls correct API endpoint", async () => {
@@ -550,7 +562,17 @@ describe("IdentityClient", () => {
 			await client.identify();
 
 			const lastCall = mockApi.getLastCall();
-			const device = (lastCall.config.body as { device?: { timestamp: string; application: { name: string; version: string; build: string; bundle_id: string }; os: { name: string; version: string }; hardware: { brand: string; model: string; device_type: string }; update: null } }).device;
+			const device = (
+				lastCall.config.body as {
+					device?: {
+						timestamp: string;
+						application: { name: string; version: string; build: string; bundle_id: string };
+						os: { name: string; version: string };
+						hardware: { brand: string; model: string; device_type: string };
+						update: null;
+					};
+				}
+			).device;
 
 			expect(device?.timestamp).toBe("2024-01-15T10:30:00.000Z");
 			expect(device?.application.name).toBe("MyApp");
@@ -566,7 +588,7 @@ describe("IdentityClient", () => {
 			const mockStorage = createMockStorageClient();
 			const storedState = {
 				type: "identified",
-				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
+				session: { session_id: "s1", device_id: "d1", user_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
 			};
 			mockStorage.getStorage().set(IDENTIFY_STORAGE_KEY, JSON.stringify(storedState));
@@ -605,10 +627,10 @@ describe("IdentityClient", () => {
 
 			// Should have debug logs about state transitions
 			// When already identified, identify() will transition: identified -> identifying -> identified
-			const debugLogs = mockLogging.getLogs().filter(l => l.level === "debug");
+			const debugLogs = mockLogging.getLogs().filter((l) => l.level === "debug");
 			expect(debugLogs.length).toBeGreaterThan(0);
 			// Check that state transitions are logged
-			expect(debugLogs.some(l => l.message.includes("Identify state:"))).toBe(true);
+			expect(debugLogs.some((l) => l.message.includes("Identify state:"))).toBe(true);
 		});
 	});
 
@@ -731,7 +753,7 @@ describe("IdentityClient", () => {
 					data: {
 						session_id: "refreshed-session",
 						device_id: "device-123",
-						persona_id: "persona-123",
+						user_id: "user-123",
 						token: "token-123",
 						version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE },
 					},
@@ -873,7 +895,7 @@ describe("IdentityClient", () => {
 			expect(session).not.toBeNull();
 			expect(session?.session_id).toBe("session-123");
 			expect(session?.device_id).toBe("device-123");
-			expect(session?.persona_id).toBe("persona-123");
+			expect(session?.user_id).toBe("user-123");
 			expect(session?.token).toBe("token-123");
 		});
 
@@ -891,7 +913,7 @@ describe("IdentityClient", () => {
 					data: {
 						session_id: "second-session",
 						device_id: "device-123",
-						persona_id: "persona-123",
+						user_id: "user-123",
 						token: "token-123",
 						version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE },
 					},
@@ -992,7 +1014,9 @@ describe("IdentityClient", () => {
 
 			// Make API slow so we can check intermediate state
 			let resolveApi: (value: unknown) => void;
-			const apiPromise = new Promise((resolve) => { resolveApi = resolve; });
+			const apiPromise = new Promise((resolve) => {
+				resolveApi = resolve;
+			});
 
 			mockApi.client = async () => {
 				await apiPromise;
@@ -1002,7 +1026,7 @@ describe("IdentityClient", () => {
 						data: {
 							session_id: "session-123",
 							device_id: "device-123",
-							persona_id: "persona-123",
+							user_id: "user-123",
 							token: "token-123",
 							version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE },
 						},
@@ -1015,7 +1039,7 @@ describe("IdentityClient", () => {
 			const identifyPromise = client.identify();
 
 			// Check storage while API call is pending
-			await new Promise(resolve => setTimeout(resolve, 10));
+			await new Promise((resolve) => setTimeout(resolve, 10));
 			const intermediateStored = mockStorage.getStorage().get(IDENTIFY_STORAGE_KEY);
 			expect(JSON.parse(intermediateStored!).type).toBe("identifying");
 
@@ -1048,14 +1072,10 @@ describe("IdentityClient", () => {
 		test("handles rapid successive identify calls", async () => {
 			const { client } = createTestClient();
 
-			const results = await Promise.all([
-				client.identify(),
-				client.identify(),
-				client.identify(),
-			]);
+			const results = await Promise.all([client.identify(), client.identify(), client.identify()]);
 
 			// All should succeed
-			results.forEach(result => {
+			results.forEach((result) => {
 				expect(result.success).toBe(true);
 			});
 
@@ -1086,7 +1106,7 @@ describe("IdentityClient", () => {
 			await client.identify({});
 
 			const lastCall = mockApi.getLastCall();
-			expect(lastCall.config.body.persona).toEqual({});
+			expect((lastCall.config.body as { user?: Persona }).user).toEqual({});
 		});
 
 		test("handles very long session tokens", async () => {

@@ -5,7 +5,7 @@ import type { StorageClient } from "../storage";
 
 export type { Eden, IngestApi };
 
-const TEARDOWN_INGEST_URL = "https://ingest.teardown.dev";
+const TEARDOWN_INGEST_URL = "http://localhost:4880";// "https://ingest.teardown.dev";
 const TEARDOWN_API_KEY_HEADER = "td-api-key";
 const TEARDOWN_ORG_ID_HEADER = "td-org-id";
 const TEARDOWN_PROJECT_ID_HEADER = "td-project-id";
