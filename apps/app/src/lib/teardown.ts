@@ -9,7 +9,7 @@ export const teardown = new TeardownCore({
 	storageAdapter: new AsyncStorageAdapter(),
 	deviceAdapter: new DeviceInfoAdapter(),
 	forceUpdate: {
-		checkCooldownMs: -1,
-		throttleMs: -1,
+		checkCooldownMs: 0,
+		throttleMs: 0,
 	},
 });
