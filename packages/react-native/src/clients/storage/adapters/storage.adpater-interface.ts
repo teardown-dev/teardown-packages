@@ -3,7 +3,7 @@
  * A storage interface that is used to store data.
  */
 export type SupportedStorage = {
-	preload: () => void;
+	preload: () => void | Promise<void>;
 	getItem: (key: string) => string | null;
 	setItem: (key: string, value: string) => void;
 	removeItem: (key: string) => void;
