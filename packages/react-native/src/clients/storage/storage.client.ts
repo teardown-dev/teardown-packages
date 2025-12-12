@@ -8,6 +8,14 @@ export class StorageClient {
 
   private readonly storage: Map<string, SupportedStorage> = new Map();
 
+  private readonly preloadPromises: Promise<void>[] = [];
+
+  private _isReady = false;
+
+  get isReady(): boolean {
+    return this._isReady;
+  }
+
   constructor(
     logging: LoggingClient,
     private readonly orgId: string,
@@ -40,7 +48,10 @@ export class StorageClient {
 
     this.logger.debug(`Creating new storage for ${fullStorageKey}`);
     const newStorage = this.storageAdapter.createStorage(fullStorageKey);
-    newStorage.preload();
+    const preloadResult = newStorage.preload();
+    if (preloadResult instanceof Promise) {
+      this.preloadPromises.push(preloadResult);
+    }
 
     const remappedStorage = {
       ...newStorage,
@@ -53,6 +64,11 @@ export class StorageClient {
     this.logger.debug(`Storage created for ${fullStorageKey}`);
 
     return remappedStorage;
+  }
+
+  async whenReady(): Promise<void> {
+    await Promise.all(this.preloadPromises);
+    this._isReady = true;
   }
 
   shutdown(): void {

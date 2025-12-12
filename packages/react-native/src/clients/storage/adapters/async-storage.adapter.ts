@@ -21,29 +21,27 @@ export class AsyncStorageAdapter extends StorageAdapter {
 		const prefixedKey = (key: string): string => `${storageKey}:${key}`;
 
 		return {
-			preload: () => {
+			preload: async (): Promise<void> => {
 				if (hydrated) return;
 
-				// Fire async hydration - cache will be populated when complete
-				AsyncStorage.getAllKeys()
-					.then((allKeys) => {
-						const relevantKeys = allKeys.filter((k) =>
-							k.startsWith(`${storageKey}:`)
-						);
-						return AsyncStorage.multiGet(relevantKeys);
-					})
-					.then((pairs) => {
-						for (const [fullKey, value] of pairs) {
-							if (value != null) {
-								const key = fullKey.replace(`${storageKey}:`, "");
-								cache[key] = value;
-							}
+				try {
+					const allKeys = await AsyncStorage.getAllKeys();
+					const relevantKeys = allKeys.filter((k) =>
+						k.startsWith(`${storageKey}:`)
+					);
+					const pairs = await AsyncStorage.multiGet(relevantKeys);
+
+					for (const [fullKey, value] of pairs) {
+						if (value != null) {
+							const key = fullKey.replace(`${storageKey}:`, "");
+							cache[key] = value;
 						}
-						hydrated = true;
-					})
-					.catch(() => {
-						// Silently fail - cache remains empty
-					});
+					}
+				} catch {
+					// Silently fail - cache remains empty
+				} finally {
+					hydrated = true;
+				}
 			},
 
 			getItem: (key: string): string | null => {
