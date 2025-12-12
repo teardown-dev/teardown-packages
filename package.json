@@ -9,9 +9,9 @@
 		],
 		"catalogs": {
 			"teardown": {
-				"@teardown/ingest-api": "0.1.41",
-				"@teardown/schemas": "0.1.41",
-				"@teardown/types": "0.1.41"
+				"@teardown/ingest-api": "0.1.43",
+				"@teardown/schemas": "0.1.43",
+				"@teardown/types": "0.1.43"
 			}
 		}
 	},
