@@ -17,7 +17,7 @@ export type Persona = {
 export type IdentityUser = {
 	session_id: string;
 	device_id: string;
-	persona_id: string;
+	user_id: string;
 	token: string;
 	version_info: {
 		status: IdentifyVersionStatusEnum;
@@ -40,7 +40,7 @@ export const UpdateVersionStatusBodySchema = z.object({
 export const SessionSchema = z.object({
 	session_id: z.string(),
 	device_id: z.string(),
-	persona_id: z.string(),
+	user_id: z.string(),
 	token: z.string(),
 });
 export type Session = z.infer<typeof SessionSchema>;
@@ -211,8 +211,8 @@ export class IdentityClient {
 		}
 	}
 
-	async identify(persona?: Persona): AsyncResult<IdentityUser> {
-		this.logger.debug(`Identifying user with persona: ${persona?.name ?? "none"}`);
+	async identify(user?: Persona): AsyncResult<IdentityUser> {
+		this.logger.debug(`Identifying user with persona: ${user?.name ?? "none"}`);
 		const previousState = this.identifyState;
 		this.setIdentifyState({ type: "identifying" });
 
@@ -231,8 +231,7 @@ export class IdentityClient {
 					"td-device-id": deviceId,
 				},
 				body: {
-					persona,
-					// @ts-expect-error - notifications is not yet implemented
+					user,
 					device: {
 						timestamp: deviceInfo.timestamp,
 						os: deviceInfo.os,
