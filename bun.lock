@@ -65,7 +65,7 @@
     },
     "packages/react-native": {
       "name": "@teardown/react-native",
-      "version": "2.0.9",
+      "version": "2.0.11",
       "dependencies": {
         "@teardown/ingest-api": "catalog:teardown",
         "@teardown/schemas": "catalog:teardown",
@@ -92,7 +92,7 @@
         "react": "*",
         "react-native": "*",
         "react-native-device-info": "^15",
-        "react-native-mmkv": "^4.0.0",
+        "react-native-mmkv": "",
         "typescript": "*",
       },
       "optionalPeers": [
