@@ -91,10 +91,9 @@
 		"react": "*",
 		"react-native": "*",
 		"react-native-device-info": "^15",
-		"react-native-mmkv": "^4.0.0",
+		"react-native-mmkv": "^4",
 		"react-native-notifications": "*",
-		"typescript": "*",
-		"zod": "*"
+		"typescript": "*"
 	},
 	"peerDependenciesMeta": {
 		"@react-native-async-storage/async-storage": {
