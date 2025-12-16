@@ -491,7 +491,7 @@ describe("IdentityClient", () => {
 			await client.identify(persona);
 
 			const lastCall = mockApi.getLastCall();
-			expect((lastCall.config.body as { persona?: Persona }).persona).toEqual(persona);
+			expect((lastCall.config.body as { user?: Persona }).user).toEqual(persona);
 		});
 
 		test("passes undefined persona when not provided", async () => {
@@ -500,7 +500,7 @@ describe("IdentityClient", () => {
 			await client.identify();
 
 			const lastCall = mockApi.getLastCall();
-			expect((lastCall.config.body as { persona?: Persona }).persona).toBeUndefined();
+			expect((lastCall.config.body as { user?: Persona }).user).toBeUndefined();
 		});
 
 		test("passes partial persona data", async () => {
@@ -511,7 +511,7 @@ describe("IdentityClient", () => {
 			await client.identify(persona);
 
 			const lastCall = mockApi.getLastCall();
-			expect((lastCall.config.body as { persona?: Persona }).persona).toEqual({ email: "only-email@test.com" });
+			expect((lastCall.config.body as { user?: Persona }).user).toEqual({ email: "only-email@test.com" });
 		});
 
 		test("calls correct API endpoint", async () => {
@@ -1086,7 +1086,7 @@ describe("IdentityClient", () => {
 			await client.identify({});
 
 			const lastCall = mockApi.getLastCall();
-			expect(lastCall.config.body.persona).toEqual({});
+			expect((lastCall.config.body as { user?: Persona }).user).toEqual({});
 		});
 
 		test("handles very long session tokens", async () => {

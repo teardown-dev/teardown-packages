@@ -1,10 +1,9 @@
 import * as MMKV from "react-native-mmkv";
 import { StorageAdapter, type SupportedStorage } from "./storage.adpater-interface";
 
-
 export class MMKVStorageAdapter extends StorageAdapter {
 	createStorage(storageKey: string): SupportedStorage {
-		const storage = MMKV.createMMKV({ id: storageKey });
+		const storage = MMKV.createMMKV({ id: storageKey, encryptionKey: storageKey });
 		return {
 			preload: () => {
 				storage.getAllKeys();
@@ -16,5 +15,4 @@ export class MMKVStorageAdapter extends StorageAdapter {
 			keys: () => storage.getAllKeys(),
 		};
 	}
-
 }

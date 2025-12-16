@@ -5,7 +5,7 @@ import type { StorageClient } from "../storage";
 
 export type { Eden, IngestApi };
 
-const TEARDOWN_INGEST_URL = "http://localhost:4880";// "https://ingest.teardown.dev";
+const TEARDOWN_INGEST_URL = "https://ingest.teardown.dev";
 const TEARDOWN_API_KEY_HEADER = "td-api-key";
 const TEARDOWN_ORG_ID_HEADER = "td-org-id";
 const TEARDOWN_PROJECT_ID_HEADER = "td-project-id";
@@ -26,8 +26,10 @@ export type ApiClientOptions = {
 	project_id: string;
 	/**
 	 * The slug of the environment.
+	 *
+	 * @default "production"
 	 */
-	environment_slug: string;
+	environment_slug?: string | null;
 	/**
 	 * A function that will be called before each request.
 	 * @param endpoint The endpoint being requested.
@@ -35,7 +37,6 @@ export type ApiClientOptions = {
 	 * @returns The options for the request.
 	 */
 	onRequest?: (endpoint: IngestApi.Endpoints, options: IngestApi.RequestOptions) => Promise<IngestApi.RequestOptions>;
-
 
 	/**
 	 * The URL of the ingest API.
@@ -54,10 +55,10 @@ export class ApiClient {
 	) {
 		this.client = IngestApi.client(options.ingestUrl ?? TEARDOWN_INGEST_URL, {
 			headers: {
-				[TEARDOWN_API_KEY_HEADER]: `Bearer ${this.options.api_key}`,
-				[TEARDOWN_ORG_ID_HEADER]: this.options.org_id,
-				[TEARDOWN_PROJECT_ID_HEADER]: this.options.project_id,
-				[TEARDOWN_ENVIRONMENT_SLUG_HEADER]: this.options.environment_slug,
+				[TEARDOWN_API_KEY_HEADER]: `Bearer ${this.apiKey}`,
+				[TEARDOWN_ORG_ID_HEADER]: this.orgId,
+				[TEARDOWN_PROJECT_ID_HEADER]: this.projectId,
+				[TEARDOWN_ENVIRONMENT_SLUG_HEADER]: this.environmentSlug,
 			},
 		});
 	}
@@ -75,6 +76,6 @@ export class ApiClient {
 	}
 
 	get environmentSlug(): string {
-		return this.options.environment_slug;
+		return this.options.environment_slug ?? "production";
 	}
 }
