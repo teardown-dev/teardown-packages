@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo } from "react";
 
-import type { TeardownCore } from "../teardown.core";
 import { TeardownContext } from "../contexts/teardown.context";
+import type { TeardownCore } from "../teardown.core";
 
 export { useTeardown } from "../contexts/teardown.context";
 
@@ -20,9 +20,5 @@ export const TeardownProvider = memo((props: TeardownProviderProps) => {
 		};
 	}, [core]);
 
-	return (
-		<TeardownContext.Provider value={context}>
-			{children}
-		</TeardownContext.Provider>
-	);
+	return <TeardownContext.Provider value={context}>{children}</TeardownContext.Provider>;
 });

@@ -21,9 +21,9 @@ export interface IdentityUser {
 	token: string;
 	version_info: {
 		status: IdentifyVersionStatusEnum;
-		update: null
-	}
-}
+		update: null;
+	};
+};
 
 export const UnidentifiedSessionStateSchema = z.object({
 	type: z.literal("unidentified"),
@@ -31,7 +31,6 @@ export const UnidentifiedSessionStateSchema = z.object({
 export const IdentifyingSessionStateSchema = z.object({
 	type: z.literal("identifying"),
 });
-
 
 export const UpdateVersionStatusBodySchema = z.object({
 	version: z.string(),
@@ -59,7 +58,11 @@ export const IdentifiedSessionStateSchema = z.object({
 	}),
 });
 
-export const IdentifyStateSchema = z.discriminatedUnion("type", [UnidentifiedSessionStateSchema, IdentifyingSessionStateSchema, IdentifiedSessionStateSchema]);
+export const IdentifyStateSchema = z.discriminatedUnion("type", [
+	UnidentifiedSessionStateSchema,
+	IdentifyingSessionStateSchema,
+	IdentifiedSessionStateSchema,
+]);
 export type IdentifyState = z.infer<typeof IdentifyStateSchema>;
 
 export type UnidentifiedSessionState = z.infer<typeof UnidentifiedSessionStateSchema>;
@@ -69,7 +72,6 @@ export type IdentifiedSessionState = z.infer<typeof IdentifiedSessionStateSchema
 export interface IdentifyStateChangeEvents {
 	IDENTIFY_STATE_CHANGED: (state: IdentifyState) => void;
 }
-
 
 export const IDENTIFY_STORAGE_KEY = "IDENTIFY_STATE";
 
@@ -141,7 +143,6 @@ export class IdentityClient {
 	}
 
 	private setIdentifyState(newState: IdentifyState): void {
-
 		if (this.identifyState.type === newState.type) {
 			this.logger.debug(`Identify state already set: ${this.identifyState.type}`);
 			return;
@@ -216,78 +217,81 @@ export class IdentityClient {
 		const previousState = this.identifyState;
 		this.setIdentifyState({ type: "identifying" });
 
-		return this.tryCatch(async () => {
-			this.logger.debug("Getting device ID...");
-			const deviceId = await this.device.getDeviceId();
-			const deviceInfo = await this.device.getDeviceInfo();
-			this.logger.debug("Calling identify API...");
-			const response = await this.api.client("/v1/identify", {
-				method: "POST",
-				headers: {
-					"td-api-key": this.api.apiKey,
-					"td-org-id": this.api.orgId,
-					"td-project-id": this.api.projectId,
-					"td-environment-slug": "production",
-					"td-device-id": deviceId,
-				},
-				body: {
-					user,
-					device: {
-						timestamp: deviceInfo.timestamp,
-						os: deviceInfo.os,
-						application: deviceInfo.application,
-						hardware: deviceInfo.hardware,
-						update: null,
+		return this.tryCatch(
+			async () => {
+				this.logger.debug("Getting device ID...");
+				const deviceId = await this.device.getDeviceId();
+				const deviceInfo = await this.device.getDeviceInfo();
+				this.logger.debug("Calling identify API...");
+				const response = await this.api.client("/v1/identify", {
+					method: "POST",
+					headers: {
+						"td-api-key": this.api.apiKey,
+						"td-org-id": this.api.orgId,
+						"td-project-id": this.api.projectId,
+						"td-environment-slug": "production",
+						"td-device-id": deviceId,
 					},
-				},
-			});
+					body: {
+						user,
+						device: {
+							timestamp: deviceInfo.timestamp,
+							os: deviceInfo.os,
+							application: deviceInfo.application,
+							hardware: deviceInfo.hardware,
+							update: null,
+						},
+					},
+				});
 
-			this.logger.debug(`Identify API response received`);
-			if (response.error != null) {
-				this.logger.warn("Identify API error", response.error.status, response.error.value);
-				this.setIdentifyState(previousState);
+				this.logger.debug(`Identify API response received`);
+				if (response.error != null) {
+					this.logger.warn("Identify API error", response.error.status, response.error.value);
+					this.setIdentifyState(previousState);
 
-				if (response.error.status === 422) {
-					this.logger.warn("422 Error identifying user", response.error.value);
+					if (response.error.status === 422) {
+						this.logger.warn("422 Error identifying user", response.error.value);
+						return {
+							success: false,
+							error: response.error.value.message ?? "Unknown error",
+						};
+					}
+
+					const value = response.error.value;
 					return {
 						success: false,
-						error: response.error.value.message ?? "Unknown error",
+						error: value?.error?.message ?? "Unknown error",
 					};
 				}
 
-				const value = response.error.value;
-				return {
-					success: false,
-					error: value?.error?.message ?? "Unknown error",
-				};
-			}
-
-			this.setIdentifyState({
-				type: "identified",
-				session: response.data.data,
-				version_info: {
-					status: response.data.data.version_info.status,
-					update: null,
-				},
-			});
-
-			return {
-				success: true,
-				data: {
-					...response.data.data,
+				this.setIdentifyState({
+					type: "identified",
+					session: response.data.data,
 					version_info: {
 						status: response.data.data.version_info.status,
 						update: null,
 					},
-				},
-			};
-		}, (error) => {
-			this.logger.error("Error identifying user", error);
-			this.setIdentifyState(previousState);
-			return {
-				success: false,
-				error: error.message,
-			};
-		});
+				});
+
+				return {
+					success: true,
+					data: {
+						...response.data.data,
+						version_info: {
+							status: response.data.data.version_info.status,
+							update: null,
+						},
+					},
+				};
+			},
+			(error) => {
+				this.logger.error("Error identifying user", error);
+				this.setIdentifyState(previousState);
+				return {
+					success: false,
+					error: error.message,
+				};
+			}
+		);
 	}
 }
