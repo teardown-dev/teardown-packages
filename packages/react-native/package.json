@@ -1,6 +1,6 @@
 {
 	"name": "@teardown/react-native",
-	"version": "2.0.13",
+	"version": "2.0.14",
 	"private": false,
 	"publishConfig": {
 		"access": "public"
@@ -78,25 +78,31 @@
 		"@teardown/tsconfig": "workspace:*",
 		"@types/bun": "latest",
 		"@types/react": "*",
-		"@types/uuid": "^11.0.0",
-		"expo-updates": "^29.0.12"
+		"@types/uuid": "^11.0.0"
 	},
 	"peerDependencies": {
 		"@react-native-async-storage/async-storage": "^1.21 || ^2.0",
-		"expo-application": "*",
-		"expo-device": "*",
-		"expo-notifications": "*",
-		"expo-secure-store": "*",
+		"expo-application": "~7",
+		"expo-device": "~8",
+		"expo-notifications": "~0.32",
+		"expo-secure-store": "~15",
+		"expo-updates": "~29",
 		"@react-native-firebase/messaging": "*",
-		"react": "*",
-		"react-native": "*",
-		"react-native-device-info": "^15",
+		"react": "~19",
+		"react-native": "~0.81",
+		"react-native-device-info": "~15",
 		"react-native-mmkv": "^4",
 		"react-native-notifications": "*",
-		"typescript": "*"
+		"typescript": "~5"
 	},
 	"peerDependenciesMeta": {
 		"@react-native-async-storage/async-storage": {
+			"optional": true
+		},
+		"react": {
+			"optional": true
+		},
+		"react-native": {
 			"optional": true
 		},
 		"react-native-device-info": {
@@ -115,6 +121,9 @@
 			"optional": true
 		},
 		"expo-secure-store": {
+			"optional": true
+		},
+		"expo-updates": {
 			"optional": true
 		},
 		"@react-native-firebase/messaging": {
