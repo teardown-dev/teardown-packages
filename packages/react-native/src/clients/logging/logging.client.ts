@@ -54,12 +54,16 @@ export class Logger {
 	private boundConsole = {
 		log: console.log.bind(console),
 		error: console.error.bind(console),
-		debug: console.debug.bind(console),
 		warn: console.warn.bind(console),
 		trace: console.trace.bind(console),
+		debug: console.debug.bind(console),
+		debugError: console.debug.bind(console, "Error: "),
+		debugWarn: console.debug.bind(console, "Warning: "),
+		debugInfo: console.debug.bind(console, "Info: "),
+		debugVerbose: console.debug.bind(console, "Verbose: "),
 	};
 
-	constructor(private readonly options: LoggerOptions) { }
+	constructor(private readonly options: LoggerOptions) {}
 
 	get prefix() {
 		return `[Teardown:${this.options.name}]`;
@@ -75,11 +79,6 @@ export class Logger {
 		this.boundConsole.error(`${this.prefix} ${message}`, ...args);
 	}
 
-	debug(message: string, ...args: unknown[]) {
-		if (!this.options.loggingClient.shouldLog("verbose")) return;
-		this.boundConsole.debug(`${this.prefix} ${message}`, ...args);
-	}
-
 	warn(message: string, ...args: unknown[]) {
 		if (!this.options.loggingClient.shouldLog("warn")) return;
 		this.boundConsole.warn(`${this.prefix} ${message}`, ...args);
@@ -88,5 +87,30 @@ export class Logger {
 	trace(message: string, ...args: unknown[]) {
 		if (!this.options.loggingClient.shouldLog("verbose")) return;
 		this.boundConsole.trace(`${this.prefix} ${message}`, ...args);
+	}
+
+	debug(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("verbose")) return;
+		this.boundConsole.debug(`${this.prefix} ${message}`, ...args);
+	}
+
+	debugError(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("verbose")) return;
+		this.boundConsole.debugError(`${this.prefix} ${message}`, ...args);
+	}
+
+	debugWarn(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("verbose")) return;
+		this.boundConsole.debugWarn(`${this.prefix} ${message}`, ...args);
+	}
+
+	debugInfo(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("verbose")) return;
+		this.boundConsole.debugInfo(`${this.prefix} ${message}`, ...args);
+	}
+
+	debugVerbose(message: string, ...args: unknown[]) {
+		if (!this.options.loggingClient.shouldLog("verbose")) return;
+		this.boundConsole.debugVerbose(`${this.prefix} ${message}`, ...args);
 	}
 }
