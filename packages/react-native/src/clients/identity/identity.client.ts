@@ -113,7 +113,7 @@ export class IdentityClient {
 			this.logger.debug(`Initialized with state: ${this.identifyState.type}`);
 		} catch (error) {
 			// Silently fail on errors - we'll re-identify on app boot if needed
-			this.logger.debug("Error initializing IdentityClient", { error });
+			this.logger.debugError("Error initializing IdentityClient", { error });
 			this.identifyState = { type: "unidentified" };
 		}
 
@@ -122,26 +122,31 @@ export class IdentityClient {
 	}
 
 	private getIdentifyStateFromStorage(): IdentifyState {
-		const stored = this.storage.getItem(IDENTIFY_STORAGE_KEY);
+		try {
+			const stored = this.storage.getItem(IDENTIFY_STORAGE_KEY);
 
-		if (stored == null) {
-			this.logger.debug("No stored identity state, returning unidentified");
-			return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
+			if (stored == null) {
+				this.logger.debugInfo("No stored identity state, returning unidentified");
+				return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
+			}
+
+			const parsed = IdentifyStateSchema.parse(JSON.parse(stored));
+			this.logger.debugInfo(`Parsed identity state from storage: ${parsed.type}`);
+
+			// "identifying" is a transient state - if we restore it, treat as unidentified
+			// This can happen if the app was killed during an identify call
+			if (parsed.type === "identifying") {
+				this.logger.debugInfo("Found stale 'identifying' state in storage, resetting to unidentified");
+				// Clear the stale state from storage immediately
+				this.storage.removeItem(IDENTIFY_STORAGE_KEY);
+				return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
+			}
+
+			return parsed;
+		} catch (error) {
+			this.logger.debugError("Error getting identify state from storage", { error });
+			return { type: "unidentified" };
 		}
-
-		const parsed = IdentifyStateSchema.parse(JSON.parse(stored));
-		this.logger.debug(`Parsed identity state from storage: ${parsed.type}`);
-
-		// "identifying" is a transient state - if we restore it, treat as unidentified
-		// This can happen if the app was killed during an identify call
-		if (parsed.type === "identifying") {
-			this.logger.debug("Found stale 'identifying' state in storage, resetting to unidentified");
-			// Clear the stale state from storage immediately
-			this.storage.removeItem(IDENTIFY_STORAGE_KEY);
-			return UnidentifiedSessionStateSchema.parse({ type: "unidentified" });
-		}
-
-		return parsed;
 	}
 
 	private saveIdentifyStateToStorage(identifyState: IdentifyState): void {
@@ -150,11 +155,11 @@ export class IdentityClient {
 
 	private setIdentifyState(newState: IdentifyState): void {
 		if (this.identifyState.type === newState.type) {
-			this.logger.debug(`Identify state already set: ${this.identifyState.type}`);
+			this.logger.debugInfo(`Identify state already set: ${this.identifyState.type}`);
 			return;
 		}
 
-		this.logger.debug(`Identify state: ${this.identifyState.type} -> ${newState.type}`);
+		this.logger.debugInfo(`Identify state: ${this.identifyState.type} -> ${newState.type}`);
 		this.identifyState = newState;
 		this.saveIdentifyStateToStorage(newState);
 		this.emitter.emit("IDENTIFY_STATE_CHANGED", newState);
@@ -219,7 +224,7 @@ export class IdentityClient {
 	}
 
 	async identify(user?: Persona): AsyncResult<IdentityUser> {
-		this.logger.debug(`Identifying user with persona: ${user?.name ?? "none"}`);
+		this.logger.debugInfo(`Identifying user with persona: ${user?.name ?? "none"}`);
 		const previousState = this.identifyState;
 		this.setIdentifyState({ type: "identifying" });
 
@@ -250,7 +255,7 @@ export class IdentityClient {
 					},
 				});
 
-				this.logger.debug(`Identify API response received`);
+				this.logger.debugInfo(`Identify API response received`);
 				if (response.error != null) {
 					this.logger.warn("Identify API error", response.error.status, response.error.value);
 					this.setIdentifyState(previousState);
