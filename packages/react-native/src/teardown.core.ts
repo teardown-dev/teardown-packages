@@ -65,11 +65,18 @@ export class TeardownCore {
 
 	async initialize(): Promise<void> {
 		// Wait for all storage hydration to complete
+		this.logger.debug("Waiting for storage to be ready");
 		await this.storage.whenReady();
 		// Initialize identity (loads from storage, then identifies if needed)
+		this.logger.debug("Initializing identity");
 		await this.identity.initialize();
+		this.logger.debug("Identity initialized");
 		// Then initialize force update (subscribes to identity events)
+		this.logger.debug("Initializing force update");
 		this.forceUpdate.initialize();
+		this.logger.debug("Force update initialized");
+
+		this.logger.debug("TeardownCore initialized");
 	}
 
 	setLogLevel(level: LogLevel): void {
