@@ -114,9 +114,9 @@
   },
   "catalogs": {
     "teardown": {
-      "@teardown/ingest-api": "0.1.48",
-      "@teardown/schemas": "0.1.48",
-      "@teardown/types": "0.1.48",
+      "@teardown/ingest-api": "0.1.49",
+      "@teardown/schemas": "0.1.49",
+      "@teardown/types": "0.1.49",
     },
   },
   "packages": {
@@ -656,15 +656,15 @@
 
     "@tailwindcss/oxide-win32-x64-msvc": ["@tailwindcss/oxide-win32-x64-msvc@4.1.16", "", { "os": "win32", "cpu": "x64" }, "sha512-m5dDFJUEejbFqP+UXVstd4W/wnxA4F61q8SoL+mqTypId2T2ZpuxosNSgowiCnLp2+Z+rivdU0AqpfgiD7yCBg=="],
 
-    "@teardown/errors": ["@teardown/errors@0.1.48", "", { "dependencies": { "elysia": "1.4.19" }, "peerDependencies": { "typescript": "5.9.3", "zod": "4.1.13" } }, "sha512-U/olFlpeOlonxDcuQswbnEh0amprS7Ekcrz2yydJl0utovopR9dTfIO15aYFto2ngyFDfTLgkJnU9fFQCQGlHQ=="],
+    "@teardown/errors": ["@teardown/errors@0.1.49", "", { "peerDependencies": { "elysia": "1.4.19", "typescript": "5.9.3", "zod": "4.1.13" }, "optionalPeers": ["elysia"] }, "sha512-N7eoWLFTdZmtuqe5cVbQxUAjU8h7bPuy6+IVSWWKlp01R2In249zfdU6NXa+ZbTwa16STRmgPIlVAzlwRIUB3g=="],
 
     "@teardown/example-app": ["@teardown/example-app@workspace:apps/app"],
 
-    "@teardown/ingest-api": ["@teardown/ingest-api@0.1.48", "", { "dependencies": { "@elysiajs/eden": "1.4.5", "@teardown/errors": "0.1.48", "@teardown/schemas": "0.1.48", "@teardown/types": "0.1.48", "zod": "4.1.13" }, "peerDependencies": { "typescript": "5.9.3" } }, "sha512-X1kYxwSaPsFwMspFer2jIqgBMGOHvyrW6fkfq6jKdeDdM9SB5A4oiQ7QDTJfQyYD5CfgSpHwwf+6gJtR3djW8Q=="],
+    "@teardown/ingest-api": ["@teardown/ingest-api@0.1.49", "", { "dependencies": { "@elysiajs/eden": "1.4.5", "@teardown/errors": "0.1.49", "@teardown/schemas": "0.1.49", "@teardown/types": "0.1.49", "zod": "4.1.13" }, "peerDependencies": { "typescript": "5.9.3" } }, "sha512-AEE/JS6xkyZr9jMnFTRhx0E4DnqReBzCrXrW+21WuJ0THAORSQhN84tGuiM7pXh/CL/EMxlh0cdfMepoG3540Q=="],
 
     "@teardown/react-native": ["@teardown/react-native@workspace:packages/react-native"],
 
-    "@teardown/schemas": ["@teardown/schemas@0.1.48", "", { "dependencies": { "@sinclair/typebox": "^0.34.41", "@teardown/types": "0.1.48" }, "peerDependencies": { "typescript": "5.9.3" } }, "sha512-Fgj6giZc1Zb54RYxGbVWYR8HByOprg4XZBmgdRIrqkutAUdtfJLdXF7u81lLb6yTwNAFNjOOY2dsCHTP/SAJAw=="],
+    "@teardown/schemas": ["@teardown/schemas@0.1.49", "", { "dependencies": { "@sinclair/typebox": "^0.34.41", "@teardown/types": "0.1.49" }, "peerDependencies": { "typescript": "5.9.3" } }, "sha512-a1K749f2kbaJJAW21b+sIpv8WzTYsJ8cZAZz0O5ANiNohpW4pH7pUuRp1DXzz7hIzvUPO1PhVoa7KFpPsCKn/w=="],
 
     "@teardown/tsconfig": ["@teardown/tsconfig@workspace:packages/tsconfig"],
 
@@ -2222,17 +2222,15 @@
 
     "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
-    "@teardown/errors/elysia": ["elysia@1.4.19", "", { "dependencies": { "cookie": "^1.1.1", "exact-mirror": "0.2.5", "fast-decode-uri-component": "^1.0.1", "memoirist": "^0.4.0" }, "peerDependencies": { "@sinclair/typebox": ">= 0.34.0 < 1", "@types/bun": ">= 1.2.0", "file-type": ">= 20.0.0", "openapi-types": ">= 12.0.0", "typescript": ">= 5.0.0" }, "optionalPeers": ["@types/bun", "typescript"] }, "sha512-DZb9y8FnWyX5IuqY44SvqAV0DjJ15NeCWHrLdgXrKgTPDPsl3VNwWHqrEr9bmnOCpg1vh6QUvAX/tcxNj88jLA=="],
+    "@teardown/ingest-api/@teardown/types": ["@teardown/types@0.1.49", "", { "peerDependencies": { "typescript": "5.9.3" } }, "sha512-HFe2hRknJ2S3YIYq7d7PAzSqp+3O97EykrcqtulMAakUfM11NGmn/RgwBdrUkAmttU0tk+1rSrmZ8K7OI9ahHQ=="],
 
-    "@teardown/ingest-api/@teardown/types": ["@teardown/types@0.1.48", "", { "peerDependencies": { "typescript": "5.9.3" } }, "sha512-eLjIDUStGXNnnhHviJPTV+ddA47Cq1OZ5DrVNz1FjRC6RJ+pHc5mY7SUC8QmGdQK1WmxVVTVoB8ZKpC+zShmZQ=="],
-
-    "@teardown/react-native/@teardown/types": ["@teardown/types@0.1.48", "", { "peerDependencies": { "typescript": "5.9.3" } }, "sha512-eLjIDUStGXNnnhHviJPTV+ddA47Cq1OZ5DrVNz1FjRC6RJ+pHc5mY7SUC8QmGdQK1WmxVVTVoB8ZKpC+zShmZQ=="],
+    "@teardown/react-native/@teardown/types": ["@teardown/types@0.1.49", "", { "peerDependencies": { "typescript": "5.9.3" } }, "sha512-HFe2hRknJ2S3YIYq7d7PAzSqp+3O97EykrcqtulMAakUfM11NGmn/RgwBdrUkAmttU0tk+1rSrmZ8K7OI9ahHQ=="],
 
     "@teardown/react-native/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
 
     "@teardown/react-native/@types/react": ["@types/react@19.2.6", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-p/jUvulfgU7oKtj6Xpk8cA2Y1xKTtICGpJYeJXz2YVO2UcvjQgeRMLDGfDeqeRW2Ta+0QNFwcc8X3GH8SxZz6w=="],
 
-    "@teardown/schemas/@teardown/types": ["@teardown/types@0.1.48", "", { "peerDependencies": { "typescript": "5.9.3" } }, "sha512-eLjIDUStGXNnnhHviJPTV+ddA47Cq1OZ5DrVNz1FjRC6RJ+pHc5mY7SUC8QmGdQK1WmxVVTVoB8ZKpC+zShmZQ=="],
+    "@teardown/schemas/@teardown/types": ["@teardown/types@0.1.49", "", { "peerDependencies": { "typescript": "5.9.3" } }, "sha512-HFe2hRknJ2S3YIYq7d7PAzSqp+3O97EykrcqtulMAakUfM11NGmn/RgwBdrUkAmttU0tk+1rSrmZ8K7OI9ahHQ=="],
 
     "@typescript-eslint/eslint-plugin/ignore": ["ignore@7.0.5", "", {}, "sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg=="],
 
@@ -2483,10 +2481,6 @@
     "@react-native/metro-config/metro-config/metro-cache": ["metro-cache@0.81.5", "", { "dependencies": { "exponential-backoff": "^3.1.1", "flow-enums-runtime": "^0.0.6", "metro-core": "0.81.5" } }, "sha512-wOsXuEgmZMZ5DMPoz1pEDerjJ11AuMy9JifH4yNW7NmWS0ghCRqvDxk13LsElzLshey8C+my/tmXauXZ3OqZgg=="],
 
     "@react-native/metro-config/metro-config/metro-core": ["metro-core@0.81.5", "", { "dependencies": { "flow-enums-runtime": "^0.0.6", "lodash.throttle": "^4.1.1", "metro-resolver": "0.81.5" } }, "sha512-+2R0c8ByfV2N7CH5wpdIajCWa8escUFd8TukfoXyBq/vb6yTCsznoA25FhNXJ+MC/cz1L447Zj3vdUfCXIZBwg=="],
-
-    "@teardown/errors/elysia/cookie": ["cookie@1.1.1", "", {}, "sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ=="],
-
-    "@teardown/errors/elysia/exact-mirror": ["exact-mirror@0.2.5", "", { "peerDependencies": { "@sinclair/typebox": "^0.34.15" }, "optionalPeers": ["@sinclair/typebox"] }, "sha512-u8Wu2lO8nio5lKSJubOydsdNtQmH8ENba5m0nbQYmTvsjksXKYIS1nSShdDlO8Uem+kbo+N6eD5I03cpZ+QsRQ=="],
 
     "@teardown/react-native/@types/bun/bun-types": ["bun-types@1.3.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ=="],
 
