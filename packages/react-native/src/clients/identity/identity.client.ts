@@ -39,7 +39,7 @@ export const UpdateVersionStatusBodySchema = z.object({
 export const SessionSchema = z.object({
 	session_id: z.string(),
 	device_id: z.string(),
-	user_id: z.string(),
+	user_id: z.string().or(z.object({ persona_id: z.string() }).transform((val) => val.persona_id)),
 	token: z.string(),
 });
 export type Session = z.infer<typeof SessionSchema>;
