@@ -2,8 +2,8 @@ import { ApiClient } from "./clients/api";
 import { DeviceClient, type DeviceClientOptions } from "./clients/device/device.client";
 import { ForceUpdateClient, type ForceUpdateClientOptions } from "./clients/force-update";
 import { IdentityClient } from "./clients/identity";
-import { LoggingClient, type LogLevel, type Logger } from "./clients/logging";
-import { StorageClient, type StorageAdapter } from "./clients/storage";
+import { type Logger, LoggingClient, type LogLevel } from "./clients/logging";
+import { type StorageAdapter, StorageClient } from "./clients/storage";
 import { UtilsClient } from "./clients/utils/utils.client";
 
 export type TeardownCoreOptions = {
@@ -51,30 +51,32 @@ export class TeardownCore {
 		this.device = new DeviceClient(this.logging, this.utils, this.storage, {
 			adapter: this.options.deviceAdapter,
 		});
-		this.identity = new IdentityClient(
-			this.logging,
-			this.utils,
-			this.storage,
-			this.api,
-			this.device
-		);
-		this.forceUpdate = new ForceUpdateClient(this.logging, this.storage, this.identity, this.options.forceUpdate)
+		this.identity = new IdentityClient(this.logging, this.utils, this.storage, this.api, this.device);
+		this.forceUpdate = new ForceUpdateClient(this.logging, this.storage, this.identity, this.options.forceUpdate);
 
-		void this.initialize().catch((error) => {
-			this.logger.error("Error initializing TeardownCore", { error });
-		}).then(() => {
-			this.logger.debug("TeardownCore initialized");
-		});
-
+		void this.initialize()
+			.catch((error) => {
+				this.logger.error("Error initializing TeardownCore", { error });
+			})
+			.then(() => {
+				this.logger.debug("TeardownCore initialized");
+			});
 	}
 
 	async initialize(): Promise<void> {
 		// Wait for all storage hydration to complete
+		this.logger.debug("Waiting for storage to be ready");
 		await this.storage.whenReady();
 		// Initialize identity (loads from storage, then identifies if needed)
+		this.logger.debug("Initializing identity");
 		await this.identity.initialize();
+		this.logger.debug("Identity initialized");
 		// Then initialize force update (subscribes to identity events)
+		this.logger.debug("Initializing force update");
 		this.forceUpdate.initialize();
+		this.logger.debug("Force update initialized");
+
+		this.logger.debug("TeardownCore initialized");
 	}
 
 	setLogLevel(level: LogLevel): void {
