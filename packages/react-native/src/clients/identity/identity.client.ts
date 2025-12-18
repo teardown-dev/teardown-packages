@@ -107,9 +107,15 @@ export class IdentityClient {
 		}
 		this.initialized = true;
 
-		// Load state from storage first (for fallback if identify fails)
-		this.identifyState = this.getIdentifyStateFromStorage();
-		this.logger.debug(`Initialized with state: ${this.identifyState.type}`);
+		try {
+			// Load state from storage first (for fallback if identify fails)
+			this.identifyState = this.getIdentifyStateFromStorage();
+			this.logger.debug(`Initialized with state: ${this.identifyState.type}`);
+		} catch (error) {
+			// Silently fail on errors - we'll re-identify on app boot if needed
+			this.logger.debug("Error initializing IdentityClient", { error });
+			this.identifyState = { type: "unidentified" };
+		}
 
 		// Always identify on app boot to refresh version status
 		await this.identify();
