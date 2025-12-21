@@ -31,9 +31,9 @@ export enum DevicePlatformEnum {
 	OTHER = "OTHER",
 }
 
-export type DeviceClientOptions = {
+export interface DeviceClientOptions {
 	adapter: DeviceInfoAdapter;
-};
+}
 export class DeviceClient {
 	private logger: Logger;
 	private storage: SupportedStorage;

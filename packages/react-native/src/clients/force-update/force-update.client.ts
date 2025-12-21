@@ -59,11 +59,11 @@ export type UpdateAvailableVersionStatus = z.infer<typeof UpdateAvailableVersion
 export type UpdateRequiredVersionStatus = z.infer<typeof UpdateRequiredVersionStatusSchema>;
 export type VersionStatus = z.infer<typeof VersionStatusSchema>;
 
-export type VersionStatusChangeEvents = {
+export interface VersionStatusChangeEvents {
 	VERSION_STATUS_CHANGED: (status: VersionStatus) => void;
-};
+}
 
-export type ForceUpdateClientOptions = {
+export interface ForceUpdateClientOptions {
 	/** Min ms between foreground checks (default: 30000) */
 	throttleMs?: number;
 	/** Min ms since last successful check before re-checking (default: 300000 = 5min) */
@@ -72,7 +72,7 @@ export type ForceUpdateClientOptions = {
 	identifyAnonymousDevice?: boolean;
 	/** If true, check version on load (default: false) */
 
-};
+}
 
 const DEFAULT_OPTIONS: Required<ForceUpdateClientOptions> = {
 	throttleMs: 30_000, // 30 seconds

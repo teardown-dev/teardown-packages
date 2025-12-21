@@ -2,9 +2,9 @@ import { createContext, useContext } from "react";
 
 import type { TeardownCore } from "../teardown.core";
 
-export type TeardownContextType = {
+export interface TeardownContextType {
 	core: TeardownCore;
-};
+}
 
 export const TeardownContext = createContext<TeardownContextType | null>(null);
 

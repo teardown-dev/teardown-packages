@@ -6,13 +6,13 @@ import { type Logger, LoggingClient, type LoggingClientOptions, LogLevel } from 
 import { StorageClient, type StorageClientOptions } from "./clients/storage";
 import { UtilsClient } from "./clients/utils/utils.client";
 
-export type TeardownCoreOptions = {
+export interface TeardownCoreOptions {
 	logging?: LoggingClientOptions;
 	api: ApiClientOptions;
 	storage: StorageClientOptions;
 	device: DeviceClientOptions;
 	forceUpdate?: ForceUpdateClientOptions;
-};
+}
 
 export class TeardownCore {
 	private readonly logging: LoggingClient;

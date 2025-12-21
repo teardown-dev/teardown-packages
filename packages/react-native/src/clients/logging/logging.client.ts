@@ -8,9 +8,9 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 	verbose: 4,
 };
 
-export type LoggingClientOptions = {
+export interface LoggingClientOptions {
 	logLevel?: LogLevel;
-};
+}
 
 export class LoggingClient {
 	private logLevel: LogLevel;
@@ -42,12 +42,12 @@ export class LoggingClient {
 /**
  * Configuration options for logger creation
  */
-export type LoggerOptions = {
+export interface LoggerOptions {
 	/** Logger name used in log prefixes */
 	name: string;
 	/** Reference to parent LoggingClient for log level checks */
 	loggingClient: LoggingClient;
-};
+}
 
 export class Logger {
 	/** Bound console methods to preserve call site */

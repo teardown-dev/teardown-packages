@@ -1,19 +1,19 @@
 import type { Logger, LoggingClient } from "../logging";
 
-export type SupportedStorage = {
+export interface SupportedStorage {
   preload: () => void;
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
   removeItem: (key: string) => void;
   clear: () => void;
   keys: () => string[];
-};
+}
 
 export type SupportedStorageFactory = (storageKey: string) => SupportedStorage;
 
-export type StorageClientOptions = {
+export interface StorageClientOptions {
   createStorage: SupportedStorageFactory;
-};
+}
 
 export class StorageClient {
 

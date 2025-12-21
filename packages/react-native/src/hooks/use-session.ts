@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import type { IdentifiedSessionState, SessionState } from "../clients/identity/identity.client";
 import { useTeardown } from "../contexts/teardown.context";
 
-export type UseSessionResult = {
+export interface UseSessionResult {
   /**
    * The current session state.
    */
   session: SessionState;
-};
+}
 
 export const useSession = (): UseSessionResult => {
   const { core } = useTeardown();
