@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { VersionStatus } from "../clients/force-update";
 import { useTeardown } from "../contexts/teardown.context";
 
-export type UseForceUpdateResult = {
+export interface UseForceUpdateResult {
   /**
    * The current version status.
    */
@@ -15,7 +15,7 @@ export type UseForceUpdateResult = {
    * Whether the the current version is out of date and is forced to be updated. "force_update" - isUpdateAvailable will also be true if this is true.
    */
   isUpdateRequired: boolean;
-};
+}
 
 export const useForceUpdate = (): UseForceUpdateResult => {
   const { core } = useTeardown();

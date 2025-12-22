@@ -11,13 +11,13 @@ const TEARDOWN_ORG_ID_HEADER = "td-org-id";
 const TEARDOWN_PROJECT_ID_HEADER = "td-project-id";
 const TEARDOWN_ENVIRONMENT_SLUG_HEADER = "td-environment-slug";
 
-export type ApiClientOptions = {
+export interface ApiClientOptions {
 	api_key: string;
 	org_id: string;
 	project_id: string;
 	environment_slug: string;
 	onRequest?: (endpoint: IngestApi.Endpoints, options: IngestApi.RequestOptions) => Promise<IngestApi.RequestOptions>;
-};
+}
 
 export class ApiClient {
 	public client: IngestApi.Client;

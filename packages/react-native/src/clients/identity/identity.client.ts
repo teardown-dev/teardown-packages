@@ -8,13 +8,13 @@ import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils";
 
-export type Persona = {
+export interface Persona {
 	name?: string | undefined;
 	user_id?: string | undefined;
 	email?: string | undefined;
-};
+}
 
-export type IdentityUser = {
+export interface IdentityUser {
 	session_id: string;
 	device_id: string;
 	persona_id: string;
@@ -66,9 +66,9 @@ export type UnidentifiedSessionState = z.infer<typeof UnidentifiedSessionStateSc
 export type IdentifyingSessionState = z.infer<typeof IdentifyingSessionStateSchema>;
 export type IdentifiedSessionState = z.infer<typeof IdentifiedSessionStateSchema>;
 
-export type IdentifyStateChangeEvents = {
+export interface IdentifyStateChangeEvents {
 	IDENTIFY_STATE_CHANGED: (state: IdentifyState) => void;
-};
+}
 
 
 export const IDENTIFY_STORAGE_KEY = "IDENTIFY_STATE";
