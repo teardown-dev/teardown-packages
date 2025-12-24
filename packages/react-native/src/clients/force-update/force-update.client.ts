@@ -64,19 +64,19 @@ export interface VersionStatusChangeEvents {
 }
 
 export interface ForceUpdateClientOptions {
-	/** Min ms between foreground checks (default: 30000) */
-	throttleMs?: number;
-	/** Min ms since last successful check before re-checking (default: 300000 = 5min) */
-	checkCooldownMs?: number;
+	/** Min ms between version checks. Values below 30s are coerced to 30s. (default: 30000) */
+	checkIntervalMs?: number;
+	/** Always check on foreground, ignoring interval (default: true) */
+	checkOnForeground?: boolean;
 	/** If true, check version even when not identified by using anonymous device identification (default: false) */
 	identifyAnonymousDevice?: boolean;
-	/** If true, check version on load (default: false) */
-
 }
 
+const MIN_CHECK_INTERVAL_MS = 30_000; // 30 seconds minimum
+
 const DEFAULT_OPTIONS: Required<ForceUpdateClientOptions> = {
-	throttleMs: 30_000, // 30 seconds
-	checkCooldownMs: 300_000, // 5 minutes
+	checkIntervalMs: 30_000, // 30 seconds
+	checkOnForeground: true,
 	identifyAnonymousDevice: false,
 };
 
@@ -88,7 +88,6 @@ export class ForceUpdateClient {
 	private unsubscribe: (() => void) | null = null;
 	private appStateSubscription: NativeEventSubscription | null = null;
 	private lastCheckTime: number | null = null;
-	private lastForegroundTime: number | null = null;
 
 	private readonly logger: Logger;
 	private readonly storage: SupportedStorage;
@@ -102,7 +101,11 @@ export class ForceUpdateClient {
 	) {
 		this.logger = logging.createLogger({ name: "ForceUpdateClient" });
 		this.storage = storage.createStorage("version");
-		this.options = { ...DEFAULT_OPTIONS, ...options };
+		this.options = {
+			...DEFAULT_OPTIONS,
+			...options,
+			checkIntervalMs: Math.max(options.checkIntervalMs ?? DEFAULT_OPTIONS.checkIntervalMs, MIN_CHECK_INTERVAL_MS),
+		};
 		this.versionStatus = this.getVersionStatusFromStorage();
 		this.subscribeToIdentity();
 		this.subscribeToAppState();
@@ -156,12 +159,9 @@ export class ForceUpdateClient {
 	private handleAppStateChange = (nextState: AppStateStatus) => {
 		if (nextState === "active") {
 			const now = Date.now();
-			const throttleOk = !this.lastForegroundTime || now - this.lastForegroundTime >= this.options.throttleMs;
-			const cooldownOk = !this.lastCheckTime || now - this.lastCheckTime >= this.options.checkCooldownMs;
+			const intervalOk = !this.lastCheckTime || now - this.lastCheckTime >= this.options.checkIntervalMs;
 
-			this.lastForegroundTime = now;
-
-			if (throttleOk && cooldownOk) {
+			if (this.options.checkOnForeground || intervalOk) {
 				this.checkVersionOnForeground();
 			}
 		}

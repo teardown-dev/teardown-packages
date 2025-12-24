@@ -14,12 +14,12 @@ mock.module("react-native", () => ({
 
 // Import after mock
 const { ForceUpdateClient, IdentifyVersionStatusEnum } = await import("./force-update.client");
-type SessionState = import("../identity").SessionState;
-type SessionStateChangeEvents = import("../identity").SessionStateChangeEvents;
+type IdentifyState = import("../identity").IdentifyState;
+type IdentifyStateChangeEvents = import("../identity").IdentifyStateChangeEvents;
 type VersionStatus = import("./force-update.client").VersionStatus;
 
 function createMockIdentityClient() {
-	const emitter = new EventEmitter<SessionStateChangeEvents>();
+	const emitter = new EventEmitter<IdentifyStateChangeEvents>();
 	let identifyCallCount = 0;
 	let nextIdentifyResult: { success: boolean; data?: { version_info: { status: IdentifyVersionStatusEnum } } } = {
 		success: true,
@@ -28,14 +28,14 @@ function createMockIdentityClient() {
 
 	return {
 		emitter,
-		onSessionStateChange: (listener: (state: SessionState) => void) => {
-			emitter.addListener("SESSION_STATE_CHANGED", listener);
-			return () => emitter.removeListener("SESSION_STATE_CHANGED", listener);
+		onIdentifyStateChange: (listener: (state: IdentifyState) => void) => {
+			emitter.addListener("IDENTIFY_STATE_CHANGED", listener);
+			return () => emitter.removeListener("IDENTIFY_STATE_CHANGED", listener);
 		},
 		identify: async () => {
 			identifyCallCount++;
-			emitter.emit("SESSION_STATE_CHANGED", { type: "identifying" });
-			emitter.emit("SESSION_STATE_CHANGED", {
+			emitter.emit("IDENTIFY_STATE_CHANGED", { type: "identifying" });
+			emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: nextIdentifyResult.data?.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE, update: null },
@@ -86,15 +86,15 @@ describe("ForceUpdateClient", () => {
 				mockLogging as never,
 				mockStorage as never,
 				mockIdentity as never,
-				{ throttleMs: 0, checkCooldownMs: 0 }
+				{ checkOnForeground: true }
 			);
 
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
 
-			// Trigger identify via session state change
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", { type: "identifying" });
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", {
+			// Trigger identify via identify state change
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", { type: "identifying" });
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UPDATE_AVAILABLE, update: null },
@@ -122,7 +122,7 @@ describe("ForceUpdateClient", () => {
 				mockLogging as never,
 				mockStorage as never,
 				mockIdentity as never,
-				{ throttleMs: 0, checkCooldownMs: 0 }
+				{ checkOnForeground: true }
 			);
 
 			const statusChanges: VersionStatus[] = [];
@@ -164,7 +164,7 @@ describe("ForceUpdateClient", () => {
 			client.shutdown();
 
 			// After shutdown, emitting should not trigger listener
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", {
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: IdentifyVersionStatusEnum.UPDATE_AVAILABLE, update: null },
@@ -193,8 +193,8 @@ describe("ForceUpdateClient", () => {
 		});
 	});
 
-	describe("throttle and cooldown", () => {
-		test("throttle prevents rapid foreground checks", async () => {
+	describe("checkIntervalMs and checkOnForeground", () => {
+		test("checkOnForeground: true always checks on foreground", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
@@ -203,7 +203,7 @@ describe("ForceUpdateClient", () => {
 				mockLogging as never,
 				mockStorage as never,
 				mockIdentity as never,
-				{ throttleMs: 1000, checkCooldownMs: 0 }
+				{ checkOnForeground: true }
 			);
 
 			const foregroundHandler = mockAppStateListeners[0];
@@ -214,20 +214,20 @@ describe("ForceUpdateClient", () => {
 
 			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
 
-			// Second foreground immediately (within throttle window)
+			// Second foreground immediately
 			await foregroundHandler("active");
 			await new Promise((r) => setTimeout(r, 10));
 
 			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
 
-			// Should only have one identify call due to throttle
+			// Both should trigger identify calls with checkOnForeground: true
 			expect(callsAfterFirst).toBe(1);
-			expect(callsAfterSecond).toBe(1);
+			expect(callsAfterSecond).toBe(2);
 
 			client.shutdown();
 		});
 
-		test("cooldown prevents redundant checks after recent success", async () => {
+		test("checkOnForeground: false respects checkIntervalMs", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
@@ -236,7 +236,7 @@ describe("ForceUpdateClient", () => {
 				mockLogging as never,
 				mockStorage as never,
 				mockIdentity as never,
-				{ throttleMs: 0, checkCooldownMs: 5000 }
+				{ checkOnForeground: false, checkIntervalMs: 60_000 }
 			);
 
 			const foregroundHandler = mockAppStateListeners[0];
@@ -247,15 +247,34 @@ describe("ForceUpdateClient", () => {
 
 			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
 
-			// Second foreground (within cooldown window)
+			// Second foreground (within interval window)
 			await foregroundHandler("active");
 			await new Promise((r) => setTimeout(r, 10));
 
 			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
 
-			// Only first call should have triggered identify (cooldown blocks second)
+			// Only first call should have triggered identify (interval blocks second)
 			expect(callsAfterFirst).toBe(1);
 			expect(callsAfterSecond).toBe(1);
+
+			client.shutdown();
+		});
+
+		test("checkIntervalMs values below 30s are coerced to 30s", () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(
+				mockLogging as never,
+				mockStorage as never,
+				mockIdentity as never,
+				{ checkIntervalMs: 5_000 } // 5 seconds - should be coerced to 30s
+			);
+
+			// Access private options via any cast to verify coercion
+			const options = (client as unknown as { options: { checkIntervalMs: number } }).options;
+			expect(options.checkIntervalMs).toBe(30_000);
 
 			client.shutdown();
 		});
@@ -282,7 +301,7 @@ describe("ForceUpdateClient", () => {
 			const statusChanges: VersionStatus[] = [];
 			client.onVersionStatusChange((status) => statusChanges.push(status));
 
-			mockIdentity.emitter.emit("SESSION_STATE_CHANGED", {
+			mockIdentity.emitter.emit("IDENTIFY_STATE_CHANGED", {
 				type: "identified",
 				session: { session_id: "s1", device_id: "d1", persona_id: "p1", token: "t1" },
 				version_info: { status: apiStatus, update: null },
