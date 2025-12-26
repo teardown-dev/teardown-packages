@@ -85,6 +85,5 @@ export class TeardownCore {
 
 	shutdown(): void {
 		this.logger.debug("Shutting down TeardownCore");
-		this.storage.shutdown();
 	}
 }
