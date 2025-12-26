@@ -69,11 +69,4 @@ export class StorageClient {
 		await Promise.all(this.preloadPromises);
 		this._isReady = true;
 	}
-
-	shutdown(): void {
-		this.storage.forEach((storage) => {
-			storage.clear();
-		});
-		this.storage.clear();
-	}
 }
