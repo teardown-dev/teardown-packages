@@ -1,17 +1,15 @@
 import { useForceUpdate, useSession } from "@teardown/react-native";
-import { Button, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { teardown } from "../lib/teardown";
 import { useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { teardown } from "../lib/teardown";
 
 export default function MainScreen() {
-
 	const forceUpdate = useForceUpdate();
 	const session = useSession();
 
 	const [userId, setUserId] = useState("");
 	const [email, setEmail] = useState("");
 	const [name, setName] = useState("");
-
 
 	const onIdentifyTextChange = (text: string) => {
 		setEmail(text);
@@ -26,25 +24,24 @@ export default function MainScreen() {
 	};
 
 	const onIdentify = () => {
-		teardown.identity.identify({
-			email: email,
-			name: name,
-			user_id: userId,
-		}).then((result) => {
-			console.log("Identify result", result);
-		});
+		teardown.identity
+			.identify({
+				email: email,
+				name: name,
+				user_id: userId,
+			})
+			.then((result) => {
+				console.log("Identify result", result);
+			});
 	};
 
 	return (
 		<View style={styles.container}>
-
 			<View style={styles.infoContainer}>
-				<Text style={styles.infoText}>
-					Session: {session?.session_id ?? "Unknown"}	</Text>
-				<Text style={styles.infoText}>Device ID: {session?.device_id ?? "Unknown"}	</Text>
-				<Text style={styles.infoText}>Persona ID: {session?.user_id ?? "Unknown"}	</Text>
-				<Text style={styles.infoText}>Version status: {forceUpdate.versionStatus.type ?? "Unknown"}
-				</Text>
+				<Text style={styles.infoText}>Session: {session?.session_id ?? "Unknown"} </Text>
+				<Text style={styles.infoText}>Device ID: {session?.device_id ?? "Unknown"} </Text>
+				<Text style={styles.infoText}>Persona ID: {session?.user_id ?? "Unknown"} </Text>
+				<Text style={styles.infoText}>Version status: {forceUpdate.versionStatus.type ?? "Unknown"}</Text>
 			</View>
 
 			<TextInput style={styles.input} placeholder="User ID" value={userId} onChangeText={onUserIdTextChange} />
