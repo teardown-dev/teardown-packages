@@ -259,7 +259,7 @@ describe("ForceUpdateClient", () => {
 		});
 	});
 
-	describe("throttle and cooldown", () => {
+	describe("checkIntervalMs", () => {
 		test("skips version check when identify returns null", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
@@ -268,8 +268,7 @@ describe("ForceUpdateClient", () => {
 			mockIdentity.setNextIdentifyResult(null);
 
 			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
-				throttleMs: 0,
-				checkCooldownMs: 0,
+				checkIntervalMs: 0,
 			});
 			client.initialize();
 
@@ -287,14 +286,13 @@ describe("ForceUpdateClient", () => {
 			client.shutdown();
 		});
 
-		test("checkCooldownMs -1 disables version checking entirely", async () => {
+		test("checkIntervalMs -1 disables version checking entirely", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
 			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
-				throttleMs: 0,
-				checkCooldownMs: -1,
+				checkIntervalMs: -1,
 			});
 			client.initialize();
 
@@ -310,80 +308,14 @@ describe("ForceUpdateClient", () => {
 			client.shutdown();
 		});
 
-		test("throttle prevents rapid foreground checks", async () => {
-			const mockIdentity = createMockIdentityClient();
-			const mockLogging = createMockLoggingClient();
-			const mockStorage = createMockStorageClient();
-
-			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
-				checkOnForeground: false,
-				throttleMs: 100,
-				checkCooldownMs: 0,
-			});
-			client.initialize();
-
-			const foregroundHandler = mockAppStateListeners[0];
-
-			// First foreground
-			await foregroundHandler("active");
-			await new Promise((r) => setTimeout(r, 10));
-
-			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
-
-			// Second foreground immediately (within throttle window)
-			await foregroundHandler("active");
-			await new Promise((r) => setTimeout(r, 10));
-
-			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
-
-			// Only first call should have triggered identify (throttle blocks second)
-			expect(callsAfterFirst).toBe(1);
-			expect(callsAfterSecond).toBe(1);
-
-			client.shutdown();
-		});
-
-		test("checkOnForeground: true always checks on foreground", async () => {
+		test("interval prevents checks too soon after successful check", async () => {
 			const mockIdentity = createMockIdentityClient();
 			const mockLogging = createMockLoggingClient();
 			const mockStorage = createMockStorageClient();
 
 			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
 				checkOnForeground: true,
-				throttleMs: 100_000,
-			});
-			client.initialize();
-
-			const foregroundHandler = mockAppStateListeners[0];
-
-			// First foreground
-			await foregroundHandler("active");
-			await new Promise((r) => setTimeout(r, 10));
-
-			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
-
-			// Second foreground immediately (within throttle window)
-			await foregroundHandler("active");
-			await new Promise((r) => setTimeout(r, 10));
-
-			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
-
-			// Both should trigger identify calls with checkOnForeground: true
-			expect(callsAfterFirst).toBe(1);
-			expect(callsAfterSecond).toBe(2);
-
-			client.shutdown();
-		});
-
-		test("cooldown prevents checks too soon after successful check", async () => {
-			const mockIdentity = createMockIdentityClient();
-			const mockLogging = createMockLoggingClient();
-			const mockStorage = createMockStorageClient();
-
-			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
-				checkOnForeground: false,
-				throttleMs: 0,
-				checkCooldownMs: 100_000,
+				checkIntervalMs: 100_000,
 			});
 			client.initialize();
 
@@ -395,13 +327,127 @@ describe("ForceUpdateClient", () => {
 
 			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
 
-			// Second foreground immediately (within cooldown window)
+			// Second foreground immediately (within interval window)
 			await foregroundHandler("active");
 			await new Promise((r) => setTimeout(r, 10));
 
 			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
 
-			// Only first call should have triggered identify (cooldown blocks second)
+			// Only first call should have triggered identify (interval blocks second)
+			expect(callsAfterFirst).toBe(1);
+			expect(callsAfterSecond).toBe(1);
+
+			client.shutdown();
+		});
+
+		test("checkOnForeground: true respects interval", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: true,
+				checkIntervalMs: 100_000,
+			});
+			client.initialize();
+
+			const foregroundHandler = mockAppStateListeners[0];
+
+			// First foreground
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
+
+			// Second foreground immediately (within interval window)
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
+
+			// Only first should trigger - interval blocks second even with checkOnForeground: true
+			expect(callsAfterFirst).toBe(1);
+			expect(callsAfterSecond).toBe(1);
+
+			client.shutdown();
+		});
+
+		test("checkOnForeground: false disables foreground checking entirely", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: false,
+				checkIntervalMs: 0, // Would normally allow every check
+			});
+			client.initialize();
+
+			const foregroundHandler = mockAppStateListeners[0];
+
+			// Foreground should not trigger check when checkOnForeground is false
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			expect(mockIdentity.getIdentifyCallCount()).toBe(0);
+
+			client.shutdown();
+		});
+
+		test("checkIntervalMs 0 checks on every foreground", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: true,
+				checkIntervalMs: 0,
+			});
+			client.initialize();
+
+			const foregroundHandler = mockAppStateListeners[0];
+
+			// First foreground
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			// Second foreground immediately
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			// Both should trigger since interval is 0
+			expect(mockIdentity.getIdentifyCallCount()).toBe(2);
+
+			client.shutdown();
+		});
+
+		test("values below 30s are clamped to 30s minimum", async () => {
+			const mockIdentity = createMockIdentityClient();
+			const mockLogging = createMockLoggingClient();
+			const mockStorage = createMockStorageClient();
+
+			// Set interval to 10ms (below 30s minimum)
+			const client = new ForceUpdateClient(mockLogging as never, mockStorage as never, mockIdentity as never, {
+				checkOnForeground: true,
+				checkIntervalMs: 10,
+			});
+			client.initialize();
+
+			const foregroundHandler = mockAppStateListeners[0];
+
+			// First foreground - should trigger check
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			const callsAfterFirst = mockIdentity.getIdentifyCallCount();
+
+			// Second foreground immediately - should be blocked by 30s minimum
+			await foregroundHandler("active");
+			await new Promise((r) => setTimeout(r, 10));
+
+			const callsAfterSecond = mockIdentity.getIdentifyCallCount();
+
+			// Only first call should have triggered (30s minimum enforced)
 			expect(callsAfterFirst).toBe(1);
 			expect(callsAfterSecond).toBe(1);
 

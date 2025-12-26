@@ -69,41 +69,30 @@ export interface VersionStatusChangeEvents {
 
 export type ForceUpdateClientOptions = {
 	/**
-	 * Minimum time (ms) between foreground transitions to prevent rapid-fire checks.
-	 * Measured from the last time the app came to foreground.
-	 * Prevents checking when user quickly switches apps back and forth.
-	 * Default: 30000 (30 seconds)
-	 *
-	 * Special values:
-	 * - -1: Disable throttling, check on every foreground (respects checkCooldownMs)
-	 *
-	 * Example: If throttleMs is 30s and user backgrounds then foregrounds the app
-	 * twice within 20s, only the first transition triggers a check.
-	 */
-	throttleMs?: number;
-	/**
-	 * Minimum time (ms) since the last successful version check before checking again.
-	 * Measured from when the last check completed successfully (not when it started).
-	 * Prevents unnecessary API calls after we already have fresh version data.
+	 * Minimum time (ms) between version checks.
 	 * Default: 300000 (5 minutes)
 	 *
-	 * Special values:
-	 * - 0: Disable cooldown, check on every foreground (respects throttleMs)
-	 * - -1: Disable all automatic version checking
+	 * Values below 30 seconds are clamped to 30 seconds to prevent excessive API calls.
 	 *
-	 * Example: If checkCooldownMs is 5min and a check completes at 12:00pm,
+	 * Special values:
+	 * - 0: Check on every foreground (no interval)
+	 * - -1: Disable automatic version checking entirely
+	 *
+	 * Example: If checkIntervalMs is 5min and a check completes at 12:00pm,
 	 * no new checks occur until 12:05pm, even if user foregrounds the app multiple times.
 	 */
-	checkCooldownMs?: number;
-	/** Always check on foreground, ignoring throttle (default: true) */
+	checkIntervalMs?: number;
+	/** Check version when app comes to foreground, respecting checkIntervalMs (default: true) */
 	checkOnForeground?: boolean;
 	/** If true, check version even when not identified by using anonymous device identification (default: false) */
 	identifyAnonymousDevice?: boolean;
 };
 
+/** Hard minimum interval between checks to prevent excessive API calls */
+const MIN_CHECK_INTERVAL_MS = 30_000; // 30 seconds
+
 const DEFAULT_OPTIONS: Required<ForceUpdateClientOptions> = {
-	throttleMs: 30_000, // 30 seconds
-	checkCooldownMs: 300_000, // 5 minutes
+	checkIntervalMs: 300_000, // 5 minutes
 	checkOnForeground: true,
 	identifyAnonymousDevice: false,
 };
@@ -116,7 +105,6 @@ export class ForceUpdateClient {
 	private unsubscribe: (() => void) | null = null;
 	private appStateSubscription: NativeEventSubscription | null = null;
 	private lastCheckTime: number | null = null;
-	private lastForegroundTime: number | null = null;
 	private initialized = false;
 
 	private readonly logger: Logger;
@@ -132,7 +120,6 @@ export class ForceUpdateClient {
 		this.logger = logging.createLogger({ name: "ForceUpdateClient" });
 		this.storage = storage.createStorage("version");
 		this.options = { ...DEFAULT_OPTIONS, ...options };
-		// Don't initialize here - defer to initialize()
 	}
 
 	initialize(): void {
@@ -142,7 +129,6 @@ export class ForceUpdateClient {
 		}
 		this.initialized = true;
 
-		// Load from storage, subscribe to events, and sync with current identity state
 		this.versionStatus = this.getVersionStatusFromStorage();
 		this.logger.debug(`Initialized with version status: ${this.versionStatus.type}`);
 		this.subscribeToIdentity();
@@ -164,25 +150,30 @@ export class ForceUpdateClient {
 	}
 
 	private getVersionStatusFromStorage(): VersionStatus {
-		const stored = this.storage.getItem(VERSION_STATUS_STORAGE_KEY);
+		try {
+			const stored = this.storage.getItem(VERSION_STATUS_STORAGE_KEY);
 
-		if (stored == null) {
-			this.logger.debug("No stored version status, returning initializing");
+			if (stored == null) {
+				this.logger.debug("No stored version status, returning initializing");
+				return InitializingVersionStatusSchema.parse({ type: "initializing" });
+			}
+
+			const parsed = VersionStatusSchema.parse(JSON.parse(stored));
+			this.logger.debug(`Parsed version status from storage: ${parsed.type}`);
+
+			// "checking" and "initializing" are transient states - if we restore them, reset to initializing
+			// This can happen if the app was killed during a version check
+			if (parsed.type === "checking" || parsed.type === "initializing") {
+				this.logger.debug(`Found stale '${parsed.type}' state in storage, resetting to initializing`);
+				this.storage.removeItem(VERSION_STATUS_STORAGE_KEY);
+				return InitializingVersionStatusSchema.parse({ type: "initializing" });
+			}
+
+			return parsed;
+		} catch (error) {
+			this.logger.debugError("Error getting version status from storage", { error });
 			return InitializingVersionStatusSchema.parse({ type: "initializing" });
 		}
-
-		const parsed = VersionStatusSchema.parse(JSON.parse(stored));
-		this.logger.debug(`Parsed version status from storage: ${parsed.type}`);
-
-		// "checking" and "initializing" are transient states - if we restore them, reset to initializing
-		// This can happen if the app was killed during a version check
-		if (parsed.type === "checking" || parsed.type === "initializing") {
-			this.logger.debug(`Found stale '${parsed.type}' state in storage, resetting to initializing`);
-			this.storage.removeItem(VERSION_STATUS_STORAGE_KEY);
-			return InitializingVersionStatusSchema.parse({ type: "initializing" });
-		}
-
-		return parsed;
 	}
 
 	private saveVersionStatusToStorage(status: VersionStatus): void {
@@ -239,30 +230,22 @@ export class ForceUpdateClient {
 		if (nextState === "active") {
 			this.logger.debug("App state changed to active");
 
-			// If checkCooldownMs is -1, disable checking entirely
-			if (this.options.checkCooldownMs === -1) {
-				this.logger.debug("Version checking disabled (checkCooldownMs = -1)");
+			// If checkIntervalMs is -1, disable checking entirely
+			if (this.options.checkIntervalMs === -1) {
+				this.logger.debug("Version checking disabled (checkIntervalMs = -1)");
 				return;
 			}
 
 			const now = Date.now();
 
-			// If throttleMs is -1, disable throttling (always pass)
-			// Otherwise, check if enough time has passed since last foreground
-			const throttleOk =
-				this.options.throttleMs === -1 ||
-				!this.lastForegroundTime ||
-				now - this.lastForegroundTime >= this.options.throttleMs;
+			// Calculate effective interval (clamp to minimum unless 0 for "always check")
+			const effectiveInterval =
+				this.options.checkIntervalMs === 0 ? 0 : Math.max(this.options.checkIntervalMs, MIN_CHECK_INTERVAL_MS);
 
-			// If checkCooldownMs is 0, always allow check (no cooldown)
-			// Otherwise, check if enough time has passed since last successful check
-			const cooldownOk =
-				this.options.checkCooldownMs === 0 ||
-				!this.lastCheckTime ||
-				now - this.lastCheckTime >= this.options.checkCooldownMs;
+			// Check if enough time has passed since last successful check
+			const canCheck = effectiveInterval === 0 || !this.lastCheckTime || now - this.lastCheckTime >= effectiveInterval;
 
-			if (this.options.checkOnForeground || (throttleOk && cooldownOk)) {
-				this.lastForegroundTime = now;
+			if (this.options.checkOnForeground && canCheck) {
 				this.checkVersionOnForeground();
 			}
 		}

@@ -25,6 +25,8 @@ function createMockLoggingClient() {
 			warn: (message: string, ...args: unknown[]) => logs.push({ level: "warn", message, args }),
 			error: (message: string, ...args: unknown[]) => logs.push({ level: "error", message, args }),
 			debug: (message: string, ...args: unknown[]) => logs.push({ level: "debug", message, args }),
+			debugInfo: (message: string, ...args: unknown[]) => logs.push({ level: "debugInfo", message, args }),
+			debugError: (message: string, ...args: unknown[]) => logs.push({ level: "debugError", message, args }),
 		}),
 		getLogs: () => logs,
 		clearLogs: () => {
@@ -256,20 +258,26 @@ describe("IdentityClient", () => {
 			expect(client.getIdentifyState().type).toBe("unidentified");
 		});
 
-		test("throws error on invalid stored state (corrupt JSON)", () => {
+		test("gracefully handles invalid stored state (corrupt JSON)", () => {
 			const mockStorage = createMockStorageClient();
 			mockStorage.getStorage().set(IDENTIFY_STORAGE_KEY, "not-valid-json{{{");
 
 			const { client } = createTestClient({ storage: mockStorage });
-			expect(() => loadStateFromStorage(client)).toThrow();
+			loadStateFromStorage(client);
+
+			// Should gracefully fall back to unidentified state
+			expect(client.getIdentifyState().type).toBe("unidentified");
 		});
 
-		test("throws error on invalid stored state (schema mismatch)", () => {
+		test("gracefully handles invalid stored state (schema mismatch)", () => {
 			const mockStorage = createMockStorageClient();
 			mockStorage.getStorage().set(IDENTIFY_STORAGE_KEY, JSON.stringify({ type: "invalid_type" }));
 
 			const { client } = createTestClient({ storage: mockStorage });
-			expect(() => loadStateFromStorage(client)).toThrow();
+			loadStateFromStorage(client);
+
+			// Should gracefully fall back to unidentified state
+			expect(client.getIdentifyState().type).toBe("unidentified");
 		});
 
 		test("creates logger with correct name", () => {
@@ -627,10 +635,10 @@ describe("IdentityClient", () => {
 
 			// Should have debug logs about state transitions
 			// When already identified, identify() will transition: identified -> identifying -> identified
-			const debugLogs = mockLogging.getLogs().filter((l) => l.level === "debug");
+			const debugLogs = mockLogging.getLogs().filter((l) => l.level === "debug" || l.level === "debugInfo");
 			expect(debugLogs.length).toBeGreaterThan(0);
 			// Check that state transitions are logged
-			expect(debugLogs.some((l) => l.message.includes("Identify state:"))).toBe(true);
+			expect(debugLogs.some((l) => l.message.includes("Identify state"))).toBe(true);
 		});
 	});
 
