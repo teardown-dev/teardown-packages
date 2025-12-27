@@ -33,7 +33,12 @@ export const FullscreenTakeover = memo(() => {
   };
 
   const showTakeover = useMemo(() => {
-    return context.isUpdateRequired && context.isUpdateAvailable && !isSkipped;
+
+    if (isSkipped) {
+      return false;
+    }
+
+    return context.isUpdateRequired || context.isUpdateAvailable;
   }, [context.isUpdateRequired, context.isUpdateAvailable, isSkipped]);
 
   if (!showTakeover) {

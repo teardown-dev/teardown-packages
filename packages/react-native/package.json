@@ -1,5 +1,6 @@
 {
 	"name": "@teardown/react-native",
+	"version": "2.0.24",
 	"private": false,
 	"publishConfig": {
 		"access": "public"
@@ -17,10 +18,25 @@
 			"import": "./src/exports/index.ts",
 			"default": "./src/exports/index.ts"
 		},
-		"./expo": {
-			"types": "./src/exports/expo.ts",
-			"import": "./src/exports/expo.ts",
-			"default": "./src/exports/expo.ts"
+		"./adapters/expo": {
+			"types": "./src/exports/adapters/expo.ts",
+			"import": "./src/exports/adapters/expo.ts",
+			"default": "./src/exports/adapters/expo.ts"
+		},
+		"./adapters/mmkv": {
+			"types": "./src/exports/adapters/mmkv.ts",
+			"import": "./src/exports/adapters/mmkv.ts",
+			"default": "./src/exports/adapters/mmkv.ts"
+		},
+		"./adapters/async-storage": {
+			"types": "./src/exports/adapters/async-storage.ts",
+			"import": "./src/exports/adapters/async-storage.ts",
+			"default": "./src/exports/adapters/async-storage.ts"
+		},
+		"./adapters/device-info": {
+			"types": "./src/exports/adapters/device-info.ts",
+			"import": "./src/exports/adapters/device-info.ts",
+			"default": "./src/exports/adapters/device-info.ts"
 		},
 		"./expo-notifications": {
 			"types": "./src/exports/expo-notifications.ts",
@@ -42,6 +58,9 @@
 		"build": "tsc --project ./tsconfig.json",
 		"dev": "bun run build && tsc --watch --project ./tsconfig.json",
 		"typecheck": "tsc --noEmit --project ./tsconfig.json",
+		"lint": "biome lint --write",
+		"fmt": "biome format --write",
+		"test": "bun test",
 		"prepublishOnly": "bun run build",
 		"nuke": "cd ../../ && bun run nuke"
 	},
@@ -50,28 +69,39 @@
 		"@teardown/schemas": "catalog:teardown",
 		"@teardown/types": "catalog:teardown",
 		"eventemitter3": "^5.0.1",
-		"uuid": "^13.0.0"
+		"react-native-get-random-values": "^2.0.0",
+		"uuid": "^13.0.0",
+		"zod": "^4.1.13"
 	},
 	"devDependencies": {
 		"@elysiajs/eden": "^1.4.5",
 		"@teardown/tsconfig": "workspace:*",
 		"@types/bun": "latest",
 		"@types/react": "*",
-		"@types/uuid": "^11.0.0",
-		"expo-updates": "^29.0.12"
+		"@types/uuid": "^11.0.0"
 	},
 	"peerDependencies": {
-		"react": "*",
-		"react-native": "*",
-		"typescript": "*",
-		"expo-application": "^7.0",
-		"expo-device": "^8.0",
-		"expo-notifications": "^0.29",
-		"@react-native-firebase/messaging": ">=18",
-		"react-native-notifications": ">=5",
-		"zod": "^4"
+		"@react-native-async-storage/async-storage": "^1.21 || ^2.0",
+		"@react-native-firebase/messaging": "*",
+		"expo-application": "~7",
+		"expo-device": "~8",
+		"expo-notifications": "~0.32",
+		"expo-secure-store": "~15",
+		"expo-updates": "~29",
+		"react": "~19",
+		"react-native": "~0.81",
+		"react-native-device-info": "~15",
+		"react-native-mmkv": "^4",
+		"react-native-notifications": "*",
+		"typescript": "~5"
 	},
 	"peerDependenciesMeta": {
+		"@react-native-async-storage/async-storage": {
+			"optional": true
+		},
+		"@react-native-firebase/messaging": {
+			"optional": true
+		},
 		"expo-application": {
 			"optional": true
 		},
@@ -81,7 +111,22 @@
 		"expo-notifications": {
 			"optional": true
 		},
-		"@react-native-firebase/messaging": {
+		"expo-secure-store": {
+			"optional": true
+		},
+		"expo-updates": {
+			"optional": true
+		},
+		"react": {
+			"optional": true
+		},
+		"react-native": {
+			"optional": true
+		},
+		"react-native-device-info": {
+			"optional": true
+		},
+		"react-native-mmkv": {
 			"optional": true
 		},
 		"react-native-notifications": {

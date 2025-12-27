@@ -2,9 +2,10 @@ import type {
 	ApplicationInfo,
 	DeviceInfo,
 	HardwareInfo,
-	NotificationsInfo,
 	OSInfo
 } from "@teardown/schemas";
+import type { Platform } from "react-native";
+import { DevicePlatformEnum } from "../device.client";
 
 /**
  * An interface for a device adapter.
@@ -16,32 +17,18 @@ import type {
  *
  */
 export abstract class DeviceInfoAdapter {
-	// -- Application Information --
 	/**
 	 * The information about the application running.
 	 */
 	abstract get applicationInfo(): ApplicationInfo;
-	// -- Updates Information --
-	/**
-	 * The information about the update running.
-	 */
-	// abstract get updateInfo(): UpdateInfo | null;
-	// -- Hardware Information --
 	/**
 	 * The information about the hardware of the device.
 	 */
 	abstract get hardwareInfo(): HardwareInfo;
-	// -- OS Information --
 	/**
 	 * The information about the operating system of the device.
 	 */
 	abstract get osInfo(): OSInfo;
-
-	/**
-	 * The information about the notifications of the device.
-	 */
-	abstract get notificationsInfo(): NotificationsInfo;
-
 	/**
 	 * The information about the device.
 	 */
@@ -50,8 +37,29 @@ export abstract class DeviceInfoAdapter {
 			application: this.applicationInfo,
 			hardware: this.hardwareInfo,
 			os: this.osInfo,
-			notifications: this.notificationsInfo,
+			notifications: null,
 			update: null,
 		});
 	}
+
+	/**
+	 * Maps React Native Platform.OS to DevicePlatformEnum
+	 */
+	mapPlatform(platform: typeof Platform.OS): DevicePlatformEnum {
+		switch (platform) {
+			case "ios":
+				return DevicePlatformEnum.IOS;
+			case "android":
+				return DevicePlatformEnum.ANDROID;
+			case "web":
+				return DevicePlatformEnum.WEB;
+			case "macos":
+				return DevicePlatformEnum.MACOS;
+			case "windows":
+				return DevicePlatformEnum.WINDOWS;
+			default:
+				return DevicePlatformEnum.UNKNOWN;
+		}
+	}
+
 }

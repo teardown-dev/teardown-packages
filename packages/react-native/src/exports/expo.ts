@@ -1,1 +1,0 @@
-export * from "../clients/device/expo-adapter";

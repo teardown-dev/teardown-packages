@@ -6,11 +6,10 @@ import type {
 } from "@teardown/schemas";
 import * as Application from "expo-application";
 import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import { DevicePlatformEnum, NotificationPlatformEnum } from "../device.client";
 import { DeviceInfoAdapter } from "./device.adpater-interface";
-import { DevicePlatformEnum, NotificationPlatformEnum } from "./device.client";
 
 /**
  * Maps expo-device DeviceType to a string representation
@@ -50,13 +49,6 @@ function mapPlatform(platform: typeof Platform.OS): DevicePlatformEnum {
   }
 }
 
-/**
- * Determines the notification platform based on the device platform
- */
-function getNotificationPlatform(): NotificationPlatformEnum {
-  return NotificationPlatformEnum.EXPO;
-}
-
 export class ExpoDeviceAdapter extends DeviceInfoAdapter {
   get applicationInfo(): ApplicationInfo {
     return {
@@ -85,44 +77,14 @@ export class ExpoDeviceAdapter extends DeviceInfoAdapter {
   }
 
   get notificationsInfo(): NotificationsInfo {
-    // Note: This returns a synchronous snapshot.
-    // For accurate permission status, use getNotificationsInfoAsync()
     return {
       push: {
         enabled: false,
         granted: false,
         token: null,
-        platform: getNotificationPlatform(),
+        platform: NotificationPlatformEnum.EXPO,
       },
     };
   }
 
-  /**
-   * Async method to get accurate notification permissions and token.
-   * Use this when you need real-time notification status.
-   */
-  async getNotificationsInfoAsync(): Promise<NotificationsInfo> {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    const granted = existingStatus === "granted";
-
-    let token: string | null = null;
-    if (granted) {
-      try {
-        const tokenData = await Notifications.getExpoPushTokenAsync();
-        token = tokenData.data;
-      } catch {
-        // Token retrieval failed, keep as null
-      }
-    }
-
-    return {
-      push: {
-        enabled: granted,
-        granted,
-        token,
-        platform: getNotificationPlatform(),
-      },
-    };
-  }
 }

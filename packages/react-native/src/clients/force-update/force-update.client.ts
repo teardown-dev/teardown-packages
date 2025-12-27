@@ -1,7 +1,7 @@
 import { EventEmitter } from "eventemitter3";
 import { AppState, type AppStateStatus, type NativeEventSubscription } from "react-native";
 import { z } from "zod";
-import type { IdentityClient, IdentityUser } from "../identity";
+import type { IdentityClient } from "../identity";
 import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 
@@ -29,13 +29,13 @@ export enum IdentifyVersionStatusEnum {
 	DISABLED = "DISABLED",
 }
 
-
 export const InitializingVersionStatusSchema = z.object({ type: z.literal("initializing") });
 export const CheckingVersionStatusSchema = z.object({ type: z.literal("checking") });
 export const UpToDateVersionStatusSchema = z.object({ type: z.literal("up_to_date") });
 export const UpdateAvailableVersionStatusSchema = z.object({ type: z.literal("update_available") });
+export const UpdateRecommendedVersionStatusSchema = z.object({ type: z.literal("update_recommended") });
 export const UpdateRequiredVersionStatusSchema = z.object({ type: z.literal("update_required") });
-
+export const DisabledVersionStatusSchema = z.object({ type: z.literal("disabled") });
 /**
  * The version status schema.
  * - "initializing" - The version status is initializing.
@@ -49,45 +49,63 @@ export const VersionStatusSchema = z.discriminatedUnion("type", [
 	CheckingVersionStatusSchema,
 	UpToDateVersionStatusSchema,
 	UpdateAvailableVersionStatusSchema,
+	UpdateRecommendedVersionStatusSchema,
 	UpdateRequiredVersionStatusSchema,
+	DisabledVersionStatusSchema,
 ]);
 
 export type InitializingVersionStatus = z.infer<typeof InitializingVersionStatusSchema>;
 export type CheckingVersionStatus = z.infer<typeof CheckingVersionStatusSchema>;
 export type UpToDateVersionStatus = z.infer<typeof UpToDateVersionStatusSchema>;
 export type UpdateAvailableVersionStatus = z.infer<typeof UpdateAvailableVersionStatusSchema>;
+export type UpdateRecommendedVersionStatus = z.infer<typeof UpdateRecommendedVersionStatusSchema>;
 export type UpdateRequiredVersionStatus = z.infer<typeof UpdateRequiredVersionStatusSchema>;
+export type DisabledVersionStatus = z.infer<typeof DisabledVersionStatusSchema>;
 export type VersionStatus = z.infer<typeof VersionStatusSchema>;
 
 export interface VersionStatusChangeEvents {
 	VERSION_STATUS_CHANGED: (status: VersionStatus) => void;
 }
 
-export interface ForceUpdateClientOptions {
-	/** Min ms between version checks. Values below 30s are coerced to 30s. (default: 30000) */
+export type ForceUpdateClientOptions = {
+	/**
+	 * Minimum time (ms) between version checks.
+	 * Default: 300000 (5 minutes)
+	 *
+	 * Values below 30 seconds are clamped to 30 seconds to prevent excessive API calls.
+	 *
+	 * Special values:
+	 * - 0: Check on every foreground (no interval)
+	 * - -1: Disable automatic version checking entirely
+	 *
+	 * Example: If checkIntervalMs is 5min and a check completes at 12:00pm,
+	 * no new checks occur until 12:05pm, even if user foregrounds the app multiple times.
+	 */
 	checkIntervalMs?: number;
-	/** Always check on foreground, ignoring interval (default: true) */
+	/** Check version when app comes to foreground, respecting checkIntervalMs (default: true) */
 	checkOnForeground?: boolean;
 	/** If true, check version even when not identified by using anonymous device identification (default: false) */
 	identifyAnonymousDevice?: boolean;
-}
+};
 
-const MIN_CHECK_INTERVAL_MS = 30_000; // 30 seconds minimum
+/** Hard minimum interval between checks to prevent excessive API calls */
+const MIN_CHECK_INTERVAL_MS = 30_000; // 30 seconds
 
 const DEFAULT_OPTIONS: Required<ForceUpdateClientOptions> = {
-	checkIntervalMs: 30_000, // 30 seconds
+	checkIntervalMs: 300_000, // 5 minutes
 	checkOnForeground: true,
 	identifyAnonymousDevice: false,
 };
 
-export const VERSION_STATUS_STORAGE_KEY = "VERSION_STATUS";
+export const VERSION_STATUS_STORAGE_KEY = "version_status";
 
 export class ForceUpdateClient {
 	private emitter = new EventEmitter<VersionStatusChangeEvents>();
-	private versionStatus: VersionStatus;
+	private versionStatus: VersionStatus = { type: "initializing" };
 	private unsubscribe: (() => void) | null = null;
 	private appStateSubscription: NativeEventSubscription | null = null;
 	private lastCheckTime: number | null = null;
+	private initialized = false;
 
 	private readonly logger: Logger;
 	private readonly storage: SupportedStorage;
@@ -101,23 +119,61 @@ export class ForceUpdateClient {
 	) {
 		this.logger = logging.createLogger({ name: "ForceUpdateClient" });
 		this.storage = storage.createStorage("version");
-		this.options = {
-			...DEFAULT_OPTIONS,
-			...options,
-			checkIntervalMs: Math.max(options.checkIntervalMs ?? DEFAULT_OPTIONS.checkIntervalMs, MIN_CHECK_INTERVAL_MS),
-		};
+		this.options = { ...DEFAULT_OPTIONS, ...options };
+	}
+
+	initialize(): void {
+		if (this.initialized) {
+			this.logger.debug("ForceUpdateClient already initialized");
+			return;
+		}
+		this.initialized = true;
+
 		this.versionStatus = this.getVersionStatusFromStorage();
+		this.logger.debug(`Initialized with version status: ${this.versionStatus.type}`);
 		this.subscribeToIdentity();
+		this.initializeFromCurrentIdentityState();
 		this.subscribeToAppState();
 	}
 
+	private initializeFromCurrentIdentityState() {
+		const currentState = this.identity.getIdentifyState();
+		this.logger.debug(`Current identity state during init: ${currentState.type}`);
+		if (currentState.type === "identified") {
+			this.logger.debug(
+				`Identity already identified, syncing version status from: ${currentState.version_info.status}`
+			);
+			this.updateFromVersionStatus(currentState.version_info.status);
+		} else {
+			this.logger.debug(`Identity not yet identified (${currentState.type}), waiting for identify event`);
+		}
+	}
+
 	private getVersionStatusFromStorage(): VersionStatus {
-		const stored = this.storage.getItem(VERSION_STATUS_STORAGE_KEY);
-		if (stored == null) {
+		try {
+			const stored = this.storage.getItem(VERSION_STATUS_STORAGE_KEY);
+
+			if (stored == null) {
+				this.logger.debug("No stored version status, returning initializing");
+				return InitializingVersionStatusSchema.parse({ type: "initializing" });
+			}
+
+			const parsed = VersionStatusSchema.parse(JSON.parse(stored));
+			this.logger.debug(`Parsed version status from storage: ${parsed.type}`);
+
+			// "checking" and "initializing" are transient states - if we restore them, reset to initializing
+			// This can happen if the app was killed during a version check
+			if (parsed.type === "checking" || parsed.type === "initializing") {
+				this.logger.debug(`Found stale '${parsed.type}' state in storage, resetting to initializing`);
+				this.storage.removeItem(VERSION_STATUS_STORAGE_KEY);
+				return InitializingVersionStatusSchema.parse({ type: "initializing" });
+			}
+
+			return parsed;
+		} catch (error) {
+			this.logger.debugError("Error getting version status from storage", { error });
 			return InitializingVersionStatusSchema.parse({ type: "initializing" });
 		}
-
-		return VersionStatusSchema.parse(JSON.parse(stored));
 	}
 
 	private saveVersionStatusToStorage(status: VersionStatus): void {
@@ -126,10 +182,15 @@ export class ForceUpdateClient {
 
 	private subscribeToIdentity() {
 		this.unsubscribe = this.identity.onIdentifyStateChange((state) => {
-			if (state.type === "identifying") {
-				this.setVersionStatus({ type: "checking" });
-			} else if (state.type === "identified") {
-				this.updateFromVersionStatus(state.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE);
+			this.logger.debug(`Identity state changed: ${state.type}`);
+			switch (state.type) {
+				case "identifying":
+					this.setVersionStatus({ type: "checking" });
+					break;
+				case "identified":
+					this.logger.debug(`Identified with version_info.status: ${state.version_info.status}`);
+					this.updateFromVersionStatus(state.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE);
+					break;
 			}
 		});
 	}
@@ -144,8 +205,17 @@ export class ForceUpdateClient {
 			case "UPDATE_AVAILABLE":
 				this.setVersionStatus({ type: "update_available" });
 				break;
+			case "UPDATE_RECOMMENDED":
+				this.setVersionStatus({ type: "update_recommended" });
+				break;
 			case "UPDATE_REQUIRED":
 				this.setVersionStatus({ type: "update_required" });
+				break;
+			case "UP_TO_DATE":
+				this.setVersionStatus({ type: "up_to_date" });
+				break;
+			case "DISABLED":
+				this.setVersionStatus({ type: "disabled" });
 				break;
 			default:
 				this.setVersionStatus({ type: "up_to_date" });
@@ -158,21 +228,35 @@ export class ForceUpdateClient {
 
 	private handleAppStateChange = (nextState: AppStateStatus) => {
 		if (nextState === "active") {
-			const now = Date.now();
-			const intervalOk = !this.lastCheckTime || now - this.lastCheckTime >= this.options.checkIntervalMs;
+			this.logger.debug("App state changed to active");
 
-			if (this.options.checkOnForeground || intervalOk) {
+			// If checkIntervalMs is -1, disable checking entirely
+			if (this.options.checkIntervalMs === -1) {
+				this.logger.debug("Version checking disabled (checkIntervalMs = -1)");
+				return;
+			}
+
+			const now = Date.now();
+
+			// Calculate effective interval (clamp to minimum unless 0 for "always check")
+			const effectiveInterval =
+				this.options.checkIntervalMs === 0 ? 0 : Math.max(this.options.checkIntervalMs, MIN_CHECK_INTERVAL_MS);
+
+			// Check if enough time has passed since last successful check
+			const canCheck = effectiveInterval === 0 || !this.lastCheckTime || now - this.lastCheckTime >= effectiveInterval;
+
+			if (this.options.checkOnForeground && canCheck) {
 				this.checkVersionOnForeground();
 			}
 		}
 	};
 
 	private async checkVersionOnForeground() {
-		this.logger.info("Checking version status on foreground");
+		this.logger.debug("Checking version status on foreground");
 		const result = await this.identity.identify();
 
 		if (!result) {
-			this.logger.info("Skipping version check - not identified");
+			this.logger.debug("Skipping version check - not identified");
 			return;
 		}
 
@@ -194,7 +278,7 @@ export class ForceUpdateClient {
 	}
 
 	private setVersionStatus(newStatus: VersionStatus) {
-		this.logger.info(`Version status changing: ${this.versionStatus.type} -> ${newStatus.type}`);
+		this.logger.debug(`Version status changing: ${this.versionStatus.type} -> ${newStatus.type}`);
 		this.versionStatus = newStatus;
 		this.saveVersionStatusToStorage(newStatus);
 		this.emitter.emit("VERSION_STATUS_CHANGED", newStatus);
@@ -211,5 +295,4 @@ export class ForceUpdateClient {
 		}
 		this.emitter.removeAllListeners("VERSION_STATUS_CHANGED");
 	}
-
 }
