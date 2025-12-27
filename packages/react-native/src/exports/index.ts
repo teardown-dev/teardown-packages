@@ -10,6 +10,7 @@ export * from "../clients/logging";
 export * from "../clients/utils";
 export * from "../clients/storage";
 export * from "../clients/device/device.client";
+export * from "../clients/notifications";
 
 // Hooks
 export * from "../hooks/use-force-update";
