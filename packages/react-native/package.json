@@ -82,12 +82,12 @@
 	},
 	"peerDependencies": {
 		"@react-native-async-storage/async-storage": "^1.21 || ^2.0",
+		"@react-native-firebase/messaging": "*",
 		"expo-application": "~7",
 		"expo-device": "~8",
 		"expo-notifications": "~0.32",
 		"expo-secure-store": "~15",
 		"expo-updates": "~29",
-		"@react-native-firebase/messaging": "*",
 		"react": "~19",
 		"react-native": "~0.81",
 		"react-native-device-info": "~15",
@@ -99,16 +99,7 @@
 		"@react-native-async-storage/async-storage": {
 			"optional": true
 		},
-		"react": {
-			"optional": true
-		},
-		"react-native": {
-			"optional": true
-		},
-		"react-native-device-info": {
-			"optional": true
-		},
-		"react-native-mmkv": {
+		"@react-native-firebase/messaging": {
 			"optional": true
 		},
 		"expo-application": {
@@ -126,7 +117,16 @@
 		"expo-updates": {
 			"optional": true
 		},
-		"@react-native-firebase/messaging": {
+		"react": {
+			"optional": true
+		},
+		"react-native": {
+			"optional": true
+		},
+		"react-native-device-info": {
+			"optional": true
+		},
+		"react-native-mmkv": {
 			"optional": true
 		},
 		"react-native-notifications": {
