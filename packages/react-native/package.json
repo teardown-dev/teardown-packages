@@ -21,6 +21,21 @@
 			"types": "./src/exports/expo.ts",
 			"import": "./src/exports/expo.ts",
 			"default": "./src/exports/expo.ts"
+		},
+		"./expo-notifications": {
+			"types": "./src/exports/expo-notifications.ts",
+			"import": "./src/exports/expo-notifications.ts",
+			"default": "./src/exports/expo-notifications.ts"
+		},
+		"./firebase-messaging": {
+			"types": "./src/exports/firebase-messaging.ts",
+			"import": "./src/exports/firebase-messaging.ts",
+			"default": "./src/exports/firebase-messaging.ts"
+		},
+		"./wix-notifications": {
+			"types": "./src/exports/wix-notifications.ts",
+			"import": "./src/exports/wix-notifications.ts",
+			"default": "./src/exports/wix-notifications.ts"
 		}
 	},
 	"scripts": {
@@ -52,6 +67,25 @@
 		"expo-application": "^7.0",
 		"expo-device": "^8.0",
 		"expo-notifications": "^0.29",
+		"@react-native-firebase/messaging": ">=18",
+		"react-native-notifications": ">=5",
 		"zod": "^4"
+	},
+	"peerDependenciesMeta": {
+		"expo-application": {
+			"optional": true
+		},
+		"expo-device": {
+			"optional": true
+		},
+		"expo-notifications": {
+			"optional": true
+		},
+		"@react-native-firebase/messaging": {
+			"optional": true
+		},
+		"react-native-notifications": {
+			"optional": true
+		}
 	}
 }
