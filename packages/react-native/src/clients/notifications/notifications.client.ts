@@ -3,6 +3,7 @@ import type { Logger, LoggingClient } from "../logging";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { NotificationPlatformEnum } from "../device/device.client";
 import type {
+	DataMessage,
 	NotificationAdapter,
 	PermissionStatus,
 	PushNotification,
@@ -13,6 +14,7 @@ interface NotificationEvents {
 	TOKEN_CHANGED: (token: string) => void;
 	NOTIFICATION_RECEIVED: (notification: PushNotification) => void;
 	NOTIFICATION_OPENED: (notification: PushNotification) => void;
+	DATA_MESSAGE: (message: DataMessage) => void;
 }
 
 export interface NotificationsClientOptions {
@@ -103,6 +105,12 @@ export class NotificationsClient {
 		);
 		this.adapterUnsubscribers.push(notificationOpenedUnsub);
 
+		const dataMessageUnsub = this.options.adapter.onDataMessage((message) => {
+			this.logger.debug("Data-only message received", message);
+			this.emitter.emit("DATA_MESSAGE", message);
+		});
+		this.adapterUnsubscribers.push(dataMessageUnsub);
+
 		this.initialized = true;
 		this.logger.debug("NotificationsClient initialized");
 	}
@@ -180,6 +188,18 @@ export class NotificationsClient {
 	): Unsubscribe {
 		this.emitter.addListener("NOTIFICATION_OPENED", listener);
 		return () => this.emitter.removeListener("NOTIFICATION_OPENED", listener);
+	}
+
+	/**
+	 * Subscribe to data-only message events (silent/background push).
+	 * These are messages without notification display, used for background data sync.
+	 *
+	 * @param listener - Callback invoked when data message received
+	 * @returns Unsubscribe function
+	 */
+	onDataMessage(listener: (message: DataMessage) => void): Unsubscribe {
+		this.emitter.addListener("DATA_MESSAGE", listener);
+		return () => this.emitter.removeListener("DATA_MESSAGE", listener);
 	}
 
 	/**

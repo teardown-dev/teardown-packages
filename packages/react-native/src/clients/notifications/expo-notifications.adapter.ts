@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import { NotificationPlatformEnum } from "../device/device.client";
 import {
 	NotificationAdapter,
+	type DataMessage,
 	type PermissionStatus,
 	type PushNotification,
 	type Unsubscribe,
@@ -89,6 +90,24 @@ export class ExpoNotificationsAdapter extends NotificationAdapter {
 					body: content.body ?? undefined,
 					data: content.data ?? undefined,
 				});
+			}
+		);
+
+		return () => subscription.remove();
+	}
+
+	onDataMessage(listener: (message: DataMessage) => void): Unsubscribe {
+		// In Expo, data-only messages come through the same listener as regular notifications
+		// but without title/body. We filter for messages that have data but no display content.
+		const subscription = Notifications.addNotificationReceivedListener(
+			(notification) => {
+				const content = notification.request.content;
+				// Data-only message: has data but no title or body
+				if (content.data && !content.title && !content.body) {
+					listener({
+						data: content.data,
+					});
+				}
 			}
 		);
 

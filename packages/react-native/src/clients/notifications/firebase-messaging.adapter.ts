@@ -4,6 +4,7 @@ import messaging, {
 import { NotificationPlatformEnum } from "../device/device.client";
 import {
 	NotificationAdapter,
+	type DataMessage,
 	type PermissionStatus,
 	type PushNotification,
 	type Unsubscribe,
@@ -79,6 +80,20 @@ export class FirebaseMessagingAdapter extends NotificationAdapter {
 					body: remoteMessage.notification?.body,
 					data: remoteMessage.data,
 				});
+			}
+		);
+	}
+
+	onDataMessage(listener: (message: DataMessage) => void): Unsubscribe {
+		// Firebase data-only messages come through onMessage but without notification payload
+		return messaging().onMessage(
+			(remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
+				// Data-only message: has data but no notification
+				if (remoteMessage.data && !remoteMessage.notification) {
+					listener({
+						data: remoteMessage.data,
+					});
+				}
 			}
 		);
 	}

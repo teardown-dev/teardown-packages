@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import { NotificationPlatformEnum } from "../device/device.client";
 import {
 	NotificationAdapter,
+	type DataMessage,
 	type PermissionStatus,
 	type PushNotification,
 	type Unsubscribe,
@@ -146,6 +147,28 @@ export class WixNotificationsAdapter extends NotificationAdapter {
 					data: payload,
 				});
 				completion();
+			}
+		);
+
+		return () => subscription.remove();
+	}
+
+	onDataMessage(listener: (message: DataMessage) => void): Unsubscribe {
+		// Wix library handles data-only messages through the same foreground listener
+		// but without title/body in the payload
+		const subscription = Notifications.events().registerNotificationReceivedForeground(
+			(
+				notification: Notification,
+				completion: (response: { alert: boolean; sound: boolean; badge: boolean }) => void
+			) => {
+				const payload = notification.payload;
+				// Data-only message: has payload but no title or body
+				if (payload && !payload.title && !payload.body) {
+					listener({
+						data: payload,
+					});
+				}
+				completion({ alert: false, sound: false, badge: false });
 			}
 		);
 

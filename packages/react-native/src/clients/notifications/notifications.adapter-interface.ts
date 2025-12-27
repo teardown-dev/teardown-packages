@@ -23,6 +23,15 @@ export interface PushNotification {
 }
 
 /**
+ * Data-only message payload (silent/background push).
+ * These messages contain only data without notification display.
+ */
+export interface DataMessage {
+	/** Custom data payload */
+	data: Record<string, unknown>;
+}
+
+/**
  * Function to unsubscribe from event listeners.
  */
 export type Unsubscribe = () => void;
@@ -90,5 +99,20 @@ export abstract class NotificationAdapter {
 	 */
 	abstract onNotificationOpened(
 		listener: (notification: PushNotification) => void
+	): Unsubscribe;
+
+	/**
+	 * Subscribe to data-only message events (silent/background push).
+	 * Called when a data-only message is received without notification display.
+	 * These are typically used for background data sync or silent updates.
+	 *
+	 * Note: On iOS, requires "Remote notifications" background mode enabled.
+	 * On Android, these are handled automatically via FCM data messages.
+	 *
+	 * @param listener - Callback invoked with data payload
+	 * @returns Unsubscribe function to remove the listener
+	 */
+	abstract onDataMessage(
+		listener: (message: DataMessage) => void
 	): Unsubscribe;
 }
