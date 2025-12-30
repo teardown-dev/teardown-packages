@@ -1,4 +1,5 @@
 console.log("[DEBUG] identity.client.test.ts - Starting module load...");
+
 import { describe, expect, mock, test } from "bun:test";
 
 // Mock react-native before any imports that use it
