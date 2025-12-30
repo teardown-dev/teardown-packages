@@ -21,6 +21,7 @@
 		"app:ios": "bun run --cwd ./apps/app ios",
 		"app:android": "bun run --cwd ./apps/app android",
 		"typecheck": "bun x turbo typecheck",
+		"check": "bun x turbo check",
 		"build": "bun x turbo build",
 		"lint": "bun x turbo lint",
 		"fmt": "bun x turbo fmt",

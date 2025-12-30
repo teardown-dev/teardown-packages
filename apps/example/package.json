@@ -12,6 +12,9 @@
 		"expo:eas": "dotenv -e .env eas",
 		"lint": "biome lint --write",
 		"fmt": "biome format --write",
+		"typecheck": "tsc --noEmit",
+		"check": "bun x biome check .",
+		"test": "echo 'No tests'",
 		"build:dev": "bun run eas workflow:run create-development-builds.yml",
 		"build:prod": "bun run eas workflow:run create-production-builds.yml",
 		"deploy:prod": "bun run eas workflow:run deploy-to-production.yml"
