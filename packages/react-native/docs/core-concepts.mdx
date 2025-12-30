@@ -1,0 +1,158 @@
+---
+title: Core Concepts
+description: Understand the architecture and design principles of the Teardown React Native SDK.
+icon: Lightbulb
+---
+
+## Architecture Overview
+
+The Teardown SDK is built around a central `TeardownCore` class that orchestrates multiple specialized clients:
+
+```
+TeardownCore
+├── IdentityClient      # User/device identification
+├── ForceUpdateClient   # Version checking
+├── DeviceClient        # Device information
+├── StorageClient       # Persistent storage
+├── ApiClient           # Backend communication
+└── LoggingClient       # Structured logging
+```
+
+## Initialization Flow
+
+When you create a `TeardownCore` instance, the following happens:
+
+1. **Storage Hydration** - Storage adapters load persisted state
+2. **Identity Initialization** - Loads cached session, then identifies with backend
+3. **Force Update Setup** - Subscribes to identity events for version checking
+4. **Ready State** - SDK is fully operational
+
+```typescript
+const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+// Initialization happens automatically in the background
+```
+
+## State Management
+
+The SDK uses an event-driven architecture with discriminated unions for type-safe state:
+
+### Identity State
+
+```typescript
+type IdentifyState =
+  | { type: 'unidentified' }
+  | { type: 'identifying' }
+  | { type: 'identified'; session: Session; version_info: VersionInfo };
+```
+
+### Version Status
+
+```typescript
+type VersionStatus =
+  | { type: 'initializing' }
+  | { type: 'checking' }
+  | { type: 'up_to_date' }
+  | { type: 'update_available' }
+  | { type: 'update_recommended' }
+  | { type: 'update_required' }
+  | { type: 'disabled' };
+```
+
+## Adapter Pattern
+
+The SDK uses adapters to abstract platform-specific functionality:
+
+### Storage Adapters
+
+Handle persistent data storage with a consistent interface:
+
+```typescript
+interface SupportedStorage {
+  preload(): void;
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+  clear(): void;
+  keys(): string[];
+}
+```
+
+### Device Adapters
+
+Provide device and app information:
+
+```typescript
+interface DeviceInfoAdapter {
+  applicationInfo: ApplicationInfo;  // version, buildNumber, bundleId
+  hardwareInfo: HardwareInfo;        // deviceName, brand, deviceType
+  osInfo: OSInfo;                    // osName, osVersion
+}
+```
+
+## React Integration
+
+The SDK provides React primitives for seamless integration:
+
+### TeardownProvider
+
+Context provider that makes the SDK available throughout your app:
+
+```tsx
+<TeardownProvider core={teardown}>
+  <App />
+</TeardownProvider>
+```
+
+### Hooks
+
+Reactive hooks that subscribe to SDK state changes:
+
+- `useTeardown()` - Access the core instance
+- `useSession()` - Get current session (reactive)
+- `useForceUpdate()` - Get version status (reactive)
+
+## Persistence
+
+The SDK automatically persists:
+
+- **Session data** - Device ID, user ID, token
+- **Version status** - Last known update state
+- **Device ID** - Stable device identifier
+
+State is restored on app restart, providing offline-first functionality.
+
+## Error Handling
+
+All async operations return `AsyncResult` for type-safe error handling:
+
+```typescript
+type AsyncResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+const result = await core.identity.identify({ user_id: '123' });
+if (result.success) {
+  console.log(result.data.session_id);
+} else {
+  console.error(result.error);
+}
+```
+
+## Logging
+
+The SDK includes a structured logging system with configurable levels:
+
+```typescript
+teardown.setLogLevel('verbose'); // none | error | warn | info | verbose
+```
+
+Each client logs with a prefix for easy filtering:
+- `[Teardown:IdentityClient]`
+- `[Teardown:ForceUpdateClient]`
+- `[Teardown:DeviceClient]`

@@ -1,0 +1,102 @@
+---
+title: Device Adapters
+description: Collect device, OS, and app information with platform adapters.
+icon: Monitor
+---
+
+Device adapters collect device and application information for identification and analytics. You must provide a device adapter when initializing `TeardownCore`.
+
+## Available Adapters
+
+| Adapter | Package | Best For |
+|---------|---------|----------|
+| [`ExpoDeviceAdapter`](/docs/react-native/adapters/device/expo) | `expo-device`, `expo-application` | Expo projects |
+| [`DeviceInfoAdapter`](/docs/react-native/adapters/device/device-info) | `react-native-device-info` | Bare RN projects |
+| [`BasicAdapter`](/docs/react-native/adapters/device/basic) | None | Fallback/testing |
+
+## Collected Information
+
+All device adapters provide:
+
+### Application Info
+
+```typescript
+interface ApplicationInfo {
+  version: string;      // App version (e.g., "1.2.3")
+  buildNumber: string;  // Build number (e.g., "45")
+  bundleId: string;     // Bundle identifier (e.g., "com.example.app")
+}
+```
+
+### Hardware Info
+
+```typescript
+interface HardwareInfo {
+  deviceName: string;   // Device name (e.g., "iPhone 14 Pro")
+  brand: string;        // Manufacturer (e.g., "Apple")
+  deviceType: string;   // Device type (e.g., "phone", "tablet")
+}
+```
+
+### OS Info
+
+```typescript
+interface OSInfo {
+  osName: string;       // OS name (e.g., "iOS", "Android")
+  osVersion: string;    // OS version (e.g., "17.0")
+}
+```
+
+## Usage
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+
+const teardown = new TeardownCore({
+  deviceAdapter: new ExpoDeviceAdapter(),
+  // ... other options
+});
+```
+
+## Device ID
+
+The SDK generates a stable device ID that persists across app sessions:
+
+```typescript
+const deviceId = await core.device.getDeviceId();
+// Returns a UUID that persists in storage
+```
+
+## Custom Adapter
+
+Implement the `DeviceInfoAdapter` interface:
+
+```typescript
+import type { DeviceInfoAdapter, ApplicationInfo, HardwareInfo, OSInfo } from '@teardown/react-native';
+
+class CustomDeviceAdapter implements DeviceInfoAdapter {
+  get applicationInfo(): ApplicationInfo {
+    return {
+      version: '1.0.0',
+      buildNumber: '1',
+      bundleId: 'com.example.app',
+    };
+  }
+
+  get hardwareInfo(): HardwareInfo {
+    return {
+      deviceName: 'Custom Device',
+      brand: 'Custom',
+      deviceType: 'phone',
+    };
+  }
+
+  get osInfo(): OSInfo {
+    return {
+      osName: 'iOS',
+      osVersion: '17.0',
+    };
+  }
+}
+```

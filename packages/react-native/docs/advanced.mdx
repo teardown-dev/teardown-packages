@@ -1,0 +1,280 @@
+---
+title: Advanced Usage
+description: Advanced patterns and configurations for the Teardown SDK.
+icon: Wrench
+---
+
+## Multiple Environments
+
+Configure different credentials per environment:
+
+```typescript
+const getConfig = () => {
+  if (__DEV__) {
+    return {
+      org_id: 'dev-org-id',
+      project_id: 'dev-project-id',
+      api_key: 'dev-api-key',
+    };
+  }
+  return {
+    org_id: 'prod-org-id',
+    project_id: 'prod-project-id',
+    api_key: 'prod-api-key',
+  };
+};
+
+export const teardown = new TeardownCore({
+  ...getConfig(),
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+```
+
+## Disable Force Update Checking
+
+For debugging or testing:
+
+```typescript
+const teardown = new TeardownCore({
+  // ...
+  forceUpdate: {
+    checkIntervalMs: -1, // Disable automatic checking
+  },
+});
+```
+
+## Custom Version Check Interval
+
+Check more or less frequently:
+
+```typescript
+const teardown = new TeardownCore({
+  // ...
+  forceUpdate: {
+    checkIntervalMs: 60_000,     // Check every minute
+    checkOnForeground: true,
+  },
+});
+```
+
+## Manual Version Checking
+
+Trigger version check programmatically:
+
+```typescript
+const { core } = useTeardown();
+
+const checkForUpdates = async () => {
+  const result = await core.identity.refresh();
+  if (result.success) {
+    // Version status will update via subscription
+    console.log('Version checked');
+  }
+};
+```
+
+## Offline Support
+
+The SDK handles offline scenarios gracefully:
+
+1. **Cached session** - Identity state persists across restarts
+2. **Cached version status** - Last known status is preserved
+3. **Retry on foreground** - Re-checks when connectivity restored
+
+```typescript
+const session = useSession();
+
+// Works offline - returns cached session
+if (session) {
+  console.log('User:', session.user_id);
+}
+```
+
+## Pre-warming
+
+Initialize SDK before app is fully loaded:
+
+```typescript
+// In app entry point (before React renders)
+import { teardown } from './lib/teardown';
+
+// SDK starts initializing immediately
+// By the time UI renders, it may already be ready
+```
+
+## Error Boundaries
+
+Handle SDK errors gracefully:
+
+```tsx
+import { ErrorBoundary } from 'react-error-boundary';
+
+function App() {
+  return (
+    <ErrorBoundary fallback={<ErrorScreen />}>
+      <TeardownProvider core={teardown}>
+        <MainApp />
+      </TeardownProvider>
+    </ErrorBoundary>
+  );
+}
+```
+
+## Testing
+
+### Mock the SDK
+
+```typescript
+// __mocks__/@teardown/react-native.ts
+export const TeardownProvider = ({ children }) => children;
+
+export const useTeardown = () => ({
+  core: {
+    identity: {
+      identify: jest.fn().mockResolvedValue({ success: true, data: mockSession }),
+      reset: jest.fn(),
+      getSessionState: () => mockSession,
+    },
+    forceUpdate: {
+      getVersionStatus: () => ({ type: 'up_to_date' }),
+    },
+  },
+});
+
+export const useSession = () => mockSession;
+export const useForceUpdate = () => ({
+  versionStatus: { type: 'up_to_date' },
+  isUpdateRequired: false,
+  isUpdateRecommended: false,
+  isUpdateAvailable: false,
+});
+```
+
+### Test Components
+
+```typescript
+import { render } from '@testing-library/react-native';
+
+test('shows login when not identified', () => {
+  jest.spyOn(hooks, 'useSession').mockReturnValue(null);
+
+  const { getByText } = render(<App />);
+  expect(getByText('Login')).toBeTruthy();
+});
+```
+
+## Debugging
+
+### Enable Verbose Logging
+
+```typescript
+teardown.setLogLevel('verbose');
+```
+
+### Inspect State
+
+```typescript
+const { core } = useTeardown();
+
+console.log('Identity state:', core.identity.getIdentifyState());
+console.log('Version status:', core.forceUpdate.getVersionStatus());
+console.log('Device ID:', await core.device.getDeviceId());
+```
+
+### Clear All Data
+
+For debugging or logout:
+
+```typescript
+core.identity.reset();
+// This clears session data and device association
+```
+
+## Performance
+
+### Minimize Re-renders
+
+Use specific hooks instead of broad subscriptions:
+
+```tsx
+// Good - only re-renders on session change
+const session = useSession();
+
+// Avoid - accessing core gives no reactivity
+const { core } = useTeardown();
+const session = core.identity.getSessionState(); // Not reactive!
+```
+
+### Lazy Initialization
+
+Defer SDK init until needed:
+
+```typescript
+let teardownInstance: TeardownCore | null = null;
+
+export const getTeardown = () => {
+  if (!teardownInstance) {
+    teardownInstance = new TeardownCore({ /* ... */ });
+  }
+  return teardownInstance;
+};
+```
+
+## Cleanup
+
+Properly cleanup on app shutdown:
+
+```typescript
+import { AppState } from 'react-native';
+
+useEffect(() => {
+  const subscription = AppState.addEventListener('change', (state) => {
+    if (state === 'background') {
+      // SDK persists state automatically, no action needed
+    }
+  });
+
+  return () => {
+    subscription.remove();
+    teardown.shutdown();
+  };
+}, []);
+```
+
+## TypeScript
+
+### Strict Types
+
+All SDK types are exported:
+
+```typescript
+import type {
+  TeardownCore,
+  TeardownCoreOptions,
+  Session,
+  IdentifyState,
+  VersionStatus,
+  Persona,
+  AsyncResult,
+} from '@teardown/react-native';
+```
+
+### Type Guards
+
+```typescript
+function handleIdentifyState(state: IdentifyState) {
+  switch (state.type) {
+    case 'unidentified':
+      // state is UnidentifiedSessionState
+      break;
+    case 'identifying':
+      // state is IdentifyingSessionState
+      break;
+    case 'identified':
+      // state is IdentifiedSessionState
+      console.log(state.session.user_id);
+      break;
+  }
+}
+```

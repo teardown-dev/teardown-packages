@@ -1,0 +1,95 @@
+---
+title: AsyncStorageAdapter
+description: Storage adapter using @react-native-async-storage/async-storage.
+---
+
+The `AsyncStorageAdapter` uses the community AsyncStorage library for persistent storage with broad platform compatibility.
+
+## Installation
+
+```bash
+npm install @react-native-async-storage/async-storage
+# or
+bun add @react-native-async-storage/async-storage
+```
+
+For Expo:
+```bash
+npx expo install @react-native-async-storage/async-storage
+```
+
+## Usage
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
+import { AsyncStorageAdapter } from '@teardown/react-native/adapters/async-storage';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new AsyncStorageAdapter(),
+  deviceAdapter: new DeviceInfoAdapter(),
+});
+```
+
+## Import Path
+
+```typescript
+import { AsyncStorageAdapter } from '@teardown/react-native/adapters/async-storage';
+```
+
+## When to Use
+
+- Web support needed
+- Existing AsyncStorage setup in your app
+- Simpler debugging (plain text storage)
+- Expo Go compatibility (no dev build needed)
+
+## Trade-offs
+
+### Pros
+- Broader platform support (iOS, Android, Web)
+- Works in Expo Go without dev build
+- Plain text storage (easier debugging)
+- Well-established, stable API
+
+### Cons
+- Asynchronous API (slightly slower)
+- No built-in encryption
+- Larger bundle size than MMKV
+
+## How It Works
+
+AsyncStorage provides a key-value storage API:
+
+1. The adapter wraps AsyncStorage with a synchronous-like interface
+2. Uses `preload()` to hydrate data into memory at startup
+3. Writes are persisted asynchronously
+
+## Requirements
+
+- `@react-native-async-storage/async-storage` >= 1.17.0
+- React Native >= 0.60
+
+## Platform Notes
+
+### iOS
+- Data stored in NSUserDefaults (small data) or files (large data)
+- Not encrypted by default
+
+### Android
+- Data stored in SQLite database
+- Not encrypted by default
+
+### Web
+- Uses localStorage
+- Size limited (~5MB)
+
+## Encryption Note
+
+AsyncStorage does not encrypt data by default. For sensitive data, consider:
+- Using MMKV instead (encrypted by default)
+- Encrypting values before storage
+- Using a separate encrypted storage for secrets

@@ -1,0 +1,4 @@
+{
+	"title": "Device",
+	"pages": ["expo", "device-info", "basic"]
+}

@@ -1,0 +1,156 @@
+---
+title: Getting Started
+description: Install and configure the Teardown SDK for React Native.
+icon: Rocket
+---
+
+## Installation
+
+Install the core package:
+
+```bash
+bun add @teardown/react-native
+# or
+npm install @teardown/react-native
+# or
+yarn add @teardown/react-native
+```
+
+### Peer Dependencies
+
+Choose adapters based on your project setup:
+
+**Expo projects:**
+```bash
+npx expo install expo-device expo-application
+```
+
+**Bare React Native projects:**
+```bash
+npm install react-native-device-info
+```
+
+**Storage (choose one):**
+```bash
+# MMKV (recommended - faster, synchronous)
+npm install react-native-mmkv
+
+# or AsyncStorage (broader compatibility)
+npm install @react-native-async-storage/async-storage
+```
+
+## Getting Your Credentials
+
+1. Sign up or log in at [dash.teardown.dev](https://dash.teardown.dev)
+2. Create or select a project
+3. Copy your `org_id`, `project_id`, and `api_key` from project settings
+
+## Setup
+
+### 1. Create SDK Configuration
+
+Create a file to initialize the Teardown SDK (e.g., `lib/teardown.ts`):
+
+**Expo Setup:**
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+```
+
+**Bare React Native Setup:**
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
+import { AsyncStorageAdapter } from '@teardown/react-native/adapters/async-storage';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new AsyncStorageAdapter(),
+  deviceAdapter: new DeviceInfoAdapter(),
+});
+```
+
+### 2. Wrap Your App
+
+In your root layout file (e.g., `app/_layout.tsx` for Expo Router):
+
+```typescript
+import { TeardownProvider } from '@teardown/react-native';
+import { teardown } from '../lib/teardown';
+
+export default function RootLayout() {
+  return (
+    <TeardownProvider core={teardown}>
+      <YourApp />
+    </TeardownProvider>
+  );
+}
+```
+
+### 3. Use in Components
+
+```typescript
+import { useTeardown, useSession, useForceUpdate } from '@teardown/react-native';
+
+function MyComponent() {
+  const { core } = useTeardown();
+  const session = useSession();
+  const { isUpdateRequired } = useForceUpdate();
+
+  const handleLogin = async () => {
+    const result = await core.identity.identify({
+      user_id: 'user-123',
+      email: 'user@example.com',
+    });
+
+    if (result.success) {
+      console.log('Session:', result.data.session_id);
+    }
+  };
+
+  if (isUpdateRequired) {
+    return <UpdateRequiredScreen />;
+  }
+
+  return <Button onPress={handleLogin} title="Login" />;
+}
+```
+
+## Configuration Options
+
+### TeardownCore Options
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `org_id` | string | Yes | Organization ID from dashboard |
+| `project_id` | string | Yes | Project ID from dashboard |
+| `api_key` | string | Yes | API key from dashboard |
+| `storageAdapter` | StorageAdapter | Yes | Storage adapter instance ([see storage](/docs/react-native/storage)) |
+| `deviceAdapter` | DeviceInfoAdapter | Yes | Device info adapter ([see device-info](/docs/react-native/device-info)) |
+| `forceUpdate` | object | No | Force update configuration ([see force-updates](/docs/react-native/force-updates)) |
+
+## Available Adapters
+
+| Adapter | Import Path | Use Case |
+|---------|-------------|----------|
+| `ExpoDeviceAdapter` | `@teardown/react-native/adapters/expo` | Expo projects |
+| `DeviceInfoAdapter` | `@teardown/react-native/adapters/device-info` | Bare RN projects |
+| `MMKVStorageAdapter` | `@teardown/react-native/adapters/mmkv` | Fast sync storage |
+| `AsyncStorageAdapter` | `@teardown/react-native/adapters/async-storage` | Standard async storage |
+
+## Next Steps
+
+- [Core Concepts](/docs/react-native/core-concepts) - Understand the SDK architecture
+- [Identity](/docs/react-native/identity) - Learn about user identification
+- [Force Updates](/docs/react-native/force-updates) - Configure version management

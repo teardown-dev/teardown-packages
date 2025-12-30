@@ -1,0 +1,86 @@
+---
+title: MMKVStorageAdapter
+description: Fast, encrypted storage adapter using react-native-mmkv.
+---
+
+The `MMKVStorageAdapter` uses MMKV for high-performance, encrypted storage. **Recommended for most apps.**
+
+## Installation
+
+```bash
+npm install react-native-mmkv
+# or
+bun add react-native-mmkv
+```
+
+For iOS, run pod install:
+```bash
+cd ios && pod install
+```
+
+## Usage
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+```
+
+## Import Path
+
+```typescript
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+```
+
+## Benefits
+
+- **Synchronous** - No async/await needed for reads/writes
+- **Encrypted** - Data encrypted by default
+- **Fast** - Memory-mapped for optimal performance
+- **Small** - Minimal bundle size impact
+- **Reliable** - Used by WeChat with 1B+ users
+
+## How It Works
+
+MMKV uses memory-mapped files for storage:
+
+1. Data is written to memory
+2. OS flushes to disk asynchronously
+3. Reads are instant (from memory)
+4. Crash-safe with journaling
+
+## Requirements
+
+- `react-native-mmkv` >= 2.0.0
+- React Native >= 0.71
+
+## Platform Notes
+
+### iOS
+- Requires `pod install`
+- Data stored in app's sandboxed Documents directory
+- Encrypted with iOS Keychain
+
+### Android
+- Works out of the box
+- Data stored in app's private directory
+- Encrypted with Android KeyStore
+
+## Expo Compatibility
+
+For Expo managed workflow, you need a development build:
+
+```bash
+npx expo install react-native-mmkv
+npx expo prebuild
+```
+
+Or use EAS Build for production.

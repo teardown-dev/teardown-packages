@@ -1,0 +1,142 @@
+---
+title: FirebaseMessagingAdapter
+description: Notification adapter for Firebase Cloud Messaging.
+---
+
+The `FirebaseMessagingAdapter` integrates with Firebase Cloud Messaging for push notifications.
+
+## Installation
+
+```bash
+npm install @react-native-firebase/app @react-native-firebase/messaging
+# or
+bun add @react-native-firebase/app @react-native-firebase/messaging
+```
+
+For iOS:
+```bash
+cd ios && pod install
+```
+
+## Usage
+
+```typescript
+import { FirebaseMessagingAdapter } from '@teardown/react-native/firebase-messaging';
+
+const notifications = new FirebaseMessagingAdapter();
+
+// Request permissions (iOS)
+const granted = await notifications.requestPermissions();
+
+if (granted) {
+  // Get FCM token
+  const token = await notifications.getToken();
+  console.log('FCM token:', token);
+}
+```
+
+## Import Path
+
+```typescript
+import { FirebaseMessagingAdapter } from '@teardown/react-native/firebase-messaging';
+```
+
+## API
+
+### getToken()
+
+Get the FCM registration token:
+
+```typescript
+const token = await notifications.getToken();
+// Returns: FCM token string or null
+```
+
+### requestPermissions()
+
+Request notification permissions (required on iOS):
+
+```typescript
+const granted = await notifications.requestPermissions();
+// Returns: true if granted, false otherwise
+```
+
+### isEnabled()
+
+Check if notifications are enabled:
+
+```typescript
+const enabled = await notifications.isEnabled();
+```
+
+### onNotification()
+
+Subscribe to incoming notifications:
+
+```typescript
+const unsubscribe = notifications.onNotification((notification) => {
+  console.log('Received:', notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+### onNotificationResponse()
+
+Subscribe to notification opens:
+
+```typescript
+const unsubscribe = notifications.onNotificationResponse((response) => {
+  console.log('User tapped:', response.notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+## Configuration
+
+### Android
+
+1. Add `google-services.json` to `android/app/`
+2. Add to `android/build.gradle`:
+
+```groovy
+buildscript {
+  dependencies {
+    classpath 'com.google.gms:google-services:4.3.15'
+  }
+}
+```
+
+3. Add to `android/app/build.gradle`:
+
+```groovy
+apply plugin: 'com.google.gms.google-services'
+```
+
+### iOS
+
+1. Add `GoogleService-Info.plist` to iOS project
+2. Enable Push Notifications capability in Xcode
+3. Upload APNs key to Firebase Console
+
+## Background Messages
+
+Handle messages when app is in background:
+
+```typescript
+import messaging from '@react-native-firebase/messaging';
+
+// Register background handler (must be outside component)
+messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+  console.log('Background message:', remoteMessage);
+});
+```
+
+## Requirements
+
+- `@react-native-firebase/app` >= 18.0.0
+- `@react-native-firebase/messaging` >= 18.0.0
+- React Native >= 0.71

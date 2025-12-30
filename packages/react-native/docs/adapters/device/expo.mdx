@@ -1,0 +1,61 @@
+---
+title: ExpoDeviceAdapter
+description: Device adapter for Expo projects using expo-device and expo-application.
+---
+
+The `ExpoDeviceAdapter` uses Expo's native modules to collect device information.
+
+## Installation
+
+```bash
+npx expo install expo-device expo-application
+```
+
+## Usage
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+```
+
+## Import Path
+
+```typescript
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+```
+
+## Collected Data
+
+### Application Info
+- `version` - From `expo-application` `nativeApplicationVersion`
+- `buildNumber` - From `expo-application` `nativeBuildVersion`
+- `bundleId` - From `expo-application` `applicationId`
+
+### Hardware Info
+- `deviceName` - From `expo-device` `deviceName`
+- `brand` - From `expo-device` `brand`
+- `deviceType` - From `expo-device` `deviceType` (phone, tablet, desktop, tv, unknown)
+
+### OS Info
+- `osName` - From `expo-device` `osName`
+- `osVersion` - From `expo-device` `osVersion`
+
+## When to Use
+
+- Expo managed workflow projects
+- Expo bare workflow projects using Expo modules
+- Projects using Expo SDK 44+
+
+## Requirements
+
+- `expo-device` >= 4.0.0
+- `expo-application` >= 4.0.0

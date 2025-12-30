@@ -1,0 +1,241 @@
+---
+title: API Reference
+description: Complete API reference for the Teardown React Native SDK.
+icon: Code
+---
+
+## TeardownCore
+
+The main SDK class that orchestrates all clients.
+
+### Constructor
+
+```typescript
+new TeardownCore(options: TeardownCoreOptions)
+```
+
+### TeardownCoreOptions
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `org_id` | `string` | Yes | Organization ID from dashboard |
+| `project_id` | `string` | Yes | Project ID from dashboard |
+| `api_key` | `string` | Yes | API key from dashboard |
+| `storageAdapter` | `StorageAdapter` | Yes | Storage adapter instance |
+| `deviceAdapter` | `DeviceInfoAdapter` | Yes | Device info adapter instance |
+| `forceUpdate` | `ForceUpdateClientOptions` | No | Force update configuration |
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `setLogLevel(level)` | `void` | Set logging verbosity |
+| `shutdown()` | `void` | Cleanup SDK resources |
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `api` | `ApiClient` | Backend API client |
+| `device` | `DeviceClient` | Device information client |
+| `identity` | `IdentityClient` | Identity management client |
+| `forceUpdate` | `ForceUpdateClient` | Version checking client |
+
+---
+
+## IdentityClient
+
+Manages user and device identification.
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `identify(persona?)` | `AsyncResult<IdentityUser>` | Identify user/device |
+| `refresh()` | `AsyncResult<IdentityUser>` | Re-identify current user |
+| `reset()` | `void` | Clear session data |
+| `getIdentifyState()` | `IdentifyState` | Get current state |
+| `getSessionState()` | `Session \| null` | Get current session |
+| `onIdentifyStateChange(listener)` | `() => void` | Subscribe to state changes |
+| `shutdown()` | `void` | Cleanup listeners |
+
+### Persona
+
+```typescript
+interface Persona {
+  user_id?: string;
+  email?: string;
+  name?: string;
+}
+```
+
+### Session
+
+```typescript
+interface Session {
+  session_id: string;
+  device_id: string;
+  user_id: string;
+  token: string;
+}
+```
+
+### IdentifyState
+
+```typescript
+type IdentifyState =
+  | { type: 'unidentified' }
+  | { type: 'identifying' }
+  | { type: 'identified'; session: Session; version_info: VersionInfo };
+```
+
+---
+
+## ForceUpdateClient
+
+Manages version checking and force updates.
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getVersionStatus()` | `VersionStatus` | Get current version status |
+| `onVersionStatusChange(listener)` | `() => void` | Subscribe to status changes |
+| `shutdown()` | `void` | Cleanup listeners |
+
+### ForceUpdateClientOptions
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `checkIntervalMs` | `number` | `300000` | Min time between checks. `0` = every foreground, `-1` = disabled |
+| `checkOnForeground` | `boolean` | `true` | Check when app foregrounds |
+| `identifyAnonymousDevice` | `boolean` | `false` | Check when not identified |
+
+### VersionStatus
+
+```typescript
+type VersionStatus =
+  | { type: 'initializing' }
+  | { type: 'checking' }
+  | { type: 'up_to_date' }
+  | { type: 'update_available' }
+  | { type: 'update_recommended' }
+  | { type: 'update_required' }
+  | { type: 'disabled' };
+```
+
+---
+
+## DeviceClient
+
+Collects device information.
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getDeviceId()` | `Promise<string>` | Get stable device UUID |
+| `getDeviceInfo()` | `Promise<DeviceInfo>` | Get full device info |
+
+### DeviceInfo
+
+```typescript
+interface DeviceInfo {
+  timestamp: string;
+  os: OSInfo;
+  hardware: HardwareInfo;
+  application: ApplicationInfo;
+}
+```
+
+---
+
+## StorageAdapter
+
+Abstract class for storage implementations.
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `createStorage(key)` | `SupportedStorage` | Create namespaced storage |
+
+### SupportedStorage
+
+```typescript
+interface SupportedStorage {
+  preload(): void;
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+  clear(): void;
+  keys(): string[];
+}
+```
+
+---
+
+## DeviceInfoAdapter
+
+Interface for device information adapters.
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `applicationInfo` | `ApplicationInfo` | App version info |
+| `hardwareInfo` | `HardwareInfo` | Device hardware info |
+| `osInfo` | `OSInfo` | Operating system info |
+
+### ApplicationInfo
+
+```typescript
+interface ApplicationInfo {
+  version: string;
+  buildNumber: string;
+  bundleId: string;
+}
+```
+
+### HardwareInfo
+
+```typescript
+interface HardwareInfo {
+  deviceName: string;
+  brand: string;
+  deviceType: string;
+}
+```
+
+### OSInfo
+
+```typescript
+interface OSInfo {
+  osName: string;
+  osVersion: string;
+}
+```
+
+---
+
+## AsyncResult
+
+Type-safe result type for async operations.
+
+```typescript
+type AsyncResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+```
+
+### Usage
+
+```typescript
+const result = await core.identity.identify({ user_id: '123' });
+
+if (result.success) {
+  console.log(result.data.session_id);
+} else {
+  console.error(result.error);
+}
+```

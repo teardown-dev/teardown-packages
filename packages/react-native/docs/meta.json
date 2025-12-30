@@ -1,0 +1,14 @@
+{
+	"title": "React Native SDK",
+	"pages": [
+		"getting-started",
+		"core-concepts",
+		"identity",
+		"force-updates",
+		"adapters",
+		"logging",
+		"api-reference",
+		"hooks-reference",
+		"advanced"
+	]
+}

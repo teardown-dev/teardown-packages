@@ -1,0 +1,100 @@
+---
+title: Notification Adapters
+description: Push notification adapters for token registration and management.
+icon: Bell
+---
+
+Notification adapters handle push notification token registration and management with your push notification provider.
+
+## Available Adapters
+
+| Adapter | Package | Best For |
+|---------|---------|----------|
+| [`ExpoNotificationsAdapter`](/docs/react-native/adapters/notifications/expo) | `expo-notifications` | Expo projects |
+| [`FirebaseMessagingAdapter`](/docs/react-native/adapters/notifications/firebase) | `@react-native-firebase/messaging` | Firebase Cloud Messaging |
+| [`WixNotificationsAdapter`](/docs/react-native/adapters/notifications/wix) | `react-native-notifications` | Wix notifications library |
+
+## Usage
+
+Notification adapters are optional and used separately from the core SDK:
+
+```typescript
+import { ExpoNotificationsAdapter } from '@teardown/react-native/expo-notifications';
+
+const notificationsAdapter = new ExpoNotificationsAdapter();
+
+// Get push token
+const token = await notificationsAdapter.getToken();
+
+// Register token with your backend
+await registerPushToken(token);
+```
+
+## Adapter Interface
+
+All notification adapters implement:
+
+```typescript
+interface NotificationsAdapter {
+  /** Get the push notification token */
+  getToken(): Promise<string | null>;
+
+  /** Request notification permissions */
+  requestPermissions(): Promise<boolean>;
+
+  /** Check if notifications are enabled */
+  isEnabled(): Promise<boolean>;
+
+  /** Subscribe to incoming notifications */
+  onNotification(handler: (notification: Notification) => void): () => void;
+
+  /** Subscribe to notification responses (user taps) */
+  onNotificationResponse(handler: (response: NotificationResponse) => void): () => void;
+}
+```
+
+## Choosing an Adapter
+
+| If you're using... | Use this adapter |
+|-------------------|------------------|
+| Expo with expo-notifications | `ExpoNotificationsAdapter` |
+| Firebase Cloud Messaging | `FirebaseMessagingAdapter` |
+| Wix react-native-notifications | `WixNotificationsAdapter` |
+| Other push library | Implement custom adapter |
+
+## Custom Adapter
+
+Implement the `NotificationsAdapter` interface:
+
+```typescript
+import type { NotificationsAdapter, Notification, NotificationResponse } from '@teardown/react-native';
+
+class CustomNotificationsAdapter implements NotificationsAdapter {
+  async getToken(): Promise<string | null> {
+    // Return push token from your notification library
+    return await myNotificationLib.getToken();
+  }
+
+  async requestPermissions(): Promise<boolean> {
+    // Request notification permissions
+    return await myNotificationLib.requestPermission();
+  }
+
+  async isEnabled(): Promise<boolean> {
+    // Check if notifications are enabled
+    return await myNotificationLib.areNotificationsEnabled();
+  }
+
+  onNotification(handler: (notification: Notification) => void): () => void {
+    // Subscribe to incoming notifications
+    const subscription = myNotificationLib.onNotification(handler);
+    return () => subscription.remove();
+  }
+
+  onNotificationResponse(handler: (response: NotificationResponse) => void): () => void {
+    // Subscribe to notification taps
+    const subscription = myNotificationLib.onNotificationOpened(handler);
+    return () => subscription.remove();
+  }
+}
+```

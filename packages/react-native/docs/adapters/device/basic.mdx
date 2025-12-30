@@ -1,0 +1,59 @@
+---
+title: BasicAdapter
+description: Fallback device adapter with minimal or static device information.
+---
+
+The `BasicAdapter` provides minimal device information without external dependencies. Useful for testing or fallback scenarios.
+
+## Usage
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { BasicAdapter } from '@teardown/react-native/adapters/basic';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new BasicAdapter(),
+});
+```
+
+## Import Path
+
+```typescript
+import { BasicAdapter } from '@teardown/react-native/adapters/basic';
+```
+
+## Collected Data
+
+The BasicAdapter returns static or minimal information:
+
+### Application Info
+- `version` - Static value or from app.json
+- `buildNumber` - Static value
+- `bundleId` - Static value or from app.json
+
+### Hardware Info
+- `deviceName` - "Unknown Device"
+- `brand` - "Unknown"
+- `deviceType` - "unknown"
+
+### OS Info
+- `osName` - From React Native Platform API
+- `osVersion` - From React Native Platform API
+
+## When to Use
+
+- Unit testing without native modules
+- Development/prototyping
+- Fallback when other adapters fail
+- Environments where native modules aren't available
+
+## Limitations
+
+- Limited device information accuracy
+- No hardware-specific details
+- Not recommended for production analytics

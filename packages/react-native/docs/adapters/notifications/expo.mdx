@@ -1,0 +1,127 @@
+---
+title: ExpoNotificationsAdapter
+description: Notification adapter for Expo projects using expo-notifications.
+---
+
+The `ExpoNotificationsAdapter` integrates with Expo's notifications library for push notification handling.
+
+## Installation
+
+```bash
+npx expo install expo-notifications expo-device expo-constants
+```
+
+## Usage
+
+```typescript
+import { ExpoNotificationsAdapter } from '@teardown/react-native/expo-notifications';
+
+const notifications = new ExpoNotificationsAdapter();
+
+// Request permissions
+const granted = await notifications.requestPermissions();
+
+if (granted) {
+  // Get push token
+  const token = await notifications.getToken();
+  console.log('Push token:', token);
+}
+```
+
+## Import Path
+
+```typescript
+import { ExpoNotificationsAdapter } from '@teardown/react-native/expo-notifications';
+```
+
+## API
+
+### getToken()
+
+Get the Expo push token:
+
+```typescript
+const token = await notifications.getToken();
+// Returns: "ExponentPushToken[xxxxxx]" or null
+```
+
+### requestPermissions()
+
+Request notification permissions:
+
+```typescript
+const granted = await notifications.requestPermissions();
+// Returns: true if granted, false otherwise
+```
+
+### isEnabled()
+
+Check if notifications are enabled:
+
+```typescript
+const enabled = await notifications.isEnabled();
+```
+
+### onNotification()
+
+Subscribe to incoming notifications while app is foregrounded:
+
+```typescript
+const unsubscribe = notifications.onNotification((notification) => {
+  console.log('Received:', notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+### onNotificationResponse()
+
+Subscribe to notification responses (user taps):
+
+```typescript
+const unsubscribe = notifications.onNotificationResponse((response) => {
+  console.log('User tapped notification:', response.notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+## Configuration
+
+### app.json / app.config.js
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+    ]
+  }
+}
+```
+
+### Android
+
+For FCM integration, add your `google-services.json` to the project root.
+
+### iOS
+
+Push notifications require:
+- Apple Developer account
+- Push notification capability
+- APNs certificate or key
+
+## Requirements
+
+- `expo-notifications` >= 0.17.0
+- `expo-device` >= 4.0.0
+- `expo-constants` >= 13.0.0
+- EAS Build or dev client (not Expo Go)

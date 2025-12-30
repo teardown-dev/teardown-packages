@@ -1,0 +1,96 @@
+---
+title: Adapters
+description: Platform adapters for storage, device info, and notifications.
+icon: Plug
+---
+
+The Teardown SDK uses adapters to abstract platform-specific functionality. This allows the SDK to work across different React Native environments (Expo, bare RN) and with different underlying libraries.
+
+## Adapter Types
+
+### Device Adapters
+
+Collect device and application information for identification and analytics.
+
+| Adapter | Package | Use Case |
+|---------|---------|----------|
+| [`ExpoDeviceAdapter`](/docs/react-native/adapters/device/expo) | `expo-device`, `expo-application` | Expo projects |
+| [`DeviceInfoAdapter`](/docs/react-native/adapters/device/device-info) | `react-native-device-info` | Bare RN projects |
+| [`BasicAdapter`](/docs/react-native/adapters/device/basic) | None | Fallback/testing |
+
+[View Device Adapters →](/docs/react-native/adapters/device)
+
+### Storage Adapters
+
+Handle persistent data storage for sessions, device IDs, and version status.
+
+| Adapter | Package | Use Case |
+|---------|---------|----------|
+| [`MMKVStorageAdapter`](/docs/react-native/adapters/storage/mmkv) | `react-native-mmkv` | Fast sync storage (recommended) |
+| [`AsyncStorageAdapter`](/docs/react-native/adapters/storage/async-storage) | `@react-native-async-storage/async-storage` | Broader compatibility |
+
+[View Storage Adapters →](/docs/react-native/adapters/storage)
+
+### Notification Adapters
+
+Handle push notification registration and token management.
+
+| Adapter | Package | Use Case |
+|---------|---------|----------|
+| [`ExpoNotificationsAdapter`](/docs/react-native/adapters/notifications/expo) | `expo-notifications` | Expo projects |
+| [`FirebaseMessagingAdapter`](/docs/react-native/adapters/notifications/firebase) | `@react-native-firebase/messaging` | Firebase Cloud Messaging |
+| [`WixNotificationsAdapter`](/docs/react-native/adapters/notifications/wix) | `react-native-notifications` | Wix notifications library |
+
+[View Notification Adapters →](/docs/react-native/adapters/notifications)
+
+## Required Adapters
+
+When initializing `TeardownCore`, you must provide:
+
+```typescript
+const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),    // Required
+  deviceAdapter: new ExpoDeviceAdapter(),       // Required
+});
+```
+
+## Common Configurations
+
+### Expo Project
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+```
+
+### Bare React Native Project
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
+import { AsyncStorageAdapter } from '@teardown/react-native/adapters/async-storage';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new AsyncStorageAdapter(),
+  deviceAdapter: new DeviceInfoAdapter(),
+});
+```
+
+## Custom Adapters
+
+All adapter types can be extended for custom implementations. See individual adapter sections for interface definitions.

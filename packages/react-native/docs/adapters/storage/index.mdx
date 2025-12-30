@@ -1,0 +1,93 @@
+---
+title: Storage Adapters
+description: Persistent storage adapters for sessions, device IDs, and version status.
+icon: Database
+---
+
+Storage adapters handle persistent data storage for the SDK. You must provide a storage adapter when initializing `TeardownCore`.
+
+## Available Adapters
+
+| Adapter | Package | Sync/Async | Best For |
+|---------|---------|-----------|----------|
+| [`MMKVStorageAdapter`](/docs/react-native/adapters/storage/mmkv) | `react-native-mmkv` | Sync | Performance (recommended) |
+| [`AsyncStorageAdapter`](/docs/react-native/adapters/storage/async-storage) | `@react-native-async-storage/async-storage` | Async | Compatibility |
+
+## Storage Interface
+
+All storage adapters implement:
+
+```typescript
+interface SupportedStorage {
+  preload(): void;
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+  clear(): void;
+  keys(): string[];
+}
+```
+
+## What Gets Stored
+
+The SDK stores:
+
+| Data | Storage Key | Description |
+|------|-------------|-------------|
+| Identity State | `identity:IDENTIFY_STATE` | Session, user ID, token |
+| Version Status | `version:version_status` | Last known update status |
+| Device ID | `device:device_id` | Stable device UUID |
+
+## Namespacing
+
+Keys are prefixed with org/project IDs to prevent conflicts:
+
+```
+teardown:{org_id}:{project_id}:identity:IDENTIFY_STATE
+teardown:{org_id}:{project_id}:version:version_status
+teardown:{org_id}:{project_id}:device:device_id
+```
+
+## Custom Adapter
+
+Extend `StorageAdapter` for custom implementations:
+
+```typescript
+import { StorageAdapter, type SupportedStorage } from '@teardown/react-native';
+
+class CustomStorageAdapter extends StorageAdapter {
+  createStorage(storageKey: string): SupportedStorage {
+    return {
+      preload: () => {
+        // Load data into memory (called on init)
+      },
+      getItem: (key: string) => {
+        return myStorage.get(`${storageKey}:${key}`);
+      },
+      setItem: (key: string, value: string) => {
+        myStorage.set(`${storageKey}:${key}`, value);
+      },
+      removeItem: (key: string) => {
+        myStorage.delete(`${storageKey}:${key}`);
+      },
+      clear: () => {
+        // Clear all keys for this namespace
+      },
+      keys: () => {
+        // Return all keys for this namespace
+        return [];
+      },
+    };
+  }
+}
+```
+
+## Comparison
+
+| Feature | MMKV | AsyncStorage |
+|---------|------|--------------|
+| Speed | Faster (sync) | Slower (async) |
+| Encryption | Built-in | No |
+| Bundle Size | Smaller | Larger |
+| Debugging | Binary data | Plain text |
+| Platform Support | iOS, Android | iOS, Android, Web |

@@ -1,0 +1,76 @@
+---
+title: DeviceInfoAdapter
+description: Device adapter for bare React Native projects using react-native-device-info.
+---
+
+The `DeviceInfoAdapter` uses `react-native-device-info` to collect device information in bare React Native projects.
+
+## Installation
+
+```bash
+npm install react-native-device-info
+# or
+bun add react-native-device-info
+```
+
+For iOS, run pod install:
+```bash
+cd ios && pod install
+```
+
+## Usage
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+export const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new DeviceInfoAdapter(),
+});
+```
+
+## Import Path
+
+```typescript
+import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
+```
+
+## Collected Data
+
+### Application Info
+- `version` - From `getVersion()`
+- `buildNumber` - From `getBuildNumber()`
+- `bundleId` - From `getBundleId()`
+
+### Hardware Info
+- `deviceName` - From `getDeviceName()`
+- `brand` - From `getBrand()`
+- `deviceType` - From `getDeviceType()` (phone, tablet, desktop, tv, unknown)
+
+### OS Info
+- `osName` - From `getSystemName()`
+- `osVersion` - From `getSystemVersion()`
+
+## When to Use
+
+- Bare React Native CLI projects
+- Projects not using Expo modules
+- Projects requiring additional device info beyond what Expo provides
+
+## Requirements
+
+- `react-native-device-info` >= 10.0.0
+- React Native >= 0.60 (autolinking)
+
+## Platform Notes
+
+### iOS
+Requires `pod install` after installation.
+
+### Android
+Works out of the box with autolinking.

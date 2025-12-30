@@ -1,0 +1,61 @@
+---
+title: React Native SDK
+description: Comprehensive SDK for device identity, force updates, logging, and analytics in React Native and Expo applications.
+icon: Smartphone
+---
+
+The Teardown React Native SDK provides everything you need to manage device identity, force app updates, and collect analytics in your mobile applications.
+
+## Features
+
+- **Device & User Identity** - Unique device fingerprinting and user session management
+- **Force Updates** - Automatic version checking with optional, recommended, or required update flows
+- **Device Information** - Comprehensive device, OS, and app information collection
+- **Storage** - Namespaced persistent storage with platform adapters
+- **Logging** - Structured logging system with configurable log levels
+- **Type Safety** - Full TypeScript support with Zod runtime validation
+
+## Quick Start
+
+```bash
+bun add @teardown/react-native
+```
+
+```tsx
+import { TeardownCore, TeardownProvider } from '@teardown/react-native';
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+});
+
+export default function App() {
+  return (
+    <TeardownProvider core={teardown}>
+      <YourApp />
+    </TeardownProvider>
+  );
+}
+```
+
+## Platform Support
+
+| Platform | Device Adapter | Storage Adapter |
+|----------|---------------|-----------------|
+| Expo | `ExpoDeviceAdapter` | `MMKVStorageAdapter` or `AsyncStorageAdapter` |
+| React Native CLI | `DeviceInfoAdapter` | `MMKVStorageAdapter` or `AsyncStorageAdapter` |
+
+## Documentation
+
+- [Getting Started](/docs/react-native/getting-started) - Installation and setup
+- [Core Concepts](/docs/react-native/core-concepts) - Architecture overview
+- [Identity](/docs/react-native/identity) - User and device identification
+- [Force Updates](/docs/react-native/force-updates) - Version management
+- [Storage](/docs/react-native/storage) - Persistent storage adapters
+- [API Reference](/docs/react-native/api-reference) - Complete API documentation
+- [Hooks Reference](/docs/react-native/hooks-reference) - React hooks

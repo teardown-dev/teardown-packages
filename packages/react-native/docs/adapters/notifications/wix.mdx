@@ -1,0 +1,140 @@
+---
+title: WixNotificationsAdapter
+description: Notification adapter for Wix react-native-notifications library.
+---
+
+The `WixNotificationsAdapter` integrates with Wix's react-native-notifications library.
+
+## Installation
+
+```bash
+npm install react-native-notifications
+# or
+bun add react-native-notifications
+```
+
+For iOS:
+```bash
+cd ios && pod install
+```
+
+## Usage
+
+```typescript
+import { WixNotificationsAdapter } from '@teardown/react-native/wix-notifications';
+
+const notifications = new WixNotificationsAdapter();
+
+// Request permissions
+const granted = await notifications.requestPermissions();
+
+if (granted) {
+  // Get push token
+  const token = await notifications.getToken();
+  console.log('Push token:', token);
+}
+```
+
+## Import Path
+
+```typescript
+import { WixNotificationsAdapter } from '@teardown/react-native/wix-notifications';
+```
+
+## API
+
+### getToken()
+
+Get the device push token:
+
+```typescript
+const token = await notifications.getToken();
+// Returns: device token string or null
+```
+
+### requestPermissions()
+
+Request notification permissions:
+
+```typescript
+const granted = await notifications.requestPermissions();
+// Returns: true if granted, false otherwise
+```
+
+### isEnabled()
+
+Check if notifications are enabled:
+
+```typescript
+const enabled = await notifications.isEnabled();
+```
+
+### onNotification()
+
+Subscribe to incoming notifications:
+
+```typescript
+const unsubscribe = notifications.onNotification((notification) => {
+  console.log('Received:', notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+### onNotificationResponse()
+
+Subscribe to notification opens:
+
+```typescript
+const unsubscribe = notifications.onNotificationResponse((response) => {
+  console.log('User tapped:', response.notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+## Configuration
+
+### iOS
+
+1. Enable Push Notifications capability in Xcode
+2. Add to `AppDelegate.m`:
+
+```objc
+#import <RNNotifications.h>
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  [RNNotifications startMonitorNotifications];
+  return YES;
+}
+
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+  [RNNotifications didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+  [RNNotifications didFailToRegisterForRemoteNotificationsWithError:error];
+}
+```
+
+### Android
+
+1. Add Firebase configuration (google-services.json)
+2. Initialize in `MainApplication.java`:
+
+```java
+import com.wix.reactnativenotifications.RNNotificationsPackage;
+```
+
+## When to Use
+
+- Existing projects using react-native-notifications
+- Projects requiring fine-grained notification control
+- Cross-platform notification handling
+
+## Requirements
+
+- `react-native-notifications` >= 4.0.0
+- React Native >= 0.60

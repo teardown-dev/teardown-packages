@@ -1,0 +1,185 @@
+---
+title: Force Updates
+description: Manage app version checking and force update flows.
+icon: RefreshCw
+---
+
+The Force Update client automatically checks your app version against your configured release policy and can require users to update.
+
+## Overview
+
+Force updates work by:
+
+1. Checking app version on identify
+2. Checking again when app returns to foreground
+3. Emitting status changes your app can respond to
+
+## Version Status
+
+```typescript
+type VersionStatus =
+  | { type: 'initializing' }   // SDK starting up
+  | { type: 'checking' }       // Version check in progress
+  | { type: 'up_to_date' }     // Current version is valid
+  | { type: 'update_available' }   // Optional update exists
+  | { type: 'update_recommended' } // Recommended update exists
+  | { type: 'update_required' }    // Must update to continue
+  | { type: 'disabled' }       // Version/build has been disabled
+```
+
+## Basic Usage
+
+### Using the Hook
+
+```typescript
+import { useForceUpdate } from '@teardown/react-native';
+
+function App() {
+  const { versionStatus, isUpdateRequired, isUpdateAvailable, isUpdateRecommended } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateModal />;
+  }
+
+  if (isUpdateRecommended) {
+    return (
+      <>
+        <UpdateBanner onDismiss={() => {}} />
+        <MainApp />
+      </>
+    );
+  }
+
+  return <MainApp />;
+}
+```
+
+### Hook Return Values
+
+```typescript
+interface UseForceUpdateResult {
+  versionStatus: VersionStatus;      // Full status object
+  isUpdateAvailable: boolean;        // Any update exists (available, recommended, or required)
+  isUpdateRecommended: boolean;      // Update is recommended but not required
+  isUpdateRequired: boolean;         // Update is mandatory
+}
+```
+
+## Configuration
+
+Configure force update behavior in `TeardownCore`:
+
+```typescript
+const teardown = new TeardownCore({
+  // ...other options
+  forceUpdate: {
+    checkIntervalMs: 300_000,        // 5 minutes (default)
+    checkOnForeground: true,         // Check when app foregrounds (default: true)
+    identifyAnonymousDevice: false,  // Check even when not identified (default: false)
+  },
+});
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `checkIntervalMs` | number | 300000 | Minimum time between version checks. Use `0` for every foreground, `-1` to disable. Values below 30s are clamped to 30s. |
+| `checkOnForeground` | boolean | true | Check version when app returns to foreground |
+| `identifyAnonymousDevice` | boolean | false | Check version even when user is not identified |
+
+## Direct API Access
+
+### Get Current Status
+
+```typescript
+const status = core.forceUpdate.getVersionStatus();
+```
+
+### Subscribe to Changes
+
+```typescript
+const unsubscribe = core.forceUpdate.onVersionStatusChange((status) => {
+  if (status.type === 'update_required') {
+    // Show force update modal
+  }
+});
+
+// Cleanup
+unsubscribe();
+```
+
+## Implementation Patterns
+
+### Force Update Modal
+
+```tsx
+function ForceUpdateModal() {
+  const handleUpdate = () => {
+    // Open app store
+    Linking.openURL('https://apps.apple.com/app/your-app');
+  };
+
+  return (
+    <Modal visible>
+      <View style={styles.container}>
+        <Text>Update Required</Text>
+        <Text>Please update to continue using the app.</Text>
+        <Button onPress={handleUpdate} title="Update Now" />
+      </View>
+    </Modal>
+  );
+}
+```
+
+### Soft Update Banner
+
+```tsx
+function UpdateBanner({ onDismiss }: { onDismiss: () => void }) {
+  const { isUpdateRecommended } = useForceUpdate();
+
+  if (!isUpdateRecommended) return null;
+
+  return (
+    <View style={styles.banner}>
+      <Text>A new version is available</Text>
+      <Button onPress={onDismiss} title="Later" />
+      <Button onPress={() => Linking.openURL('...')} title="Update" />
+    </View>
+  );
+}
+```
+
+### Root Level Guard
+
+```tsx
+function RootLayout() {
+  const { isUpdateRequired } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  return <Stack />;
+}
+```
+
+## How It Works
+
+1. **On Identify** - Version status is returned from the identify API
+2. **On Foreground** - If `checkOnForeground` is true and interval has passed, re-identifies to check version
+3. **State Persistence** - Last known status is cached for offline access
+4. **Event Emission** - Status changes trigger subscribers and hook re-renders
+
+## Dashboard Configuration
+
+Configure version policies in the [Teardown Dashboard](https://dash.teardown.dev):
+
+1. Go to your project settings
+2. Navigate to "Releases" or "Version Management"
+3. Set policies for each version/build:
+   - **Active** - Version is valid
+   - **Update Available** - Optional update exists
+   - **Update Recommended** - Soft nudge to update
+   - **Update Required** - Force update
+   - **Disabled** - Version blocked entirely

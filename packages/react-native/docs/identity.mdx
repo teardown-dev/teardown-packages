@@ -1,0 +1,171 @@
+---
+title: Identity
+description: User and device identification with the Teardown SDK.
+icon: User
+---
+
+The Identity client manages user sessions, device identification, and authentication state.
+
+## Overview
+
+The SDK automatically identifies devices on initialization. You can optionally associate users with devices by calling `identify()` with user information.
+
+## Session Structure
+
+```typescript
+interface Session {
+  session_id: string;  // Unique session identifier
+  device_id: string;   // Stable device identifier
+  user_id: string;     // User or persona identifier
+  token: string;       // Authentication token
+}
+```
+
+## Basic Usage
+
+### Identify a User
+
+```typescript
+const { core } = useTeardown();
+
+const handleLogin = async () => {
+  const result = await core.identity.identify({
+    user_id: 'user-123',
+    email: 'user@example.com',
+    name: 'John Doe',
+  });
+
+  if (result.success) {
+    console.log('Identified:', result.data.session_id);
+  } else {
+    console.error('Failed:', result.error);
+  }
+};
+```
+
+### Get Current Session
+
+```typescript
+// Imperative
+const session = core.identity.getSessionState();
+
+// Reactive (hook)
+const session = useSession();
+
+if (session) {
+  console.log('Device:', session.device_id);
+  console.log('User:', session.user_id);
+}
+```
+
+### Reset Identity
+
+Clear the current session and device association:
+
+```typescript
+core.identity.reset();
+```
+
+### Refresh Session
+
+Re-identify to refresh session data (only works if already identified):
+
+```typescript
+const result = await core.identity.refresh();
+```
+
+## Identity State
+
+The identity client maintains a state machine:
+
+```typescript
+type IdentifyState =
+  | { type: 'unidentified' }
+  | { type: 'identifying' }
+  | { type: 'identified'; session: Session; version_info: VersionInfo };
+```
+
+### Subscribe to State Changes
+
+```typescript
+const unsubscribe = core.identity.onIdentifyStateChange((state) => {
+  switch (state.type) {
+    case 'unidentified':
+      // Show login screen
+      break;
+    case 'identifying':
+      // Show loading
+      break;
+    case 'identified':
+      // Navigate to app
+      console.log('Session:', state.session);
+      break;
+  }
+});
+
+// Cleanup
+unsubscribe();
+```
+
+## Persona Object
+
+When identifying, you can provide optional user information:
+
+```typescript
+interface Persona {
+  user_id?: string;   // Your system's user ID
+  email?: string;     // User email
+  name?: string;      // Display name
+}
+```
+
+All fields are optional. If no persona is provided, the device is identified anonymously.
+
+## Device ID
+
+The SDK generates a stable device ID that persists across app sessions:
+
+```typescript
+const deviceId = await core.device.getDeviceId();
+```
+
+The device ID is:
+- Generated once per device
+- Persisted in storage
+- Used for all API calls
+- Stable across app updates
+
+## Version Info
+
+The identify response includes version information used for force updates:
+
+```typescript
+if (state.type === 'identified') {
+  const status = state.version_info.status;
+  // 'UP_TO_DATE' | 'UPDATE_AVAILABLE' | 'UPDATE_RECOMMENDED' | 'UPDATE_REQUIRED' | 'DISABLED'
+}
+```
+
+## Error Handling
+
+```typescript
+const result = await core.identity.identify({ user_id: '123' });
+
+if (!result.success) {
+  switch (result.error) {
+    case 'Network error':
+      // Handle offline
+      break;
+    default:
+      // Handle other errors
+      console.error(result.error);
+  }
+}
+```
+
+## Best Practices
+
+1. **Call identify on login** - Associate users with their devices
+2. **Call reset on logout** - Clear session data
+3. **Handle offline** - The SDK caches session data for offline use
+4. **Use useSession hook** - For reactive UI updates

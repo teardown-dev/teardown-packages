@@ -1,0 +1,144 @@
+---
+title: Logging
+description: Configure structured logging in the Teardown SDK.
+icon: FileText
+---
+
+The SDK includes a structured logging system for debugging and monitoring.
+
+## Log Levels
+
+```typescript
+type LogLevel = 'none' | 'error' | 'warn' | 'info' | 'verbose';
+```
+
+| Level | Priority | Description |
+|-------|----------|-------------|
+| `none` | 0 | No logging |
+| `error` | 1 | Only errors |
+| `warn` | 2 | Errors and warnings |
+| `info` | 3 | General information |
+| `verbose` | 4 | Detailed debug output |
+
+## Setting Log Level
+
+```typescript
+const teardown = new TeardownCore({
+  // ...options
+});
+
+// Set log level (default is 'verbose' during development)
+teardown.setLogLevel('verbose');
+```
+
+## Log Output
+
+Each client logs with a prefix for easy filtering:
+
+```
+[Teardown:TeardownCore] TeardownCore initialized
+[Teardown:IdentityClient] Identifying user with persona: John
+[Teardown:ForceUpdateClient] Version status: up_to_date
+[Teardown:DeviceClient] Device ID: 550e8400-e29b-41d4...
+```
+
+## Log Methods
+
+The internal `Logger` class provides these methods:
+
+| Method | Level Required | Console Method |
+|--------|---------------|----------------|
+| `error()` | error | `console.error` |
+| `warn()` | warn | `console.warn` |
+| `info()` | info | `console.log` |
+| `debug()` | verbose | `console.debug` |
+| `trace()` | verbose | `console.trace` |
+
+### Debug Variants
+
+Additional debug methods for categorized output:
+
+```typescript
+logger.debugError('Something went wrong', { error });   // Error: [prefix] ...
+logger.debugWarn('Warning message');                     // Warning: [prefix] ...
+logger.debugInfo('Info message');                        // Info: [prefix] ...
+logger.debugVerbose('Verbose details');                  // Verbose: [prefix] ...
+```
+
+## Production Logging
+
+For production builds, set log level to `none` or `error`:
+
+```typescript
+const teardown = new TeardownCore({ /* ... */ });
+
+if (__DEV__) {
+  teardown.setLogLevel('verbose');
+} else {
+  teardown.setLogLevel('error');
+}
+```
+
+## Filtering Logs
+
+Use the `[Teardown:` prefix to filter SDK logs in your console:
+
+**React Native Debugger:**
+```
+Filter: [Teardown:
+```
+
+**Xcode Console:**
+```
+[Teardown:
+```
+
+**Android Logcat:**
+```bash
+adb logcat | grep "\[Teardown:"
+```
+
+## Internal Architecture
+
+The logging system consists of two classes:
+
+### LoggingClient
+
+Central log level management:
+
+```typescript
+class LoggingClient {
+  setLogLevel(level: LogLevel): void;
+  getLogLevel(): LogLevel;
+  shouldLog(level: LogLevel): boolean;
+  createLogger(options: { name: string }): Logger;
+}
+```
+
+### Logger
+
+Individual logger instance with bound console methods:
+
+```typescript
+class Logger {
+  get prefix(): string;  // [Teardown:ClientName]
+  info(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  debug(message: string, ...args: unknown[]): void;
+  trace(message: string, ...args: unknown[]): void;
+}
+```
+
+## Best Practices
+
+1. **Use `verbose` in development** - See all SDK activity
+2. **Use `error` in production** - Minimize noise, catch issues
+3. **Filter by prefix** - Isolate SDK logs from app logs
+4. **Check log level first** - Avoid expensive string operations:
+
+```typescript
+if (core.logging.shouldLog('verbose')) {
+  console.log('Complex debug:', JSON.stringify(largeObject));
+}
+```

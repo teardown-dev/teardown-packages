@@ -1,0 +1,232 @@
+---
+title: Hooks Reference
+description: React hooks for the Teardown SDK.
+icon: Anchor
+---
+
+The SDK provides React hooks for reactive access to SDK state.
+
+## TeardownProvider
+
+Context provider that makes the SDK available to all child components.
+
+```tsx
+import { TeardownProvider } from '@teardown/react-native';
+import { teardown } from './lib/teardown';
+
+function App() {
+  return (
+    <TeardownProvider core={teardown}>
+      <YourApp />
+    </TeardownProvider>
+  );
+}
+```
+
+### Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `core` | `TeardownCore` | Yes | Initialized TeardownCore instance |
+| `children` | `ReactNode` | Yes | Child components |
+
+---
+
+## useTeardown
+
+Access the TeardownCore instance from any component.
+
+```typescript
+import { useTeardown } from '@teardown/react-native';
+
+function MyComponent() {
+  const { core } = useTeardown();
+
+  // Access clients
+  await core.identity.identify({ user_id: '123' });
+  core.setLogLevel('verbose');
+}
+```
+
+### Returns
+
+```typescript
+interface UseTeardownResult {
+  core: TeardownCore;
+}
+```
+
+### Throws
+
+Throws an error if used outside of `TeardownProvider`.
+
+---
+
+## useSession
+
+Get the current session with reactive updates.
+
+```typescript
+import { useSession } from '@teardown/react-native';
+
+function ProfileScreen() {
+  const session = useSession();
+
+  if (!session) {
+    return <LoginScreen />;
+  }
+
+  return (
+    <View>
+      <Text>User ID: {session.user_id}</Text>
+      <Text>Device ID: {session.device_id}</Text>
+      <Text>Session ID: {session.session_id}</Text>
+    </View>
+  );
+}
+```
+
+### Returns
+
+```typescript
+type UseSessionResult = Session | null;
+
+interface Session {
+  session_id: string;
+  device_id: string;
+  user_id: string;
+  token: string;
+}
+```
+
+Returns `null` if not identified.
+
+### Reactivity
+
+The hook subscribes to `identity.onIdentifyStateChange()` and re-renders when:
+- User identifies (session available)
+- User resets (session becomes null)
+- Session refreshes (new session data)
+
+---
+
+## useForceUpdate
+
+Get version status with reactive updates.
+
+```typescript
+import { useForceUpdate } from '@teardown/react-native';
+
+function App() {
+  const {
+    versionStatus,
+    isUpdateAvailable,
+    isUpdateRecommended,
+    isUpdateRequired
+  } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateModal />;
+  }
+
+  if (isUpdateRecommended) {
+    return (
+      <>
+        <UpdateBanner />
+        <MainApp />
+      </>
+    );
+  }
+
+  return <MainApp />;
+}
+```
+
+### Returns
+
+```typescript
+interface UseForceUpdateResult {
+  /** Full version status object */
+  versionStatus: VersionStatus;
+  /** Any update exists (available, recommended, or required) */
+  isUpdateAvailable: boolean;
+  /** Update is recommended but not required */
+  isUpdateRecommended: boolean;
+  /** Update is mandatory */
+  isUpdateRequired: boolean;
+}
+```
+
+### Convenience Booleans
+
+| Property | True When |
+|----------|-----------|
+| `isUpdateRequired` | `versionStatus.type === 'update_required'` |
+| `isUpdateRecommended` | `versionStatus.type === 'update_recommended'` |
+| `isUpdateAvailable` | Any of: `update_available`, `update_recommended`, `update_required` |
+
+### Reactivity
+
+The hook subscribes to `forceUpdate.onVersionStatusChange()` and re-renders when:
+- Version check completes
+- Status changes (e.g., from up_to_date to update_required)
+- App foregrounds (triggers new check)
+
+---
+
+## Usage Patterns
+
+### Conditional Rendering
+
+```tsx
+function RootLayout() {
+  const session = useSession();
+  const { isUpdateRequired } = useForceUpdate();
+
+  if (isUpdateRequired) {
+    return <ForceUpdateScreen />;
+  }
+
+  if (!session) {
+    return <AuthStack />;
+  }
+
+  return <MainStack />;
+}
+```
+
+### Loading States
+
+```tsx
+function App() {
+  const session = useSession();
+  const { versionStatus } = useForceUpdate();
+
+  // SDK is initializing
+  if (versionStatus.type === 'initializing') {
+    return <SplashScreen />;
+  }
+
+  // Checking version
+  if (versionStatus.type === 'checking') {
+    return <LoadingScreen message="Checking for updates..." />;
+  }
+
+  return <MainApp />;
+}
+```
+
+### Accessing Core Methods
+
+```tsx
+function LogoutButton() {
+  const { core } = useTeardown();
+
+  const handleLogout = () => {
+    core.identity.reset();
+    // Session will become null, useSession will re-render
+  };
+
+  return <Button onPress={handleLogout} title="Logout" />;
+}
+```
