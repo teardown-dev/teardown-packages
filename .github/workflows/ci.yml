@@ -13,7 +13,7 @@ concurrency:
 jobs:
   checks:
     name: Checks
-    runs-on: linux-arm64
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 8
     steps:
       - name: Debug - Start
