@@ -1,3 +1,4 @@
+console.log("[DEBUG] force-update.client.test.ts - Starting module load...");
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { EventEmitter } from "eventemitter3";
 import { ForceUpdateClient, IdentifyVersionStatusEnum, VERSION_STATUS_STORAGE_KEY } from "./force-update.client";
@@ -555,3 +556,5 @@ describe("ForceUpdateClient", () => {
 		});
 	});
 });
+
+console.log("[DEBUG] force-update.client.test.ts - Tests registered successfully");
