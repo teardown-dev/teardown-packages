@@ -5,9 +5,6 @@ on:
     - cron: "0 23 * * *" # 23:00 UTC daily (end of UK business day)
   workflow_dispatch: # Manual trigger
 
-env:
-  TURBO_TELEMETRY_DISABLED: 1
-
 jobs:
   nightly:
     name: Nightly Build
