@@ -32,7 +32,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.4",
-		"@teardown/tsconfig": "workspace:*",
+		"@teardown/tsconfig": "0.1.49",
 		"@types/bun": "latest",
 		"turbo": "^2.6.0",
 		"typescript": "^5"
