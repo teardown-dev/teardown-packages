@@ -17,7 +17,8 @@
 			"dependsOn": ["^fmt"]
 		},
 		"test": {
-			"dependsOn": ["^test"]
+			"dependsOn": ["^test"],
+			"outputLogs": "full"
 		},
 		"dev": {
 			"persistent": true,
