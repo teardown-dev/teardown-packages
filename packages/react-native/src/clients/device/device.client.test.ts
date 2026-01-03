@@ -1,5 +1,3 @@
-console.log("[DEBUG] device.client.test.ts - Starting module load...");
-
 import { describe, expect, test } from "bun:test";
 import type { DeviceInfo } from "@teardown/schemas";
 import type { DeviceInfoAdapter } from "./adapters/device.adpater-interface";
@@ -175,5 +173,3 @@ describe("DeviceClient", () => {
 		});
 	});
 });
-
-console.log("[DEBUG] device.client.test.ts - Tests registered successfully");

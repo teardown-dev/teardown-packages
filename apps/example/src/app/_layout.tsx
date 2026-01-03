@@ -5,7 +5,6 @@ import { FullscreenTakeover } from "../components/fullscreen-takeover";
 import { teardown } from "../lib/teardown";
 import "../styles/global.css";
 
-
 export default function RootLayout() {
 	return (
 		<>

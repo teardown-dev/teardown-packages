@@ -1,5 +1,3 @@
-console.log("[DEBUG] storage-adapters.test.ts - Starting module load...");
-
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { SupportedStorage } from "./storage.adpater-interface";
 
@@ -574,5 +572,3 @@ describe("Edge Cases", () => {
 		});
 	});
 });
-
-console.log("[DEBUG] storage-adapters.test.ts - Tests registered successfully");
