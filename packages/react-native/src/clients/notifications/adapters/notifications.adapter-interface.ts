@@ -1,4 +1,4 @@
-import type { NotificationPlatformEnum } from "../device/device.client";
+import type { NotificationPlatformEnum } from "../../device/device.client";
 
 /**
  * Permission status returned from notification permission requests.

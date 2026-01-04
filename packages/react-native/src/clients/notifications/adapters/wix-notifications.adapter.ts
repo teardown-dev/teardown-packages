@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { type Notification, Notifications, type Registered } from "react-native-notifications";
-import { NotificationPlatformEnum } from "../device/device.client";
+import { NotificationPlatformEnum } from "../../device/device.client";
 import {
 	type DataMessage,
 	NotificationAdapter,

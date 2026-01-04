@@ -1,5 +1,5 @@
 import messaging, { type FirebaseMessagingTypes } from "@react-native-firebase/messaging";
-import { NotificationPlatformEnum } from "../device/device.client";
+import { NotificationPlatformEnum } from "../../device/device.client";
 import {
 	type DataMessage,
 	NotificationAdapter,

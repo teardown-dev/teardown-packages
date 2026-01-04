@@ -75,8 +75,6 @@ export class TeardownCore {
 		this.logger.debug("Initializing force update");
 		this.forceUpdate.initialize();
 		this.logger.debug("Force update initialized");
-
-		this.logger.debug("TeardownCore initialized");
 	}
 
 	setLogLevel(level: LogLevel): void {

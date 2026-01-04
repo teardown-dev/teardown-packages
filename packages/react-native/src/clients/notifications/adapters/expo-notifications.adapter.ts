@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { NotificationPlatformEnum } from "../device/device.client";
+import { NotificationPlatformEnum } from "../../device/device.client";
 import {
 	type DataMessage,
 	NotificationAdapter,

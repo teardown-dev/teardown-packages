@@ -43,6 +43,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 	experiments: {
 		typedRoutes: true,
 		tsconfigPaths: true,
-		reactCompiler: true,
+		// reactCompiler: true, // Disabled: RN 0.81 bundles react-native-renderer@19.1.0 which requires React 19.1.x exactly
 	},
 });

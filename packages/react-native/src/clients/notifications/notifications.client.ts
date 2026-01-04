@@ -8,7 +8,7 @@ import type {
 	PermissionStatus,
 	PushNotification,
 	Unsubscribe,
-} from "./notifications.adapter-interface";
+} from "./adapters/notifications.adapter-interface";
 
 interface NotificationEvents {
 	TOKEN_CHANGED: (token: string) => void;

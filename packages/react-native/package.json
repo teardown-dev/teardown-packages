@@ -20,40 +20,25 @@
 			"import": "./src/exports/index.ts",
 			"default": "./src/exports/index.ts"
 		},
-		"./adapters/expo": {
-			"types": "./src/exports/adapters/expo.ts",
-			"import": "./src/exports/adapters/expo.ts",
-			"default": "./src/exports/adapters/expo.ts"
+		"./adapters/*": {
+			"types": "./src/exports/adapters/*.ts",
+			"import": "./src/exports/adapters/*.ts",
+			"default": "./src/exports/adapters/*.ts"
 		},
-		"./adapters/mmkv": {
-			"types": "./src/exports/adapters/mmkv.ts",
-			"import": "./src/exports/adapters/mmkv.ts",
-			"default": "./src/exports/adapters/mmkv.ts"
+		"./expo": {
+			"types": "./src/exports/expo.ts",
+			"import": "./src/exports/expo.ts",
+			"default": "./src/exports/expo.ts"
 		},
-		"./adapters/async-storage": {
-			"types": "./src/exports/adapters/async-storage.ts",
-			"import": "./src/exports/adapters/async-storage.ts",
-			"default": "./src/exports/adapters/async-storage.ts"
+		"./firebase": {
+			"types": "./src/exports/firebase.ts",
+			"import": "./src/exports/firebase.ts",
+			"default": "./src/exports/firebase.ts"
 		},
-		"./adapters/device-info": {
-			"types": "./src/exports/adapters/device-info.ts",
-			"import": "./src/exports/adapters/device-info.ts",
-			"default": "./src/exports/adapters/device-info.ts"
-		},
-		"./expo-notifications": {
-			"types": "./src/exports/expo-notifications.ts",
-			"import": "./src/exports/expo-notifications.ts",
-			"default": "./src/exports/expo-notifications.ts"
-		},
-		"./firebase-messaging": {
-			"types": "./src/exports/firebase-messaging.ts",
-			"import": "./src/exports/firebase-messaging.ts",
-			"default": "./src/exports/firebase-messaging.ts"
-		},
-		"./wix-notifications": {
-			"types": "./src/exports/wix-notifications.ts",
-			"import": "./src/exports/wix-notifications.ts",
-			"default": "./src/exports/wix-notifications.ts"
+		"./wix": {
+			"types": "./src/exports/wix.ts",
+			"import": "./src/exports/wix.ts",
+			"default": "./src/exports/wix.ts"
 		}
 	},
 	"scripts": {
@@ -80,8 +65,10 @@
 		"@elysiajs/eden": "1.4.5",
 		"@react-native-firebase/messaging": "*",
 		"@types/bun": "1.3.5",
-		"@types/react": "19.2.7",
+		"@types/react": "~19.1.0",
 		"@types/uuid": "^11.0.0",
+		"react": "19.1.0",
+		"react-native": "0.81.5",
 		"react-native-notifications": "*"
 	},
 	"peerDependencies": {
