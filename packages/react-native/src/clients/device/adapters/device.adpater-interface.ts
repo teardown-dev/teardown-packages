@@ -32,7 +32,6 @@ export abstract class DeviceInfoAdapter {
 			application: this.applicationInfo,
 			hardware: this.hardwareInfo,
 			os: this.osInfo,
-			notifications: null,
 			update: null,
 		});
 	}
