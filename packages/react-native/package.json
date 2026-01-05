@@ -1,6 +1,6 @@
 {
 	"name": "@teardown/react-native",
-	"version": "2.0.25",
+	"version": "2.0.27",
 	"type": "module",
 	"private": false,
 	"publishConfig": {
@@ -52,9 +52,9 @@
 		"prepublishOnly": "bun run build"
 	},
 	"dependencies": {
-		"@teardown/ingest-api": "^0.1.49",
-		"@teardown/schemas": "^0.1.49",
-		"@teardown/types": "^0.1.49",
+		"@teardown/ingest-api": "2.0.26",
+		"@teardown/schemas": "2.0.26",
+		"@teardown/types": "2.0.26",
 		"eventemitter3": "^5.0.1",
 		"react-native-get-random-values": "^2.0.0",
 		"uuid": "^13.0.0",
