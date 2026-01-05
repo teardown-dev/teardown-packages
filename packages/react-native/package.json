@@ -52,9 +52,9 @@
 		"prepublishOnly": "bun run build"
 	},
 	"dependencies": {
-		"@teardown/ingest-api": "2.0.26",
-		"@teardown/schemas": "2.0.26",
-		"@teardown/types": "2.0.26",
+		"@teardown/ingest-api": "^2.0.27",
+		"@teardown/schemas": "^2.0.27",
+		"@teardown/types": "^2.0.27",
 		"eventemitter3": "^5.0.1",
 		"react-native-get-random-values": "^2.0.0",
 		"uuid": "^13.0.0",
