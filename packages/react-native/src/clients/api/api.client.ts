@@ -77,4 +77,8 @@ export class ApiClient {
 	get environmentSlug(): string {
 		return this.options.environment_slug ?? "production";
 	}
+
+	get ingestUrl(): string {
+		return this.options.ingestUrl ?? TEARDOWN_INGEST_URL;
+	}
 }

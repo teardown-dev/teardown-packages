@@ -2,9 +2,10 @@ import type { AsyncResult } from "@teardown/types";
 import { EventEmitter } from "eventemitter3";
 import { z } from "zod";
 import type { ApiClient } from "../api";
-import type { DeviceClient } from "../device/device.client";
+import type { DeviceClient, NotificationPlatformEnum } from "../device/device.client";
 import { IdentifyVersionStatusEnum } from "../force-update";
 import type { Logger, LoggingClient } from "../logging";
+import type { NotificationsClient } from "../notifications/notifications.client";
 import type { StorageClient, SupportedStorage } from "../storage";
 import type { UtilsClient } from "../utils";
 
@@ -89,7 +90,8 @@ export class IdentityClient {
 		utils: UtilsClient,
 		storage: StorageClient,
 		private readonly api: ApiClient,
-		private readonly device: DeviceClient
+		private readonly device: DeviceClient,
+		private readonly notificationsClient?: NotificationsClient
 	) {
 		this.logger = logging.createLogger({
 			name: "IdentityClient",
@@ -233,6 +235,35 @@ export class IdentityClient {
 				this.logger.debug("Getting device ID...");
 				const deviceId = await this.device.getDeviceId();
 				const deviceInfo = await this.device.getDeviceInfo();
+
+				// Get push notification info if notifications client is configured
+				let notificationsInfo:
+					| {
+							push: {
+								enabled: boolean;
+								granted: boolean;
+								token: string | null;
+								platform: NotificationPlatformEnum;
+							};
+					  }
+					| undefined;
+
+				if (this.notificationsClient) {
+					this.logger.debug("Getting push notification token...");
+					const token = await this.notificationsClient.getToken();
+					notificationsInfo = {
+						push: {
+							enabled: true,
+							granted: token !== null,
+							token,
+							platform: this.notificationsClient.platform,
+						},
+					};
+					this.logger.debug(
+						`Push token retrieved: ${token ? "yes" : "no"}, platform: ${this.notificationsClient.platform}`
+					);
+				}
+
 				this.logger.debug("Calling identify API...");
 				const response = await this.api.client("/v1/identify", {
 					method: "POST",
@@ -240,7 +271,7 @@ export class IdentityClient {
 						"td-api-key": this.api.apiKey,
 						"td-org-id": this.api.orgId,
 						"td-project-id": this.api.projectId,
-						"td-environment-slug": "production",
+						"td-environment-slug": this.api.environmentSlug,
 						"td-device-id": deviceId,
 					},
 					body: {
@@ -251,6 +282,7 @@ export class IdentityClient {
 							application: deviceInfo.application,
 							hardware: deviceInfo.hardware,
 							update: null,
+							notifications: notificationsInfo,
 						},
 					},
 				});

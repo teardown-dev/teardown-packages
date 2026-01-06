@@ -1,6 +1,7 @@
 import { useForceUpdate, useSession } from "@teardown/react-native";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { NotificationLog } from "../components/notification-log";
 import { teardown } from "../lib/teardown";
 
 export default function MainScreen() {
@@ -36,42 +37,64 @@ export default function MainScreen() {
 	};
 
 	return (
-		<View style={styles.container}>
-			<View style={styles.infoContainer}>
-				<Text style={styles.infoText}>Session: {session?.session_id ?? "Unknown"} </Text>
-				<Text style={styles.infoText}>Device ID: {session?.device_id ?? "Unknown"} </Text>
-				<Text style={styles.infoText}>Persona ID: {session?.user_id ?? "Unknown"} </Text>
-				<Text style={styles.infoText}>Version status: {forceUpdate.versionStatus.type ?? "Unknown"}</Text>
+		<ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
+			<View style={styles.section}>
+				<Text style={styles.sectionTitle}>Session Info</Text>
+				<View style={styles.infoContainer}>
+					<Text style={styles.infoText}>Session: {session?.session_id ?? "Unknown"} </Text>
+					<Text style={styles.infoText}>Device ID: {session?.device_id ?? "Unknown"} </Text>
+					<Text style={styles.infoText}>Persona ID: {session?.user_id ?? "Unknown"} </Text>
+					<Text style={styles.infoText}>Version status: {forceUpdate.versionStatus.type ?? "Unknown"}</Text>
+					<Text style={styles.infoText}>Environment: {teardown.api.environmentSlug}</Text>
+					<Text style={styles.infoText}>API: {teardown.api.ingestUrl}</Text>
+				</View>
+
+				<TextInput style={styles.input} placeholder="User ID" value={userId} onChangeText={onUserIdTextChange} />
+				<TextInput style={styles.input} placeholder="Email" value={email} onChangeText={onIdentifyTextChange} />
+				<TextInput style={styles.input} placeholder="Name" value={name} onChangeText={onNameTextChange} />
+
+				<Pressable style={styles.button} onPress={onIdentify}>
+					<Text style={styles.buttonText}>Identify</Text>
+				</Pressable>
 			</View>
 
-			<TextInput style={styles.input} placeholder="User ID" value={userId} onChangeText={onUserIdTextChange} />
-			<TextInput style={styles.input} placeholder="Email" value={email} onChangeText={onIdentifyTextChange} />
-			<TextInput style={styles.input} placeholder="Name" value={name} onChangeText={onNameTextChange} />
-
-			<Pressable style={styles.button} onPress={onIdentify}>
-				<Text style={styles.buttonText}>Identify</Text>
-			</Pressable>
-		</View>
+			<View style={styles.section}>
+				<Text style={styles.sectionTitle}>Push Notifications</Text>
+				<NotificationLog />
+			</View>
+		</ScrollView>
 	);
 }
 
 const styles = StyleSheet.create({
-	container: {
+	scrollContainer: {
 		flex: 1,
 		backgroundColor: "#FFFFFF",
+	},
+	scrollContent: {
 		padding: 16,
-		alignItems: "center",
-		justifyContent: "center",
+		paddingTop: 60,
+	},
+	section: {
+		marginBottom: 32,
+	},
+	sectionTitle: {
+		fontSize: 18,
+		fontWeight: "600",
+		color: "#1A1A1A",
+		marginBottom: 12,
 	},
 	infoContainer: {
 		width: "100%",
 		padding: 16,
 		gap: 12,
+		backgroundColor: "#F5F5F5",
+		marginBottom: 16,
 	},
 	infoText: {
 		color: "#1A1A1A",
-		fontSize: 16,
-		lineHeight: 24,
+		fontSize: 14,
+		lineHeight: 20,
 	},
 	input: {
 		width: "100%",
@@ -79,14 +102,12 @@ const styles = StyleSheet.create({
 		borderColor: "#1A1A1A",
 		borderWidth: 1,
 		padding: 8,
-		marginBottom: 16,
+		marginBottom: 12,
 	},
 	button: {
 		width: "100%",
 		height: 40,
 		backgroundColor: "#1A1A1A",
-		fontSize: 16,
-		lineHeight: 24,
 		alignItems: "center",
 		justifyContent: "center",
 	},
