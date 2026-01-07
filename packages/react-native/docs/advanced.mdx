@@ -133,7 +133,8 @@ export const useTeardown = () => ({
   core: {
     identity: {
       identify: jest.fn().mockResolvedValue({ success: true, data: mockSession }),
-      reset: jest.fn(),
+      signOut: jest.fn().mockResolvedValue({ success: true, data: undefined }),
+      signOutAll: jest.fn().mockResolvedValue({ success: true, data: undefined }),
       getSessionState: () => mockSession,
     },
     forceUpdate: {
@@ -187,8 +188,11 @@ console.log('Device ID:', await core.device.getDeviceId());
 For debugging or logout:
 
 ```typescript
-core.identity.reset();
-// This clears session data and device association
+// Sign out - clears session, keeps device ID
+await core.identity.signOut();
+
+// Full reset - clears session AND device ID (fresh install state)
+await core.identity.signOutAll();
 ```
 
 ## Performance

@@ -58,12 +58,51 @@ if (session) {
 }
 ```
 
-### Reset Identity
+### Sign Out
 
-Clear the current session and device association:
+Sign out the current user while preserving the device identity:
 
 ```typescript
-core.identity.reset();
+const result = await core.identity.signOut();
+
+if (result.success) {
+  console.log('Signed out successfully');
+} else {
+  console.error('Sign out failed:', result.error);
+}
+```
+
+This clears the session and user association but keeps the device ID. The same device will be recognized on the next `identify()` call.
+
+### Sign Out All (Full Reset)
+
+Sign out and reset all SDK state including the device ID:
+
+```typescript
+const result = await core.identity.signOutAll();
+```
+
+This clears everything - the device will appear as a fresh install on the next `identify()` call.
+
+### Sign Out Options
+
+Both `signOut()` and `signOutAll()` accept optional configuration:
+
+```typescript
+interface SignOutOptions {
+  // Additional properties to include in the sign out event
+  properties?: Record<string, unknown>;
+  // Wait for event to be sent before clearing state (default: true)
+  waitForEvent?: boolean;
+}
+
+// Example: Fire-and-forget sign out
+await core.identity.signOut({ waitForEvent: false });
+
+// Example: Include custom properties
+await core.identity.signOut({
+  properties: { reason: 'user_requested' }
+});
 ```
 
 ### Refresh Session
@@ -166,6 +205,7 @@ if (!result.success) {
 ## Best Practices
 
 1. **Call identify on login** - Associate users with their devices
-2. **Call reset on logout** - Clear session data
-3. **Handle offline** - The SDK caches session data for offline use
-4. **Use useSession hook** - For reactive UI updates
+2. **Call signOut on logout** - Clear session data and notify the backend
+3. **Use signOutAll for account switching** - When users switch accounts, use `signOutAll()` for a clean slate
+4. **Handle offline** - The SDK caches session data for offline use
+5. **Use useSession hook** - For reactive UI updates

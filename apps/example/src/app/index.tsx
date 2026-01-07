@@ -36,6 +36,18 @@ export default function MainScreen() {
 			});
 	};
 
+	const onSignOut = () => {
+		teardown.identity.signOut().then((result) => {
+			console.log("Sign out result", result);
+		});
+	};
+
+	const onSignOutAll = () => {
+		teardown.identity.signOutAll().then((result) => {
+			console.log("Sign out all result", result);
+		});
+	};
+
 	return (
 		<ScrollView style={styles.scrollContainer} contentContainerStyle={styles.scrollContent}>
 			<View style={styles.section}>
@@ -55,6 +67,14 @@ export default function MainScreen() {
 
 				<Pressable style={styles.button} onPress={onIdentify}>
 					<Text style={styles.buttonText}>Identify</Text>
+				</Pressable>
+
+				<Pressable style={styles.button} onPress={onSignOut}>
+					<Text style={styles.buttonText}>Sign Out</Text>
+				</Pressable>
+
+				<Pressable style={[styles.button, styles.destructiveButton]} onPress={onSignOutAll}>
+					<Text style={styles.buttonText}>Sign Out All (Reset Device)</Text>
 				</Pressable>
 			</View>
 
@@ -110,6 +130,10 @@ const styles = StyleSheet.create({
 		backgroundColor: "#1A1A1A",
 		alignItems: "center",
 		justifyContent: "center",
+		marginBottom: 12,
+	},
+	destructiveButton: {
+		backgroundColor: "#DC2626",
 	},
 	buttonText: {
 		color: "#FFFFFF",

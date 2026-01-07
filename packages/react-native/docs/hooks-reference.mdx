@@ -105,7 +105,7 @@ Returns `null` if not identified.
 
 The hook subscribes to `identity.onIdentifyStateChange()` and re-renders when:
 - User identifies (session available)
-- User resets (session becomes null)
+- User signs out (session becomes null)
 - Session refreshes (new session data)
 
 ---
@@ -225,8 +225,8 @@ function App() {
 function LogoutButton() {
   const { core } = useTeardown();
 
-  const handleLogout = () => {
-    core.identity.reset();
+  const handleLogout = async () => {
+    await core.identity.signOut();
     // Session will become null, useSession will re-render
   };
 

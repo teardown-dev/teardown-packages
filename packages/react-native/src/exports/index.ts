@@ -1,6 +1,7 @@
 // Clients
 export * from "../clients/api";
 export * from "../clients/device/device.client";
+export * from "../clients/events";
 export * from "../clients/logging";
 export * from "../clients/notifications";
 export * from "../clients/storage";

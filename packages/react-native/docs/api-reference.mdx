@@ -53,7 +53,8 @@ Manages user and device identification.
 |--------|---------|-------------|
 | `identify(persona?)` | `AsyncResult<IdentityUser>` | Identify user/device |
 | `refresh()` | `AsyncResult<IdentityUser>` | Re-identify current user |
-| `reset()` | `void` | Clear session data |
+| `signOut(options?)` | `AsyncResult<void>` | Sign out user, preserve device |
+| `signOutAll(options?)` | `AsyncResult<void>` | Sign out and reset device |
 | `getIdentifyState()` | `IdentifyState` | Get current state |
 | `getSessionState()` | `Session \| null` | Get current session |
 | `onIdentifyStateChange(listener)` | `() => void` | Subscribe to state changes |
@@ -87,6 +88,17 @@ type IdentifyState =
   | { type: 'unidentified' }
   | { type: 'identifying' }
   | { type: 'identified'; session: Session; version_info: VersionInfo };
+```
+
+### SignOutOptions
+
+```typescript
+interface SignOutOptions {
+  // Additional properties to include in the sign out event
+  properties?: Record<string, unknown>;
+  // Wait for event to be sent before clearing state (default: true)
+  waitForEvent?: boolean;
+}
 ```
 
 ---

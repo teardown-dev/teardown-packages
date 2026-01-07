@@ -1,5 +1,6 @@
 import { ApiClient } from "./clients/api";
 import { DeviceClient, type DeviceClientOptions } from "./clients/device/device.client";
+import { EventsClient } from "./clients/events";
 import { ForceUpdateClient, type ForceUpdateClientOptions } from "./clients/force-update";
 import { IdentityClient } from "./clients/identity";
 import { type Logger, LoggingClient, type LogLevel } from "./clients/logging";
@@ -30,6 +31,7 @@ export class TeardownCore {
 	public readonly api: ApiClient;
 	private readonly storage: StorageClient;
 	public readonly device: DeviceClient;
+	public readonly events: EventsClient;
 	public readonly identity: IdentityClient;
 	public readonly forceUpdate: ForceUpdateClient;
 	public readonly notifications?: NotificationsClient;
@@ -61,6 +63,9 @@ export class TeardownCore {
 			adapter: this.options.deviceAdapter,
 		});
 
+		// Create events client after device (needs device for deviceId)
+		this.events = new EventsClient(this.logging, this.api, this.device);
+
 		// Create notifications client before identity so it can be passed in
 		if (this.options.notificationAdapter) {
 			this.notifications = new NotificationsClient(this.logging, this.storage, {
@@ -74,6 +79,7 @@ export class TeardownCore {
 			this.storage,
 			this.api,
 			this.device,
+			this.events,
 			this.notifications
 		);
 		this.forceUpdate = new ForceUpdateClient(this.logging, this.storage, this.identity, this.options.forceUpdate);

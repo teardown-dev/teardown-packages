@@ -3,6 +3,7 @@ import { EventEmitter } from "eventemitter3";
 import { z } from "zod";
 import type { ApiClient } from "../api";
 import type { DeviceClient, NotificationPlatformEnum } from "../device/device.client";
+import type { EventsClient } from "../events";
 import { IdentifyVersionStatusEnum } from "../force-update";
 import type { Logger, LoggingClient } from "../logging";
 import type { NotificationsClient } from "../notifications/notifications.client";
@@ -13,6 +14,18 @@ export interface Persona {
 	name?: string | undefined;
 	user_id?: string | undefined;
 	email?: string | undefined;
+}
+
+export interface SignOutOptions {
+	/**
+	 * Additional properties to include in the sign out event
+	 */
+	properties?: Record<string, unknown>;
+	/**
+	 * Whether to wait for the event to be sent before clearing state.
+	 * Default: true (fire-and-forget if false)
+	 */
+	waitForEvent?: boolean;
 }
 
 export interface UpdateInfo {
@@ -131,6 +144,7 @@ export class IdentityClient {
 		storage: StorageClient,
 		private readonly api: ApiClient,
 		private readonly device: DeviceClient,
+		private readonly events: EventsClient,
 		private readonly notificationsClient?: NotificationsClient
 	) {
 		this.logger = logging.createLogger({
@@ -229,9 +243,99 @@ export class IdentityClient {
 		this.emitter.removeAllListeners("IDENTIFY_STATE_CHANGED");
 	}
 
-	public reset() {
+	/**
+	 * Internal method to clear identity state.
+	 * Used by signOut() and signOutAll().
+	 */
+	private clearIdentityState(): void {
 		this.storage.removeItem(IDENTIFY_STORAGE_KEY);
 		this.setIdentifyState({ type: "unidentified" });
+	}
+
+	/**
+	 * Sign out the current user.
+	 * Sends a sign_out event to the backend and clears session/user identity.
+	 * The deviceId is preserved - the same device will be recognized on next identify.
+	 *
+	 * @param options - Optional configuration for the sign out
+	 * @returns AsyncResult indicating success/failure of the event send
+	 */
+	async signOut(options?: SignOutOptions): AsyncResult<void> {
+		this.logger.debugInfo("Signing out user");
+
+		const session = this.getSessionState();
+		const waitForEvent = options?.waitForEvent ?? true;
+
+		// Send event FIRST while session/device data still exists
+		const eventPromise = this.events.track(
+			{
+				event_name: "user_signed_out",
+				event_type: "action",
+				properties: {
+					sign_out_type: "sign_out",
+					session_id: session?.session_id,
+					user_id: session?.user_id,
+					...options?.properties,
+				},
+			},
+			session?.session_id
+		);
+
+		if (waitForEvent) {
+			const result = await eventPromise;
+			// Clear state regardless of event send result
+			this.clearIdentityState();
+			return result;
+		}
+
+		// Fire-and-forget mode - don't await but still clear state
+		void eventPromise;
+		this.clearIdentityState();
+		return { success: true, data: undefined };
+	}
+
+	/**
+	 * Sign out and reset all state including deviceId.
+	 * Sends a sign_out_all event to the backend and clears all SDK state.
+	 * The device will appear as a fresh install on next identify.
+	 *
+	 * @param options - Optional configuration for the sign out
+	 * @returns AsyncResult indicating success/failure of the event send
+	 */
+	async signOutAll(options?: SignOutOptions): AsyncResult<void> {
+		this.logger.debugInfo("Signing out all - full reset");
+
+		const session = this.getSessionState();
+		const waitForEvent = options?.waitForEvent ?? true;
+
+		// Send event FIRST while session/device data still exists
+		const eventPromise = this.events.track(
+			{
+				event_name: "user_signed_out",
+				event_type: "action",
+				properties: {
+					sign_out_type: "sign_out_all",
+					session_id: session?.session_id,
+					user_id: session?.user_id,
+					...options?.properties,
+				},
+			},
+			session?.session_id
+		);
+
+		if (waitForEvent) {
+			const result = await eventPromise;
+			// Clear all state regardless of event send result
+			this.clearIdentityState();
+			this.device.reset();
+			return result;
+		}
+
+		// Fire-and-forget mode - don't await but still clear state
+		void eventPromise;
+		this.clearIdentityState();
+		this.device.reset();
+		return { success: true, data: undefined };
 	}
 
 	/**

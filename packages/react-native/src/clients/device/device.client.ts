@@ -67,4 +67,13 @@ export class DeviceClient {
 	async getDeviceInfo(): Promise<DeviceInfo> {
 		return this.options.adapter.getDeviceInfo();
 	}
+
+	/**
+	 * Reset the device client by clearing the stored deviceId.
+	 * This will generate a new deviceId on next getDeviceId() call.
+	 */
+	reset(): void {
+		this.logger.debug("Resetting device - clearing deviceId");
+		this.storage.removeItem("deviceId");
+	}
 }
