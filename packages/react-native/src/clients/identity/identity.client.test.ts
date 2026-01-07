@@ -127,6 +127,7 @@ function createMockApiClient(
 		apiKey: "test-api-key",
 		orgId: "test-org-id",
 		projectId: "test-project-id",
+		environmentSlug: "production",
 		client: async (endpoint: string, config: ApiCallRecord["config"]) => {
 			calls.push({ endpoint, config });
 
