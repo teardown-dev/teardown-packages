@@ -15,6 +15,14 @@ export interface Persona {
 	email?: string | undefined;
 }
 
+export interface UpdateInfo {
+	version: string;
+	build: string;
+	update_id: string;
+	effective_date: Date;
+	release_notes: string | null;
+}
+
 export interface IdentityUser {
 	session_id: string;
 	device_id: string;
@@ -22,7 +30,7 @@ export interface IdentityUser {
 	token: string;
 	version_info: {
 		status: IdentifyVersionStatusEnum;
-		update: null;
+		update: UpdateInfo | null;
 	};
 }
 
@@ -50,13 +58,45 @@ export const VersionStatusResponseSchema = z.object({
 	latest_version: z.string().optional(),
 });
 
+export const UpdateInfoSchema = z.object({
+	version: z.string(),
+	build: z.string(),
+	update_id: z.string(),
+	effective_date: z.coerce.date(),
+	release_notes: z.string().nullable(),
+});
+
+// Accept either the nested schema from API or the flat UpdateInfo schema
+export const VersionInfoResponseSchema = z.object({
+	status: z.enum(IdentifyVersionStatusEnum),
+	update: z.union([
+		z.object({
+			status: z.enum(IdentifyVersionStatusEnum),
+			update: UpdateInfoSchema,
+		}),
+		UpdateInfoSchema,
+		z.null(),
+	]),
+});
+
 export const IdentifiedSessionStateSchema = z.object({
 	type: z.literal("identified"),
 	session: SessionSchema,
-	version_info: z.object({
-		status: z.enum(IdentifyVersionStatusEnum),
-		update: z.null(),
-	}),
+	version_info: z
+		.object({
+			status: z.enum(IdentifyVersionStatusEnum),
+			update: UpdateInfoSchema.nullable(),
+		})
+		.transform((data) => {
+			// Flatten nested structure if present
+			if (data.update && typeof data.update === "object" && "status" in data.update && "update" in data.update) {
+				return {
+					status: data.status,
+					update: (data.update as any).update,
+				};
+			}
+			return data;
+		}),
 });
 
 export const IdentifyStateSchema = z.discriminatedUnion("type", [
@@ -307,24 +347,45 @@ export class IdentityClient {
 					};
 				}
 
+				// Parse and flatten the response
+				const parsedSession = SessionSchema.parse(response.data.data);
+				const rawVersionInfo = response.data.data.version_info;
+
+				// Flatten nested version_info structure if present
+				let flattenedUpdate: UpdateInfo | null = null;
+				if (rawVersionInfo.update) {
+					if (
+						typeof rawVersionInfo.update === "object" &&
+						"status" in rawVersionInfo.update &&
+						"update" in rawVersionInfo.update
+					) {
+						// Nested structure: { status: "UPDATE_AVAILABLE", update: { version, build, ... } }
+						flattenedUpdate = (rawVersionInfo.update as any).update;
+					} else {
+						// Already flat structure
+						flattenedUpdate = rawVersionInfo.update as UpdateInfo;
+					}
+				}
+
+				const flattenedVersionInfo = {
+					status: rawVersionInfo.status as IdentifyVersionStatusEnum,
+					update: flattenedUpdate,
+				};
+
+				const identityUser: IdentityUser = {
+					...parsedSession,
+					version_info: flattenedVersionInfo,
+				};
+
 				this.setIdentifyState({
 					type: "identified",
-					session: response.data.data,
-					version_info: {
-						status: response.data.data.version_info.status,
-						update: null,
-					},
+					session: parsedSession,
+					version_info: flattenedVersionInfo,
 				});
 
 				return {
 					success: true,
-					data: {
-						...response.data.data,
-						version_info: {
-							status: response.data.data.version_info.status,
-							update: null,
-						},
-					},
+					data: identityUser,
 				};
 			},
 			(error) => {

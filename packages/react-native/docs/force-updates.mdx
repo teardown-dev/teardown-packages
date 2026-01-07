@@ -21,11 +21,13 @@ type VersionStatus =
   | { type: 'initializing' }   // SDK starting up
   | { type: 'checking' }       // Version check in progress
   | { type: 'up_to_date' }     // Current version is valid
-  | { type: 'update_available' }   // Optional update exists
-  | { type: 'update_recommended' } // Recommended update exists
-  | { type: 'update_required' }    // Must update to continue
+  | { type: 'update_available'; releaseNotes?: string | null }   // Optional update exists
+  | { type: 'update_recommended'; releaseNotes?: string | null } // Recommended update exists
+  | { type: 'update_required'; releaseNotes?: string | null }    // Must update to continue
   | { type: 'disabled' }       // Version/build has been disabled
 ```
+
+Update status types include an optional `releaseNotes` field containing notes set in the dashboard when changing version/build status.
 
 ## Basic Usage
 
@@ -35,16 +37,16 @@ type VersionStatus =
 import { useForceUpdate } from '@teardown/react-native';
 
 function App() {
-  const { versionStatus, isUpdateRequired, isUpdateAvailable, isUpdateRecommended } = useForceUpdate();
+  const { versionStatus, isUpdateRequired, isUpdateAvailable, isUpdateRecommended, releaseNotes } = useForceUpdate();
 
   if (isUpdateRequired) {
-    return <ForceUpdateModal />;
+    return <ForceUpdateModal releaseNotes={releaseNotes} />;
   }
 
   if (isUpdateRecommended) {
     return (
       <>
-        <UpdateBanner onDismiss={() => {}} />
+        <UpdateBanner releaseNotes={releaseNotes} onDismiss={() => {}} />
         <MainApp />
       </>
     );
@@ -62,6 +64,7 @@ interface UseForceUpdateResult {
   isUpdateAvailable: boolean;        // Any update exists (available, recommended, or required)
   isUpdateRecommended: boolean;      // Update is recommended but not required
   isUpdateRequired: boolean;         // Update is mandatory
+  releaseNotes: string | null;       // Release notes for the update, if available
 }
 ```
 
@@ -114,7 +117,7 @@ unsubscribe();
 ### Force Update Modal
 
 ```tsx
-function ForceUpdateModal() {
+function ForceUpdateModal({ releaseNotes }: { releaseNotes: string | null }) {
   const handleUpdate = () => {
     // Open app store
     Linking.openURL('https://apps.apple.com/app/your-app');
@@ -125,6 +128,12 @@ function ForceUpdateModal() {
       <View style={styles.container}>
         <Text>Update Required</Text>
         <Text>Please update to continue using the app.</Text>
+        {releaseNotes && (
+          <View style={styles.releaseNotes}>
+            <Text style={styles.releaseNotesTitle}>What's New:</Text>
+            <Text>{releaseNotes}</Text>
+          </View>
+        )}
         <Button onPress={handleUpdate} title="Update Now" />
       </View>
     </Modal>
@@ -135,7 +144,7 @@ function ForceUpdateModal() {
 ### Soft Update Banner
 
 ```tsx
-function UpdateBanner({ onDismiss }: { onDismiss: () => void }) {
+function UpdateBanner({ releaseNotes, onDismiss }: { releaseNotes: string | null; onDismiss: () => void }) {
   const { isUpdateRecommended } = useForceUpdate();
 
   if (!isUpdateRecommended) return null;
@@ -143,6 +152,7 @@ function UpdateBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
     <View style={styles.banner}>
       <Text>A new version is available</Text>
+      {releaseNotes && <Text style={styles.notes}>{releaseNotes}</Text>}
       <Button onPress={onDismiss} title="Later" />
       <Button onPress={() => Linking.openURL('...')} title="Update" />
     </View>

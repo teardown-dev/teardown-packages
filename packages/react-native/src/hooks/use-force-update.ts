@@ -19,6 +19,11 @@ export interface UseForceUpdateResult {
 	 * Whether the the current version is out of date and is forced to be updated.
 	 */
 	isUpdateRequired: boolean;
+	/**
+	 * Release notes for the update, if available.
+	 * Only present when there's an update (update_available, update_recommended, or update_required).
+	 */
+	releaseNotes: string | null;
 }
 
 export const useForceUpdate = (): UseForceUpdateResult => {
@@ -35,10 +40,19 @@ export const useForceUpdate = (): UseForceUpdateResult => {
 	const isUpdateRecommended = versionStatus.type === "update_recommended";
 	const isUpdateAvailable = isUpdateRequired || isUpdateRecommended || versionStatus.type === "update_available";
 
+	// Extract release notes from update status types
+	const releaseNotes =
+		versionStatus.type === "update_available" ||
+		versionStatus.type === "update_recommended" ||
+		versionStatus.type === "update_required"
+			? (versionStatus.releaseNotes ?? null)
+			: null;
+
 	return {
 		versionStatus,
 		isUpdateRequired,
 		isUpdateRecommended,
 		isUpdateAvailable,
+		releaseNotes,
 	};
 };

@@ -32,9 +32,18 @@ export enum IdentifyVersionStatusEnum {
 export const InitializingVersionStatusSchema = z.object({ type: z.literal("initializing") });
 export const CheckingVersionStatusSchema = z.object({ type: z.literal("checking") });
 export const UpToDateVersionStatusSchema = z.object({ type: z.literal("up_to_date") });
-export const UpdateAvailableVersionStatusSchema = z.object({ type: z.literal("update_available") });
-export const UpdateRecommendedVersionStatusSchema = z.object({ type: z.literal("update_recommended") });
-export const UpdateRequiredVersionStatusSchema = z.object({ type: z.literal("update_required") });
+export const UpdateAvailableVersionStatusSchema = z.object({
+	type: z.literal("update_available"),
+	releaseNotes: z.string().nullable().optional(),
+});
+export const UpdateRecommendedVersionStatusSchema = z.object({
+	type: z.literal("update_recommended"),
+	releaseNotes: z.string().nullable().optional(),
+});
+export const UpdateRequiredVersionStatusSchema = z.object({
+	type: z.literal("update_required"),
+	releaseNotes: z.string().nullable().optional(),
+});
 export const DisabledVersionStatusSchema = z.object({ type: z.literal("disabled") });
 /**
  * The version status schema.
@@ -143,7 +152,7 @@ export class ForceUpdateClient {
 			this.logger.debug(
 				`Identity already identified, syncing version status from: ${currentState.version_info.status}`
 			);
-			this.updateFromVersionStatus(currentState.version_info.status);
+			this.updateFromVersionInfo(currentState.version_info);
 		} else {
 			this.logger.debug(`Identity not yet identified (${currentState.type}), waiting for identify event`);
 		}
@@ -189,13 +198,19 @@ export class ForceUpdateClient {
 					break;
 				case "identified":
 					this.logger.debug(`Identified with version_info.status: ${state.version_info.status}`);
-					this.updateFromVersionStatus(state.version_info.status ?? IdentifyVersionStatusEnum.UP_TO_DATE);
+					this.updateFromVersionInfo(state.version_info);
 					break;
 			}
 		});
 	}
 
-	private updateFromVersionStatus(status?: IdentifyVersionStatusEnum) {
+	private updateFromVersionInfo(versionInfo: {
+		status: IdentifyVersionStatusEnum;
+		update: { release_notes: string | null } | null;
+	}) {
+		const status = versionInfo.status;
+		const releaseNotes = versionInfo.update?.release_notes ?? null;
+
 		if (!status) {
 			this.setVersionStatus({ type: "up_to_date" });
 			return;
@@ -203,13 +218,15 @@ export class ForceUpdateClient {
 
 		switch (status) {
 			case "UPDATE_AVAILABLE":
-				this.setVersionStatus({ type: "update_available" });
+				this.setVersionStatus(releaseNotes ? { type: "update_available", releaseNotes } : { type: "update_available" });
 				break;
 			case "UPDATE_RECOMMENDED":
-				this.setVersionStatus({ type: "update_recommended" });
+				this.setVersionStatus(
+					releaseNotes ? { type: "update_recommended", releaseNotes } : { type: "update_recommended" }
+				);
 				break;
 			case "UPDATE_REQUIRED":
-				this.setVersionStatus({ type: "update_required" });
+				this.setVersionStatus(releaseNotes ? { type: "update_required", releaseNotes } : { type: "update_required" });
 				break;
 			case "UP_TO_DATE":
 				this.setVersionStatus({ type: "up_to_date" });
