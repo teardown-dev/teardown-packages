@@ -21,8 +21,11 @@ new TeardownCore(options: TeardownCoreOptions)
 | `org_id` | `string` | Yes | Organization ID from dashboard |
 | `project_id` | `string` | Yes | Project ID from dashboard |
 | `api_key` | `string` | Yes | API key from dashboard |
+| `environment_slug` | `string` | No | Environment slug (default: "production") |
+| `ingestUrl` | `string` | No | Custom ingest API URL for local/staging |
 | `storageAdapter` | `StorageAdapter` | Yes | Storage adapter instance |
 | `deviceAdapter` | `DeviceInfoAdapter` | Yes | Device info adapter instance |
+| `notificationAdapter` | `NotificationAdapter` | No | Push notification adapter instance |
 | `forceUpdate` | `ForceUpdateClientOptions` | No | Force update configuration |
 
 ### Methods
@@ -38,8 +41,10 @@ new TeardownCore(options: TeardownCoreOptions)
 |----------|------|-------------|
 | `api` | `ApiClient` | Backend API client |
 | `device` | `DeviceClient` | Device information client |
+| `events` | `EventsClient` | Event tracking client |
 | `identity` | `IdentityClient` | Identity management client |
 | `forceUpdate` | `ForceUpdateClient` | Version checking client |
+| `notifications` | `NotificationsClient \| undefined` | Push notifications client (if adapter provided) |
 
 ---
 
@@ -130,10 +135,140 @@ type VersionStatus =
   | { type: 'initializing' }
   | { type: 'checking' }
   | { type: 'up_to_date' }
-  | { type: 'update_available' }
-  | { type: 'update_recommended' }
-  | { type: 'update_required' }
+  | { type: 'update_available'; releaseNotes?: string | null }
+  | { type: 'update_recommended'; releaseNotes?: string | null }
+  | { type: 'update_required'; releaseNotes?: string | null }
   | { type: 'disabled' };
+```
+
+---
+
+## EventsClient
+
+Tracks events to the backend.
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `track(event, sessionId?)` | `AsyncResult<void>` | Track a single event |
+| `trackBatch(events, sessionId?)` | `AsyncResult<void>` | Track multiple events |
+
+### EventPayload
+
+```typescript
+interface EventPayload {
+  /** Name of the event (e.g., "button_clicked", "page_viewed") */
+  event_name: string;
+  /** Type of event */
+  event_type?: "action" | "screen_view" | "custom";
+  /** Additional properties to attach to the event */
+  properties?: Record<string, unknown>;
+  /** ISO timestamp. Defaults to current time if not provided */
+  timestamp?: string;
+}
+```
+
+### Usage
+
+```typescript
+const { core } = useTeardown();
+
+// Track a single event
+await core.events.track({
+  event_name: 'button_clicked',
+  event_type: 'action',
+  properties: { button_id: 'submit-form' }
+});
+
+// Track multiple events
+await core.events.trackBatch([
+  { event_name: 'page_viewed', event_type: 'screen_view', properties: { page: 'home' } },
+  { event_name: 'cta_shown', event_type: 'action' }
+]);
+```
+
+---
+
+## NotificationsClient
+
+Manages push notifications across different providers. Only available if `notificationAdapter` is provided in TeardownCore options.
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `requestPermissions()` | `Promise<PermissionStatus>` | Request notification permissions |
+| `getToken()` | `Promise<string \| null>` | Get push notification token |
+| `onTokenChange(listener)` | `Unsubscribe` | Subscribe to token changes |
+| `onNotificationReceived(listener)` | `Unsubscribe` | Subscribe to foreground notifications |
+| `onNotificationOpened(listener)` | `Unsubscribe` | Subscribe to notification taps |
+| `onDataMessage(listener)` | `Unsubscribe` | Subscribe to silent/data messages |
+| `destroy()` | `void` | Cleanup resources |
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `platform` | `NotificationPlatformEnum` | Notification platform (APNS, FCM, EXPO) |
+
+### PermissionStatus
+
+```typescript
+interface PermissionStatus {
+  granted: boolean;
+  canAskAgain: boolean;
+}
+```
+
+### PushNotification
+
+```typescript
+interface PushNotification {
+  title?: string;
+  body?: string;
+  data?: Record<string, unknown>;
+}
+```
+
+### DataMessage
+
+```typescript
+interface DataMessage {
+  data: Record<string, unknown>;
+}
+```
+
+### NotificationPlatformEnum
+
+```typescript
+enum NotificationPlatformEnum {
+  APNS = "APNS",  // Apple Push Notification Service
+  FCM = "FCM",    // Firebase Cloud Messaging
+  EXPO = "EXPO",  // Expo Push Notifications
+}
+```
+
+### Usage
+
+```typescript
+const { core } = useTeardown();
+
+if (core.notifications) {
+  // Request permissions
+  const status = await core.notifications.requestPermissions();
+
+  // Get token for backend
+  const token = await core.notifications.getToken();
+
+  // Listen for foreground notifications
+  const unsub = core.notifications.onNotificationReceived((notification) => {
+    console.log('Notification:', notification.title);
+  });
+
+  // Cleanup
+  unsub();
+}
 ```
 
 ---
@@ -148,15 +283,18 @@ Collects device information.
 |--------|---------|-------------|
 | `getDeviceId()` | `Promise<string>` | Get stable device UUID |
 | `getDeviceInfo()` | `Promise<DeviceInfo>` | Get full device info |
+| `reset()` | `void` | Clear stored deviceId (new ID on next call) |
 
 ### DeviceInfo
 
 ```typescript
 interface DeviceInfo {
-  timestamp: string;
+  timestamp?: Date;
   os: OSInfo;
   hardware: HardwareInfo;
   application: ApplicationInfo;
+  update: DeviceUpdateInfo | null;
+  notifications?: NotificationsInfo;
 }
 ```
 
@@ -204,8 +342,7 @@ Interface for device information adapters.
 ```typescript
 interface ApplicationInfo {
   version: string;
-  buildNumber: string;
-  bundleId: string;
+  build_number: number;
 }
 ```
 
@@ -213,9 +350,9 @@ interface ApplicationInfo {
 
 ```typescript
 interface HardwareInfo {
-  deviceName: string;
-  brand: string;
-  deviceType: string;
+  device_name: string;
+  device_brand: string;
+  device_type: string;
 }
 ```
 
@@ -223,8 +360,24 @@ interface HardwareInfo {
 
 ```typescript
 interface OSInfo {
-  osName: string;
-  osVersion: string;
+  platform: DevicePlatformEnum;
+  name: string;
+  version: string;
+}
+```
+
+### DevicePlatformEnum
+
+```typescript
+enum DevicePlatformEnum {
+  IOS = "IOS",
+  ANDROID = "ANDROID",
+  WEB = "WEB",
+  WINDOWS = "WINDOWS",
+  MACOS = "MACOS",
+  LINUX = "LINUX",
+  UNKNOWN = "UNKNOWN",
+  // ... and more
 }
 ```
 

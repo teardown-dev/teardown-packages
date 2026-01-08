@@ -44,17 +44,17 @@ import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
 
 ### Application Info
 - `version` - From `getVersion()`
-- `buildNumber` - From `getBuildNumber()`
-- `bundleId` - From `getBundleId()`
+- `build_number` - From `getBuildNumber()` (as number)
 
 ### Hardware Info
-- `deviceName` - From `getDeviceName()`
-- `brand` - From `getBrand()`
-- `deviceType` - From `getDeviceType()` (phone, tablet, desktop, tv, unknown)
+- `device_name` - From `getDeviceName()`
+- `device_brand` - From `getBrand()`
+- `device_type` - From `getDeviceType()` (phone, tablet, desktop, tv, unknown)
 
 ### OS Info
-- `osName` - From `getSystemName()`
-- `osVersion` - From `getSystemVersion()`
+- `platform` - Mapped from React Native `Platform.OS` to `DevicePlatformEnum`
+- `name` - From `getSystemName()`
+- `version` - From `getSystemVersion()`
 
 ## When to Use
 
@@ -64,7 +64,7 @@ import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
 
 ## Requirements
 
-- `react-native-device-info` >= 10.0.0
+- `react-native-device-info` >= 15.0.0
 - React Native >= 0.60 (autolinking)
 
 ## Platform Notes

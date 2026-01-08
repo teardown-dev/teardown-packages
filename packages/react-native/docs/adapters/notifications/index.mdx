@@ -4,7 +4,7 @@ description: Push notification adapters for token registration and management.
 icon: Bell
 ---
 
-Notification adapters handle push notification token registration and management with your push notification provider.
+Notification adapters handle push notification token registration, permission requests, and notification event handling with your push notification provider.
 
 ## Available Adapters
 
@@ -16,40 +16,94 @@ Notification adapters handle push notification token registration and management
 
 ## Usage
 
-Notification adapters are optional and used separately from the core SDK:
+Notification adapters are passed to `TeardownCore` to enable push notification support:
 
 ```typescript
-import { ExpoNotificationsAdapter } from '@teardown/react-native/expo-notifications';
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoNotificationsAdapter } from '@teardown/react-native/expo';
+import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
 
-const notificationsAdapter = new ExpoNotificationsAdapter();
+const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+  notificationAdapter: new ExpoNotificationsAdapter(), // Optional
+});
 
-// Get push token
-const token = await notificationsAdapter.getToken();
-
-// Register token with your backend
-await registerPushToken(token);
+// Access notifications via core
+if (teardown.notifications) {
+  const token = await teardown.notifications.getToken();
+}
 ```
 
 ## Adapter Interface
 
-All notification adapters implement:
+All notification adapters extend the abstract `NotificationAdapter` class:
 
 ```typescript
-interface NotificationsAdapter {
-  /** Get the push notification token */
-  getToken(): Promise<string | null>;
+abstract class NotificationAdapter {
+  /** The notification platform this adapter supports (APNS, FCM, EXPO) */
+  abstract get platform(): NotificationPlatformEnum;
 
-  /** Request notification permissions */
-  requestPermissions(): Promise<boolean>;
+  /** Get the current push notification token */
+  abstract getToken(): Promise<string | null>;
 
-  /** Check if notifications are enabled */
-  isEnabled(): Promise<boolean>;
+  /** Request push notification permissions from the user */
+  abstract requestPermissions(): Promise<PermissionStatus>;
 
-  /** Subscribe to incoming notifications */
-  onNotification(handler: (notification: Notification) => void): () => void;
+  /** Subscribe to token refresh events */
+  abstract onTokenRefresh(listener: (token: string) => void): Unsubscribe;
 
-  /** Subscribe to notification responses (user taps) */
-  onNotificationResponse(handler: (response: NotificationResponse) => void): () => void;
+  /** Subscribe to foreground notification events */
+  abstract onNotificationReceived(listener: (notification: PushNotification) => void): Unsubscribe;
+
+  /** Subscribe to notification opened events (user taps) */
+  abstract onNotificationOpened(listener: (notification: PushNotification) => void): Unsubscribe;
+
+  /** Subscribe to data-only message events (silent/background push) */
+  abstract onDataMessage(listener: (message: DataMessage) => void): Unsubscribe;
+}
+```
+
+### PermissionStatus
+
+```typescript
+interface PermissionStatus {
+  /** Whether notifications permission is granted */
+  granted: boolean;
+  /** Whether the user can be prompted again (iOS specific) */
+  canAskAgain: boolean;
+}
+```
+
+### PushNotification
+
+```typescript
+interface PushNotification {
+  title?: string;
+  body?: string;
+  data?: Record<string, unknown>;
+}
+```
+
+### DataMessage
+
+```typescript
+interface DataMessage {
+  data: Record<string, unknown>;
+}
+```
+
+### NotificationPlatformEnum
+
+```typescript
+enum NotificationPlatformEnum {
+  APNS = "APNS",  // Apple Push Notification Service
+  FCM = "FCM",    // Firebase Cloud Messaging
+  EXPO = "EXPO",  // Expo Push Notifications
 }
 ```
 
@@ -64,37 +118,64 @@ interface NotificationsAdapter {
 
 ## Custom Adapter
 
-Implement the `NotificationsAdapter` interface:
+Extend the `NotificationAdapter` abstract class:
 
 ```typescript
-import type { NotificationsAdapter, Notification, NotificationResponse } from '@teardown/react-native';
+import {
+  NotificationAdapter,
+  NotificationPlatformEnum,
+  type PermissionStatus,
+  type PushNotification,
+  type DataMessage,
+  type Unsubscribe,
+} from '@teardown/react-native';
 
-class CustomNotificationsAdapter implements NotificationsAdapter {
+class CustomNotificationsAdapter extends NotificationAdapter {
+  get platform(): NotificationPlatformEnum {
+    return NotificationPlatformEnum.FCM;
+  }
+
   async getToken(): Promise<string | null> {
-    // Return push token from your notification library
     return await myNotificationLib.getToken();
   }
 
-  async requestPermissions(): Promise<boolean> {
-    // Request notification permissions
-    return await myNotificationLib.requestPermission();
+  async requestPermissions(): Promise<PermissionStatus> {
+    const granted = await myNotificationLib.requestPermission();
+    return { granted, canAskAgain: !granted };
   }
 
-  async isEnabled(): Promise<boolean> {
-    // Check if notifications are enabled
-    return await myNotificationLib.areNotificationsEnabled();
-  }
-
-  onNotification(handler: (notification: Notification) => void): () => void {
-    // Subscribe to incoming notifications
-    const subscription = myNotificationLib.onNotification(handler);
+  onTokenRefresh(listener: (token: string) => void): Unsubscribe {
+    const subscription = myNotificationLib.onTokenRefresh(listener);
     return () => subscription.remove();
   }
 
-  onNotificationResponse(handler: (response: NotificationResponse) => void): () => void {
-    // Subscribe to notification taps
-    const subscription = myNotificationLib.onNotificationOpened(handler);
-    return () => subscription.remove();
+  onNotificationReceived(listener: (notification: PushNotification) => void): Unsubscribe {
+    const subscription = myNotificationLib.onMessage((msg) => {
+      listener({
+        title: msg.notification?.title,
+        body: msg.notification?.body,
+        data: msg.data,
+      });
+    });
+    return () => subscription();
+  }
+
+  onNotificationOpened(listener: (notification: PushNotification) => void): Unsubscribe {
+    const subscription = myNotificationLib.onNotificationOpened((msg) => {
+      listener({
+        title: msg.notification?.title,
+        body: msg.notification?.body,
+        data: msg.data,
+      });
+    });
+    return () => subscription();
+  }
+
+  onDataMessage(listener: (message: DataMessage) => void): Unsubscribe {
+    const subscription = myNotificationLib.onDataMessage((msg) => {
+      listener({ data: msg.data ?? {} });
+    });
+    return () => subscription();
   }
 }
 ```

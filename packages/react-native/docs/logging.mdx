@@ -135,10 +135,11 @@ class Logger {
 1. **Use `verbose` in development** - See all SDK activity
 2. **Use `error` in production** - Minimize noise, catch issues
 3. **Filter by prefix** - Isolate SDK logs from app logs
-4. **Check log level first** - Avoid expensive string operations:
+4. **Set log level based on environment**:
 
 ```typescript
-if (core.logging.shouldLog('verbose')) {
-  console.log('Complex debug:', JSON.stringify(largeObject));
-}
+const teardown = new TeardownCore({ /* ... */ });
+
+// Set based on environment
+teardown.setLogLevel(__DEV__ ? 'verbose' : 'error');
 ```

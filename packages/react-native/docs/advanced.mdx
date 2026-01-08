@@ -31,6 +31,86 @@ export const teardown = new TeardownCore({
 });
 ```
 
+## Push Notifications Setup
+
+Enable push notifications by providing a notification adapter:
+
+```typescript
+import { TeardownCore } from '@teardown/react-native';
+import { ExpoNotificationsAdapter, ExpoDeviceAdapter } from '@teardown/react-native/expo';
+import { MMKVStorageAdapter } from '@teardown/react-native/adapters/mmkv';
+
+const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new MMKVStorageAdapter(),
+  deviceAdapter: new ExpoDeviceAdapter(),
+  notificationAdapter: new ExpoNotificationsAdapter(), // Enable notifications
+});
+
+// Request permissions and get token
+if (teardown.notifications) {
+  const status = await teardown.notifications.requestPermissions();
+  if (status.granted) {
+    const token = await teardown.notifications.getToken();
+    // Token is automatically sent with identify() calls
+  }
+}
+```
+
+### Handle Notifications
+
+```typescript
+const { core } = useTeardown();
+
+useEffect(() => {
+  if (!core.notifications) return;
+
+  const unsubs = [
+    core.notifications.onNotificationReceived((notification) => {
+      // Foreground notification
+      console.log('Notification:', notification.title);
+    }),
+    core.notifications.onNotificationOpened((notification) => {
+      // User tapped notification
+      navigateToScreen(notification.data?.screen);
+    }),
+    core.notifications.onDataMessage((message) => {
+      // Silent/data message
+      syncData(message.data);
+    }),
+  ];
+
+  return () => unsubs.forEach(unsub => unsub());
+}, [core.notifications]);
+```
+
+## Event Tracking
+
+Track custom events:
+
+```typescript
+const { core } = useTeardown();
+
+// Track single event
+await core.events.track({
+  event_name: 'purchase_completed',
+  event_type: 'action',
+  properties: {
+    product_id: 'abc123',
+    amount: 99.99,
+    currency: 'USD',
+  },
+});
+
+// Track multiple events
+await core.events.trackBatch([
+  { event_name: 'cart_viewed', event_type: 'screen_view' },
+  { event_name: 'item_added', properties: { item_id: 'xyz' } },
+]);
+```
+
 ## Disable Force Update Checking
 
 For debugging or testing:
@@ -140,6 +220,17 @@ export const useTeardown = () => ({
     forceUpdate: {
       getVersionStatus: () => ({ type: 'up_to_date' }),
     },
+    events: {
+      track: jest.fn().mockResolvedValue({ success: true, data: undefined }),
+      trackBatch: jest.fn().mockResolvedValue({ success: true, data: undefined }),
+    },
+    notifications: {
+      requestPermissions: jest.fn().mockResolvedValue({ granted: true, canAskAgain: true }),
+      getToken: jest.fn().mockResolvedValue('mock-push-token'),
+      onNotificationReceived: jest.fn().mockReturnValue(() => {}),
+      onNotificationOpened: jest.fn().mockReturnValue(() => {}),
+      onDataMessage: jest.fn().mockReturnValue(() => {}),
+    },
   },
 });
 
@@ -149,6 +240,7 @@ export const useForceUpdate = () => ({
   isUpdateRequired: false,
   isUpdateRecommended: false,
   isUpdateAvailable: false,
+  releaseNotes: null,
 });
 ```
 

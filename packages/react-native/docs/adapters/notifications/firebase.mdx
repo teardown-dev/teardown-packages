@@ -21,60 +21,64 @@ cd ios && pod install
 ## Usage
 
 ```typescript
-import { FirebaseMessagingAdapter } from '@teardown/react-native/firebase-messaging';
+import { TeardownCore } from '@teardown/react-native';
+import { FirebaseMessagingAdapter } from '@teardown/react-native/firebase';
+import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
+import { AsyncStorageAdapter } from '@teardown/react-native/adapters/async-storage';
 
-const notifications = new FirebaseMessagingAdapter();
+const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new AsyncStorageAdapter(),
+  deviceAdapter: new DeviceInfoAdapter(),
+  notificationAdapter: new FirebaseMessagingAdapter(),
+});
 
-// Request permissions (iOS)
-const granted = await notifications.requestPermissions();
-
-if (granted) {
-  // Get FCM token
-  const token = await notifications.getToken();
-  console.log('FCM token:', token);
+// Access via NotificationsClient
+if (teardown.notifications) {
+  const status = await teardown.notifications.requestPermissions();
+  if (status.granted) {
+    const token = await teardown.notifications.getToken();
+    console.log('FCM token:', token);
+  }
 }
 ```
 
 ## Import Path
 
 ```typescript
-import { FirebaseMessagingAdapter } from '@teardown/react-native/firebase-messaging';
+import { FirebaseMessagingAdapter } from '@teardown/react-native/firebase';
 ```
 
 ## API
 
-### getToken()
-
-Get the FCM registration token:
-
-```typescript
-const token = await notifications.getToken();
-// Returns: FCM token string or null
-```
+All methods are accessed via `NotificationsClient`, not directly on the adapter.
 
 ### requestPermissions()
 
 Request notification permissions (required on iOS):
 
 ```typescript
-const granted = await notifications.requestPermissions();
-// Returns: true if granted, false otherwise
+const status = await teardown.notifications.requestPermissions();
+// Returns: { granted: boolean, canAskAgain: boolean }
 ```
 
-### isEnabled()
+### getToken()
 
-Check if notifications are enabled:
+Get the FCM registration token:
 
 ```typescript
-const enabled = await notifications.isEnabled();
+const token = await teardown.notifications.getToken();
+// Returns: FCM token string or null
 ```
 
-### onNotification()
+### onNotificationReceived()
 
-Subscribe to incoming notifications:
+Subscribe to foreground notifications:
 
 ```typescript
-const unsubscribe = notifications.onNotification((notification) => {
+const unsubscribe = teardown.notifications.onNotificationReceived((notification) => {
   console.log('Received:', notification.title);
 });
 
@@ -82,13 +86,39 @@ const unsubscribe = notifications.onNotification((notification) => {
 unsubscribe();
 ```
 
-### onNotificationResponse()
+### onNotificationOpened()
 
-Subscribe to notification opens:
+Subscribe to notification taps:
 
 ```typescript
-const unsubscribe = notifications.onNotificationResponse((response) => {
-  console.log('User tapped:', response.notification.title);
+const unsubscribe = teardown.notifications.onNotificationOpened((notification) => {
+  console.log('User tapped:', notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+### onTokenRefresh()
+
+Subscribe to token changes:
+
+```typescript
+const unsubscribe = teardown.notifications.onTokenChange((token) => {
+  console.log('New FCM token:', token);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+### onDataMessage()
+
+Subscribe to data-only messages (silent push):
+
+```typescript
+const unsubscribe = teardown.notifications.onDataMessage((message) => {
+  console.log('Data message:', message.data);
 });
 
 // Cleanup
@@ -134,6 +164,10 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {
   console.log('Background message:', remoteMessage);
 });
 ```
+
+## Platform
+
+Returns `NotificationPlatformEnum.FCM`
 
 ## Requirements
 

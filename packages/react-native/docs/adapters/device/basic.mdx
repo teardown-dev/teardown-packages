@@ -33,17 +33,17 @@ The BasicAdapter returns static or minimal information:
 
 ### Application Info
 - `version` - Static value or from app.json
-- `buildNumber` - Static value
-- `bundleId` - Static value or from app.json
+- `build_number` - Static value (as number)
 
 ### Hardware Info
-- `deviceName` - "Unknown Device"
-- `brand` - "Unknown"
-- `deviceType` - "unknown"
+- `device_name` - "Unknown Device"
+- `device_brand` - "Unknown"
+- `device_type` - "unknown"
 
 ### OS Info
-- `osName` - From React Native Platform API
-- `osVersion` - From React Native Platform API
+- `platform` - From React Native `Platform.OS` mapped to `DevicePlatformEnum`
+- `name` - From React Native Platform API
+- `version` - From React Native Platform API
 
 ## When to Use
 

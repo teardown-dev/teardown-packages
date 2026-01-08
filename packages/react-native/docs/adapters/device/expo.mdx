@@ -37,25 +37,25 @@ import { ExpoDeviceAdapter } from '@teardown/react-native/adapters/expo';
 
 ### Application Info
 - `version` - From `expo-application` `nativeApplicationVersion`
-- `buildNumber` - From `expo-application` `nativeBuildVersion`
-- `bundleId` - From `expo-application` `applicationId`
+- `build_number` - From `expo-application` `nativeBuildVersion` (as number)
 
 ### Hardware Info
-- `deviceName` - From `expo-device` `deviceName`
-- `brand` - From `expo-device` `brand`
-- `deviceType` - From `expo-device` `deviceType` (phone, tablet, desktop, tv, unknown)
+- `device_name` - From `expo-device` `deviceName`
+- `device_brand` - From `expo-device` `brand`
+- `device_type` - From `expo-device` `deviceType` (phone, tablet, desktop, tv, unknown)
 
 ### OS Info
-- `osName` - From `expo-device` `osName`
-- `osVersion` - From `expo-device` `osVersion`
+- `platform` - Mapped from React Native `Platform.OS` to `DevicePlatformEnum`
+- `name` - From `expo-device` `osName`
+- `version` - From `expo-device` `osVersion`
 
 ## When to Use
 
 - Expo managed workflow projects
 - Expo bare workflow projects using Expo modules
-- Projects using Expo SDK 44+
+- Projects using Expo SDK 50+
 
 ## Requirements
 
-- `expo-device` >= 4.0.0
-- `expo-application` >= 4.0.0
+- `expo-device` >= 8.0.0
+- `expo-application` >= 7.0.0

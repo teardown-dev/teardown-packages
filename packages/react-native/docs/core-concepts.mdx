@@ -10,12 +10,14 @@ The Teardown SDK is built around a central `TeardownCore` class that orchestrate
 
 ```
 TeardownCore
-├── IdentityClient      # User/device identification
-├── ForceUpdateClient   # Version checking
-├── DeviceClient        # Device information
-├── StorageClient       # Persistent storage
-├── ApiClient           # Backend communication
-└── LoggingClient       # Structured logging
+├── IdentityClient       # User/device identification
+├── ForceUpdateClient    # Version checking
+├── DeviceClient         # Device information
+├── EventsClient         # Event tracking
+├── NotificationsClient  # Push notifications (optional)
+├── StorageClient        # Persistent storage
+├── ApiClient            # Backend communication
+└── LoggingClient        # Structured logging
 ```
 
 ## Initialization Flow
@@ -58,9 +60,9 @@ type VersionStatus =
   | { type: 'initializing' }
   | { type: 'checking' }
   | { type: 'up_to_date' }
-  | { type: 'update_available' }
-  | { type: 'update_recommended' }
-  | { type: 'update_required' }
+  | { type: 'update_available'; releaseNotes?: string | null }
+  | { type: 'update_recommended'; releaseNotes?: string | null }
+  | { type: 'update_required'; releaseNotes?: string | null }
   | { type: 'disabled' };
 ```
 
@@ -88,10 +90,26 @@ interface SupportedStorage {
 Provide device and app information:
 
 ```typescript
-interface DeviceInfoAdapter {
-  applicationInfo: ApplicationInfo;  // version, buildNumber, bundleId
-  hardwareInfo: HardwareInfo;        // deviceName, brand, deviceType
-  osInfo: OSInfo;                    // osName, osVersion
+abstract class DeviceInfoAdapter {
+  applicationInfo: ApplicationInfo;  // version, build_number
+  hardwareInfo: HardwareInfo;        // device_name, device_brand, device_type
+  osInfo: OSInfo;                    // platform, name, version
+}
+```
+
+### Notification Adapters
+
+Handle push notification registration and events (optional):
+
+```typescript
+abstract class NotificationAdapter {
+  platform: NotificationPlatformEnum;
+  getToken(): Promise<string | null>;
+  requestPermissions(): Promise<PermissionStatus>;
+  onTokenRefresh(listener): Unsubscribe;
+  onNotificationReceived(listener): Unsubscribe;
+  onNotificationOpened(listener): Unsubscribe;
+  onDataMessage(listener): Unsubscribe;
 }
 ```
 

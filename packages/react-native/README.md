@@ -112,7 +112,7 @@ import { useTeardown, useForceUpdate, useSession } from '@teardown/react-native'
 function YourComponent() {
   const { core } = useTeardown();
   const session = useSession();
-  const { status, isUpdateRequired } = useForceUpdate();
+  const { versionStatus, isUpdateRequired } = useForceUpdate();
 
   const handleLogin = async () => {
     await core.identity.identify({
@@ -129,14 +129,18 @@ function YourComponent() {
 
 ```tsx
 new TeardownCore({
-  org_id: string,           // Your organization ID
-  project_id: string,       // Your project ID
-  api_key: string,          // Your API key
-  storageAdapter: adapter,  // Storage implementation
-  deviceAdapter: adapter,   // Device info source
-  forceUpdate: {
-    throttleMs: 30_000,     // Min time between checks (default: 30s)
-    checkCooldownMs: 10_000 // Cooldown after check (default: 10s)
+  org_id: string,               // Your organization ID
+  project_id: string,           // Your project ID
+  api_key: string,              // Your API key
+  environment_slug?: string,    // Environment slug (default: "production")
+  ingestUrl?: string,           // Custom ingest API URL (optional)
+  storageAdapter: adapter,      // Storage implementation
+  deviceAdapter: adapter,       // Device info source
+  notificationAdapter?: adapter, // Push notification adapter (optional)
+  forceUpdate?: {
+    checkIntervalMs?: number,   // Min time between checks (default: 300000ms/5min)
+    checkOnForeground?: boolean, // Check on app foreground (default: true)
+    identifyAnonymousDevice?: boolean, // Check even when not identified (default: false)
   },
 });
 ```
@@ -156,16 +160,15 @@ For detailed guides, visit **[teardown.dev/docs](https://teardown.dev/docs)**
 
 Local documentation is also available in the [docs](./docs) folder:
 
-- [Getting Started](./docs/01-getting-started.mdx)
-- [Core Concepts](./docs/02-core-concepts.mdx)
-- [Identity & Authentication](./docs/03-identity.mdx)
-- [Force Updates](./docs/04-force-updates.mdx)
-- [Device Information](./docs/05-device-info.mdx)
-- [Storage](./docs/06-storage.mdx)
-- [Logging](./docs/07-logging.mdx)
-- [API Reference](./docs/08-api-reference.mdx)
-- [Hooks Reference](./docs/09-hooks-reference.mdx)
-- [Advanced Usage](./docs/10-advanced.mdx)
+- [Getting Started](./docs/getting-started.mdx)
+- [Core Concepts](./docs/core-concepts.mdx)
+- [Identity & Authentication](./docs/identity.mdx)
+- [Force Updates](./docs/force-updates.mdx)
+- [Logging](./docs/logging.mdx)
+- [API Reference](./docs/api-reference.mdx)
+- [Hooks Reference](./docs/hooks-reference.mdx)
+- [Advanced Usage](./docs/advanced.mdx)
+- [Adapters](./docs/adapters/index.mdx)
 
 ## License
 

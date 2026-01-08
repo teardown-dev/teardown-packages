@@ -21,60 +21,64 @@ cd ios && pod install
 ## Usage
 
 ```typescript
-import { WixNotificationsAdapter } from '@teardown/react-native/wix-notifications';
+import { TeardownCore } from '@teardown/react-native';
+import { WixNotificationsAdapter } from '@teardown/react-native/wix';
+import { DeviceInfoAdapter } from '@teardown/react-native/adapters/device-info';
+import { AsyncStorageAdapter } from '@teardown/react-native/adapters/async-storage';
 
-const notifications = new WixNotificationsAdapter();
+const teardown = new TeardownCore({
+  org_id: 'your-org-id',
+  project_id: 'your-project-id',
+  api_key: 'your-api-key',
+  storageAdapter: new AsyncStorageAdapter(),
+  deviceAdapter: new DeviceInfoAdapter(),
+  notificationAdapter: new WixNotificationsAdapter(),
+});
 
-// Request permissions
-const granted = await notifications.requestPermissions();
-
-if (granted) {
-  // Get push token
-  const token = await notifications.getToken();
-  console.log('Push token:', token);
+// Access via NotificationsClient
+if (teardown.notifications) {
+  const status = await teardown.notifications.requestPermissions();
+  if (status.granted) {
+    const token = await teardown.notifications.getToken();
+    console.log('Push token:', token);
+  }
 }
 ```
 
 ## Import Path
 
 ```typescript
-import { WixNotificationsAdapter } from '@teardown/react-native/wix-notifications';
+import { WixNotificationsAdapter } from '@teardown/react-native/wix';
 ```
 
 ## API
 
-### getToken()
-
-Get the device push token:
-
-```typescript
-const token = await notifications.getToken();
-// Returns: device token string or null
-```
+All methods are accessed via `NotificationsClient`, not directly on the adapter.
 
 ### requestPermissions()
 
 Request notification permissions:
 
 ```typescript
-const granted = await notifications.requestPermissions();
-// Returns: true if granted, false otherwise
+const status = await teardown.notifications.requestPermissions();
+// Returns: { granted: boolean, canAskAgain: boolean }
 ```
 
-### isEnabled()
+### getToken()
 
-Check if notifications are enabled:
+Get the device push token:
 
 ```typescript
-const enabled = await notifications.isEnabled();
+const token = await teardown.notifications.getToken();
+// Returns: device token string or null
 ```
 
-### onNotification()
+### onNotificationReceived()
 
-Subscribe to incoming notifications:
+Subscribe to foreground notifications:
 
 ```typescript
-const unsubscribe = notifications.onNotification((notification) => {
+const unsubscribe = teardown.notifications.onNotificationReceived((notification) => {
   console.log('Received:', notification.title);
 });
 
@@ -82,13 +86,39 @@ const unsubscribe = notifications.onNotification((notification) => {
 unsubscribe();
 ```
 
-### onNotificationResponse()
+### onNotificationOpened()
 
-Subscribe to notification opens:
+Subscribe to notification taps:
 
 ```typescript
-const unsubscribe = notifications.onNotificationResponse((response) => {
-  console.log('User tapped:', response.notification.title);
+const unsubscribe = teardown.notifications.onNotificationOpened((notification) => {
+  console.log('User tapped:', notification.title);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+### onTokenRefresh()
+
+Subscribe to token changes:
+
+```typescript
+const unsubscribe = teardown.notifications.onTokenChange((token) => {
+  console.log('New token:', token);
+});
+
+// Cleanup
+unsubscribe();
+```
+
+### onDataMessage()
+
+Subscribe to data-only messages (silent push):
+
+```typescript
+const unsubscribe = teardown.notifications.onDataMessage((message) => {
+  console.log('Data message:', message.data);
 });
 
 // Cleanup
@@ -127,6 +157,10 @@ unsubscribe();
 ```java
 import com.wix.reactnativenotifications.RNNotificationsPackage;
 ```
+
+## Platform
+
+Returns `NotificationPlatformEnum.APNS` on iOS, `NotificationPlatformEnum.FCM` on Android.
 
 ## When to Use
 
