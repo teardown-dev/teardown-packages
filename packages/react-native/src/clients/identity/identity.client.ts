@@ -79,6 +79,11 @@ export const UpdateInfoSchema = z.object({
 	release_notes: z.string().nullable(),
 });
 
+/** Type guard to check if update has nested structure */
+function isNestedUpdate(update: unknown): update is { status: string; update: UpdateInfo } {
+	return typeof update === "object" && update !== null && "status" in update && "update" in update;
+}
+
 // Accept either the nested schema from API or the flat UpdateInfo schema
 export const VersionInfoResponseSchema = z.object({
 	status: z.enum(IdentifyVersionStatusEnum),
@@ -102,10 +107,10 @@ export const IdentifiedSessionStateSchema = z.object({
 		})
 		.transform((data) => {
 			// Flatten nested structure if present
-			if (data.update && typeof data.update === "object" && "status" in data.update && "update" in data.update) {
+			if (isNestedUpdate(data.update)) {
 				return {
 					status: data.status,
-					update: (data.update as any).update,
+					update: data.update.update,
 				};
 			}
 			return data;
@@ -244,6 +249,14 @@ export class IdentityClient {
 	}
 
 	/**
+	 * Reset identity state to unidentified.
+	 * Clears stored state and emits state change.
+	 */
+	public reset(): void {
+		this.setIdentifyState({ type: "unidentified" });
+	}
+
+	/**
 	 * Internal method to clear identity state.
 	 * Used by signOut() and signOutAll().
 	 */
@@ -369,6 +382,82 @@ export class IdentityClient {
 		}
 	}
 
+	/**
+	 * Extract error message from API validation error response (422)
+	 */
+	private extractValidationErrorMessage(errorValue: unknown): string {
+		if (typeof errorValue === "string") return errorValue;
+		if (typeof errorValue === "object" && errorValue !== null) {
+			const obj = errorValue as { summary?: string; message?: string };
+			if (obj.summary) return obj.summary;
+			if (obj.message) return obj.message;
+		}
+		return "Unknown error";
+	}
+
+	/**
+	 * Extract error message from API error response (non-422)
+	 */
+	private extractErrorMessage(errorValue: unknown): string {
+		if (typeof errorValue === "string") return errorValue;
+		if (typeof errorValue === "object" && errorValue !== null) {
+			const obj = errorValue as { code?: string; message?: string };
+			if (obj.message) return obj.message;
+		}
+		return "Unknown error";
+	}
+
+	/**
+	 * Get push notification info if notifications client is configured
+	 */
+	private async getNotificationsInfo(): Promise<
+		| {
+				push: {
+					enabled: boolean;
+					granted: boolean;
+					token: string | null;
+					platform: NotificationPlatformEnum;
+				};
+		  }
+		| undefined
+	> {
+		if (!this.notificationsClient) return undefined;
+
+		this.logger.debug("Getting push notification token...");
+		const token = await this.notificationsClient.getToken();
+		this.logger.debug(`Push token retrieved: ${token ? "yes" : "no"}, platform: ${this.notificationsClient.platform}`);
+
+		return {
+			push: {
+				enabled: true,
+				granted: token !== null,
+				token,
+				platform: this.notificationsClient.platform,
+			},
+		};
+	}
+
+	/**
+	 * Flatten nested version_info structure from API response
+	 */
+	private flattenVersionInfo(rawVersionInfo: { status: string; update: unknown }): {
+		status: IdentifyVersionStatusEnum;
+		update: UpdateInfo | null;
+	} {
+		let flattenedUpdate: UpdateInfo | null = null;
+
+		if (rawVersionInfo.update) {
+			flattenedUpdate = isNestedUpdate(rawVersionInfo.update)
+				? rawVersionInfo.update.update
+				: (rawVersionInfo.update as UpdateInfo);
+		}
+
+		return {
+			status: rawVersionInfo.status as IdentifyVersionStatusEnum,
+			update: flattenedUpdate,
+		};
+	}
+
 	async identify(user?: Persona): AsyncResult<IdentityUser> {
 		this.logger.debugInfo(`Identifying user with persona: ${user?.name ?? "none"}`);
 		const previousState = this.identifyState;
@@ -379,34 +468,7 @@ export class IdentityClient {
 				this.logger.debug("Getting device ID...");
 				const deviceId = await this.device.getDeviceId();
 				const deviceInfo = await this.device.getDeviceInfo();
-
-				// Get push notification info if notifications client is configured
-				let notificationsInfo:
-					| {
-							push: {
-								enabled: boolean;
-								granted: boolean;
-								token: string | null;
-								platform: NotificationPlatformEnum;
-							};
-					  }
-					| undefined;
-
-				if (this.notificationsClient) {
-					this.logger.debug("Getting push notification token...");
-					const token = await this.notificationsClient.getToken();
-					notificationsInfo = {
-						push: {
-							enabled: true,
-							granted: token !== null,
-							token,
-							platform: this.notificationsClient.platform,
-						},
-					};
-					this.logger.debug(
-						`Push token retrieved: ${token ? "yes" : "no"}, platform: ${this.notificationsClient.platform}`
-					);
-				}
+				const notificationsInfo = await this.getNotificationsInfo();
 
 				this.logger.debug("Calling identify API...");
 				const response = await this.api.client("/v1/identify", {
@@ -436,45 +498,16 @@ export class IdentityClient {
 					this.logger.warn("Identify API error", response.error.status, response.error.value);
 					this.setIdentifyState(previousState);
 
-					if (response.error.status === 422) {
-						this.logger.warn("422 Error identifying user", response.error.value);
-						return {
-							success: false,
-							error: response.error.value.message ?? "Unknown error",
-						};
-					}
+					const errorMessage =
+						response.error.status === 422
+							? this.extractValidationErrorMessage(response.error.value)
+							: this.extractErrorMessage(response.error.value);
 
-					const value = response.error.value;
-					return {
-						success: false,
-						error: value?.error?.message ?? "Unknown error",
-					};
+					return { success: false, error: errorMessage };
 				}
 
-				// Parse and flatten the response
 				const parsedSession = SessionSchema.parse(response.data.data);
-				const rawVersionInfo = response.data.data.version_info;
-
-				// Flatten nested version_info structure if present
-				let flattenedUpdate: UpdateInfo | null = null;
-				if (rawVersionInfo.update) {
-					if (
-						typeof rawVersionInfo.update === "object" &&
-						"status" in rawVersionInfo.update &&
-						"update" in rawVersionInfo.update
-					) {
-						// Nested structure: { status: "UPDATE_AVAILABLE", update: { version, build, ... } }
-						flattenedUpdate = (rawVersionInfo.update as any).update;
-					} else {
-						// Already flat structure
-						flattenedUpdate = rawVersionInfo.update as UpdateInfo;
-					}
-				}
-
-				const flattenedVersionInfo = {
-					status: rawVersionInfo.status as IdentifyVersionStatusEnum,
-					update: flattenedUpdate,
-				};
+				const flattenedVersionInfo = this.flattenVersionInfo(response.data.data.version_info);
 
 				const identityUser: IdentityUser = {
 					...parsedSession,
@@ -487,18 +520,12 @@ export class IdentityClient {
 					version_info: flattenedVersionInfo,
 				});
 
-				return {
-					success: true,
-					data: identityUser,
-				};
+				return { success: true, data: identityUser };
 			},
 			(error) => {
 				this.logger.error("Error identifying user", error);
 				this.setIdentifyState(previousState);
-				return {
-					success: false,
-					error: error.message,
-				};
+				return { success: false, error: error.message };
 			}
 		);
 	}

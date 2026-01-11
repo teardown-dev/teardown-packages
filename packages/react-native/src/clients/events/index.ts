@@ -1,1 +1,1 @@
-export { EventsClient, type EventPayload } from "./events.client";
+export { type EventPayload, EventsClient } from "./events.client";
