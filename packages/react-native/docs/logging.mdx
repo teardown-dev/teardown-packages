@@ -54,17 +54,6 @@ The internal `Logger` class provides these methods:
 | `debug()` | verbose | `console.debug` |
 | `trace()` | verbose | `console.trace` |
 
-### Debug Variants
-
-Additional debug methods for categorized output:
-
-```typescript
-logger.debugError('Something went wrong', { error });   // Error: [prefix] ...
-logger.debugWarn('Warning message');                     // Warning: [prefix] ...
-logger.debugInfo('Info message');                        // Info: [prefix] ...
-logger.debugVerbose('Verbose details');                  // Verbose: [prefix] ...
-```
-
 ## Production Logging
 
 For production builds, set log level to `none` or `error`:

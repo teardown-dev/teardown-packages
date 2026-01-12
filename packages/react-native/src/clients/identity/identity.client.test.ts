@@ -636,7 +636,7 @@ describe("IdentityClient", () => {
 
 			// Should have debug logs about state transitions
 			// When already identified, identify() will transition: identified -> identifying -> identified
-			const debugLogs = mockLogging.getLogs().filter((l) => l.level === "debug" || l.level === "debugInfo");
+			const debugLogs = mockLogging.getLogs().filter((l) => l.level === "debug" || l.level === "info");
 			expect(debugLogs.length).toBeGreaterThan(0);
 			// Check that state transitions are logged
 			expect(debugLogs.some((l) => l.message.includes("Identify state"))).toBe(true);

@@ -92,7 +92,7 @@ export class EventsClient {
 			this.logger.debug(`Successfully tracked ${events.length} event(s)`);
 			return { success: true, data: undefined };
 		} catch (error) {
-			this.logger.debugError("Error tracking events", { error });
+			this.logger.error("Error tracking events", { error });
 			return {
 				success: false,
 				error: error instanceof Error ? error.message : "Unknown error",

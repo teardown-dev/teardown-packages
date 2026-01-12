@@ -180,7 +180,7 @@ export class ForceUpdateClient {
 
 			return parsed;
 		} catch (error) {
-			this.logger.debugError("Error getting version status from storage", { error });
+			this.logger.error("Error getting version status from storage", { error });
 			return InitializingVersionStatusSchema.parse({ type: "initializing" });
 		}
 	}
