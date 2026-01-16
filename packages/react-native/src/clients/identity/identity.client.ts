@@ -440,7 +440,7 @@ export class IdentityClient {
 	/**
 	 * Flatten nested version_info structure from API response
 	 */
-	private flattenVersionInfo(rawVersionInfo: { status: string; update: unknown }): {
+	private flattenVersionInfo(rawVersionInfo: { status: string; update?: unknown }): {
 		status: IdentifyVersionStatusEnum;
 		update: UpdateInfo | null;
 	} {
@@ -471,43 +471,57 @@ export class IdentityClient {
 				const notificationsInfo = await this.getNotificationsInfo();
 
 				this.logger.debug("Calling identify API...");
-				const response = await this.api.client("/v1/identify", {
-					method: "POST",
-					headers: {
-						"td-api-key": this.api.apiKey,
-						"td-org-id": this.api.orgId,
-						"td-project-id": this.api.projectId,
-						"td-environment-slug": this.api.environmentSlug,
-						"td-device-id": deviceId,
+				const { data, error, response } = await this.api.client.POST("/v1/identify", {
+					params: {
+						header: {
+							"td-api-key": this.api.apiKey,
+							"td-org-id": this.api.orgId,
+							"td-project-id": this.api.projectId,
+							"td-environment-slug": this.api.environmentSlug,
+							"td-device-id": deviceId,
+						},
 					},
 					body: {
 						user,
 						device: {
-							timestamp: deviceInfo.timestamp,
-							os: deviceInfo.os,
+							timestamp: deviceInfo.timestamp?.toISOString(),
+							os: {
+								platform: deviceInfo.os.platform.toLowerCase() as "ios" | "android" | "web",
+								name: deviceInfo.os.name,
+								version: deviceInfo.os.version,
+							},
 							application: deviceInfo.application,
 							hardware: deviceInfo.hardware,
 							update: null,
-							notifications: notificationsInfo,
+							notifications: notificationsInfo
+								? {
+										push: {
+											enabled: notificationsInfo.push.enabled,
+											granted: notificationsInfo.push.granted,
+											token: notificationsInfo.push.token,
+											platform: notificationsInfo.push.platform.toLowerCase() as "fcm" | "apns" | "expo",
+										},
+									}
+								: undefined,
 						},
 					},
 				});
 
 				this.logger.info(`Identify API response received`);
-				if (response.error != null) {
-					this.logger.warn("Identify API error", response.error.status, response.error.value);
+				if (error) {
+					this.logger.warn("Identify API error", response.status, error);
 					this.setIdentifyState(previousState);
 
 					const errorMessage =
-						response.error.status === 422
-							? this.extractValidationErrorMessage(response.error.value)
-							: this.extractErrorMessage(response.error.value);
+						response.status === 422 ? this.extractValidationErrorMessage(error) : this.extractErrorMessage(error);
 
 					return { success: false, error: errorMessage };
 				}
 
-				const parsedSession = SessionSchema.parse(response.data.data);
-				const flattenedVersionInfo = this.flattenVersionInfo(response.data.data.version_info);
+				const parsedSession = SessionSchema.parse(data.data);
+				const flattenedVersionInfo = this.flattenVersionInfo(
+					data.data.version_info ?? { status: "up_to_date", update: null }
+				);
 
 				const identityUser: IdentityUser = {
 					...parsedSession,

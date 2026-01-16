@@ -40,7 +40,6 @@ export class TeardownCore {
 		this.options = options;
 
 		this.logging = new LoggingClient();
-		this.setLogLevel("verbose");
 
 		this.logger = this.logging.createLogger({
 			name: "TeardownCore",

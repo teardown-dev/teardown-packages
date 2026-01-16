@@ -64,28 +64,29 @@ export class EventsClient {
 		try {
 			const deviceId = await this.device.getDeviceId();
 
-			const response = await this.api.client("/v1/events", {
-				method: "POST",
-				headers: {
-					"td-api-key": this.api.apiKey,
-					"td-org-id": this.api.orgId,
-					"td-project-id": this.api.projectId,
-					"td-environment-slug": this.api.environmentSlug,
-					"td-device-id": deviceId,
-					...(sessionId ? { "td-session-id": sessionId } : {}),
+			const { error } = await this.api.client.POST("/v1/events", {
+				params: {
+					header: {
+						"td-api-key": this.api.apiKey,
+						"td-org-id": this.api.orgId,
+						"td-project-id": this.api.projectId,
+						"td-environment-slug": this.api.environmentSlug,
+						"td-device-id": deviceId,
+						...(sessionId ? { "td-session-id": sessionId } : {}),
+					},
 				},
 				body: {
 					events: events.map((event) => ({
 						event_name: event.event_name,
 						event_type: event.event_type ?? "custom",
-						properties: event.properties,
+						properties: event.properties as Record<string, unknown>,
 						timestamp: event.timestamp ?? new Date().toISOString(),
 					})),
 				},
 			});
 
-			if (response.error != null) {
-				this.logger.warn("Failed to track events", { error: response.error });
+			if (error) {
+				this.logger.warn("Failed to track events", { error });
 				return { success: false, error: "Failed to track events" };
 			}
 

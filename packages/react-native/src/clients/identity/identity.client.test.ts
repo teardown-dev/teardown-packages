@@ -61,19 +61,19 @@ function createMockUtilsClient() {
 function createMockDeviceClient(
 	overrides: Partial<{
 		deviceId: string;
-		timestamp: string;
+		timestamp: Date;
 		application: { name: string; version: string; build: string; bundle_id: string };
 		hardware: { brand: string; model: string; device_type: string };
-		os: { name: string; version: string };
+		os: { name: string; version: string; platform: string };
 		notifications: { push_token: string | null; platform: string | null };
 		update: null;
 	}> = {}
 ) {
 	const defaultDeviceInfo = {
-		timestamp: new Date().toISOString(),
+		timestamp: new Date(),
 		application: { name: "TestApp", version: "1.0.0", build: "100", bundle_id: "com.test.app" },
 		hardware: { brand: "Apple", model: "iPhone 15", device_type: "PHONE" },
-		os: { name: "iOS", version: "17.0" },
+		os: { name: "iOS", version: "17.0", platform: "iOS" },
 		notifications: { push_token: null, platform: null },
 		update: null,
 	};
@@ -84,15 +84,23 @@ function createMockDeviceClient(
 			...defaultDeviceInfo,
 			...overrides,
 		}),
+		reset: () => {},
+	};
+}
+
+function createMockEventsClient() {
+	return {
+		track: async () => ({ success: true, data: undefined }),
 	};
 }
 
 type ApiCallRecord = {
 	endpoint: string;
 	config: {
-		method: string;
-		headers: Record<string, string>;
-		body: unknown;
+		params?: {
+			header?: Record<string, string>;
+		};
+		body?: unknown;
 	};
 };
 
@@ -123,48 +131,58 @@ function createMockApiClient(
 
 	const calls: ApiCallRecord[] = [];
 
+	const postHandler = async (endpoint: string, config: ApiCallRecord["config"]) => {
+		calls.push({ endpoint, config });
+
+		if (throwError) {
+			throw throwError;
+		}
+
+		if (!success) {
+			return {
+				error: {
+					message: errorMessage ?? "API Error",
+				},
+				data: null,
+				response: {
+					status: errorStatus ?? 500,
+				},
+			};
+		}
+
+		return {
+			error: null,
+			data: {
+				data: {
+					session_id: sessionId,
+					device_id: deviceId,
+					user_id: user_id,
+					token: token,
+					version_info: { status: versionStatus },
+				},
+			},
+			response: {
+				status: 200,
+			},
+		};
+	};
+
 	return {
 		apiKey: "test-api-key",
 		orgId: "test-org-id",
 		projectId: "test-project-id",
 		environmentSlug: "production",
-		client: async (endpoint: string, config: ApiCallRecord["config"]) => {
-			calls.push({ endpoint, config });
-
-			if (throwError) {
-				throw throwError;
-			}
-
-			if (!success) {
-				return {
-					error: {
-						status: errorStatus ?? 500,
-						value: {
-							message: errorMessage ?? "API Error",
-							error: { message: errorMessage ?? "API Error" },
-						},
-					},
-					data: null,
-				};
-			}
-
-			return {
-				error: null,
-				data: {
-					data: {
-						session_id: sessionId,
-						device_id: deviceId,
-						user_id: user_id,
-						token: token,
-						version_info: { status: versionStatus },
-					},
-				},
-			};
+		client: {
+			POST: postHandler,
 		},
 		getCalls: () => calls,
 		getLastCall: () => calls[calls.length - 1],
 		clearCalls: () => {
 			calls.length = 0;
+		},
+		setPostHandler: (handler: typeof postHandler) => {
+			// @ts-expect-error - dynamic override
+			return handler as unknown as typeof postHandler;
 		},
 	};
 }
@@ -177,6 +195,7 @@ function createTestClient(
 		utils?: ReturnType<typeof createMockUtilsClient>;
 		api?: ReturnType<typeof createMockApiClient>;
 		device?: ReturnType<typeof createMockDeviceClient>;
+		events?: ReturnType<typeof createMockEventsClient>;
 	} = {}
 ) {
 	const mockLogging = overrides.logging ?? createMockLoggingClient();
@@ -184,13 +203,15 @@ function createTestClient(
 	const mockUtils = overrides.utils ?? createMockUtilsClient();
 	const mockApi = overrides.api ?? createMockApiClient();
 	const mockDevice = overrides.device ?? createMockDeviceClient();
+	const mockEvents = overrides.events ?? createMockEventsClient();
 
 	const client = new IdentityClient(
 		mockLogging as never,
 		mockUtils as never,
 		mockStorage as never,
 		mockApi as never,
-		mockDevice as never
+		mockDevice as never,
+		mockEvents as never
 	);
 
 	return {
@@ -200,6 +221,7 @@ function createTestClient(
 		mockUtils,
 		mockApi,
 		mockDevice,
+		mockEvents,
 	};
 }
 
@@ -425,12 +447,12 @@ describe("IdentityClient", () => {
 			const mockApi = createMockApiClient({ success: false, errorStatus: 422 });
 			// Override to return null message
 			// @ts-expect-error - message is not yet implemented
-			mockApi.client = async () => ({
-				error: {
-					status: 422,
-					value: { message: null, error: { message: null } },
-				},
+			mockApi.client.POST = async () => ({
+				error: {},
 				data: null,
+				response: {
+					status: 422,
+				},
 			});
 
 			const { client } = createTestClient({ api: mockApi });
@@ -474,7 +496,7 @@ describe("IdentityClient", () => {
 
 		test("handles non-Error thrown exceptions", async () => {
 			const mockApi = createMockApiClient();
-			mockApi.client = async () => {
+			mockApi.client.POST = async () => {
 				throw "string error"; // Non-Error throw
 			};
 
@@ -542,7 +564,6 @@ describe("IdentityClient", () => {
 
 			const lastCall = mockApi.getLastCall();
 			expect(lastCall.endpoint).toBe("/v1/identify");
-			expect(lastCall.config.method).toBe("POST");
 		});
 
 		test("sends correct headers to API", async () => {
@@ -551,19 +572,20 @@ describe("IdentityClient", () => {
 			await client.identify();
 
 			const lastCall = mockApi.getLastCall();
-			expect(lastCall.config.headers["td-api-key"]).toBe("test-api-key");
-			expect(lastCall.config.headers["td-org-id"]).toBe("test-org-id");
-			expect(lastCall.config.headers["td-project-id"]).toBe("test-project-id");
-			expect(lastCall.config.headers["td-environment-slug"]).toBe("production");
-			expect(lastCall.config.headers["td-device-id"]).toBe("mock-device-id");
+			expect(lastCall.config.params?.header?.["td-api-key"]).toBe("test-api-key");
+			expect(lastCall.config.params?.header?.["td-org-id"]).toBe("test-org-id");
+			expect(lastCall.config.params?.header?.["td-project-id"]).toBe("test-project-id");
+			expect(lastCall.config.params?.header?.["td-environment-slug"]).toBe("production");
+			expect(lastCall.config.params?.header?.["td-device-id"]).toBe("mock-device-id");
 		});
 
 		test("sends device info in request body", async () => {
+			const mockTimestamp = new Date("2024-01-15T10:30:00.000Z");
 			const mockDevice = createMockDeviceClient({
 				deviceId: "custom-device-id",
-				timestamp: "2024-01-15T10:30:00.000Z",
+				timestamp: mockTimestamp,
 				application: { name: "MyApp", version: "2.0.0", build: "200", bundle_id: "com.my.app" },
-				os: { name: "Android", version: "14" },
+				os: { name: "Android", version: "14", platform: "Android" },
 				hardware: { brand: "Samsung", model: "Galaxy S24", device_type: "PHONE" },
 			});
 			const { client, mockApi } = createTestClient({ device: mockDevice });
@@ -576,7 +598,7 @@ describe("IdentityClient", () => {
 					device?: {
 						timestamp: string;
 						application: { name: string; version: string; build: string; bundle_id: string };
-						os: { name: string; version: string };
+						os: { name: string; version: string; platform: string };
 						hardware: { brand: string; model: string; device_type: string };
 						update: null;
 					};
@@ -756,7 +778,7 @@ describe("IdentityClient", () => {
 			await client.identify();
 
 			// Update mock to return new session
-			mockApi.client = async (_endpoint: string, _config: ApiCallRecord["config"]) => ({
+			mockApi.client.POST = async (_endpoint: string, _config: ApiCallRecord["config"]) => ({
 				error: null,
 				data: {
 					data: {
@@ -766,6 +788,9 @@ describe("IdentityClient", () => {
 						token: "token-123",
 						version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE },
 					},
+				},
+				response: {
+					status: 200,
 				},
 			});
 
@@ -916,7 +941,7 @@ describe("IdentityClient", () => {
 			expect(client.getSessionState()?.session_id).toBe("first-session");
 
 			// Change what API returns
-			mockApi.client = async () => ({
+			mockApi.client.POST = async () => ({
 				error: null,
 				data: {
 					data: {
@@ -926,6 +951,9 @@ describe("IdentityClient", () => {
 						token: "token-123",
 						version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE },
 					},
+				},
+				response: {
+					status: 200,
 				},
 			});
 
@@ -1027,7 +1055,7 @@ describe("IdentityClient", () => {
 				resolveApi = resolve;
 			});
 
-			mockApi.client = async () => {
+			mockApi.client.POST = async () => {
 				await apiPromise;
 				return {
 					error: null,
@@ -1039,6 +1067,9 @@ describe("IdentityClient", () => {
 							token: "token-123",
 							version_info: { status: IdentifyVersionStatusEnum.UP_TO_DATE },
 						},
+					},
+					response: {
+						status: 200,
 					},
 				};
 			};
