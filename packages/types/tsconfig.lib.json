@@ -1,0 +1,12 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.lib.json",
+	"include": ["src/**/*"],
+	"compilerOptions": {
+		"noEmit": false,
+		"composite": true,
+		"rootDir": "src",
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	}
+}

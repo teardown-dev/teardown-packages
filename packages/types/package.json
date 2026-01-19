@@ -1,0 +1,56 @@
+{
+	"name": "@teardown/types",
+	"version": "2.0.40",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"main": "./src/index.ts",
+	"module": "./src/index.ts",
+	"types": "./src/index.ts",
+	"files": [
+		"src/**/*",
+		"generated/**/*",
+		"tsconfig.json",
+		"tsconfig.lib.json",
+		"tsconfig.scripts.json"
+	],
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./interfaces/*": {
+			"types": "./src/interfaces/*.ts",
+			"import": "./src/interfaces/*.ts",
+			"default": "./src/interfaces/*.ts"
+		},
+		"./eden-treaty": {
+			"types": "./src/eden-treaty.types.ts",
+			"import": "./src/eden-treaty.types.ts",
+			"default": "./src/eden-treaty.types.ts"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"generate:types": "bun run ./scripts/generate-types.script.ts",
+		"generate:consts": "bun run ./scripts/generate-constants.script.ts",
+		"generate": "bun run generate:types && bun run generate:consts",
+		"pull": "bun run generate",
+		"dev": "bun run typecheck --watch",
+		"typecheck": "bun x tsgo --noEmit --project ./tsconfig.lib.json",
+		"fmt": "bun x biome format --write ./src",
+		"lint": "bun x biome lint --write ./src",
+		"check": "bun x biome check ./src"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.11",
+		"@teardown/tsconfig": "workspace:*",
+		"@types/bun": "1.3.5"
+	},
+	"peerDependencies": {
+		"typescript": "catalog:"
+	}
+}

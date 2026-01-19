@@ -1,0 +1,11 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": "src",
+		"jsx": "react-jsx",
+		"tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
+		"lib": ["DOM", "DOM.Iterable", "ES2022"],
+		"outDir": "dist"
+	},
+	"include": ["src/**/*.ts", "src/**/*.tsx"]
+}

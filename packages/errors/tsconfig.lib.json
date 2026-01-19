@@ -1,0 +1,15 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.lib.json",
+	"include": ["src/**/*"],
+	"exclude": ["src/**/*.test.ts"],
+	"compilerOptions": {
+		"rootDir": "src",
+		"outDir": "dist",
+		"noEmit": false,
+		"declaration": true,
+		"tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	}
+}

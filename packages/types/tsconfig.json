@@ -1,0 +1,11 @@
+{
+  "extends": "@teardown/tsconfig/tsconfig.base.json",
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.scripts.json"
+    }
+  ]
+}

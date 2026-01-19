@@ -1,0 +1,111 @@
+{
+	"name": "@teardown/schemas",
+	"version": "2.0.40",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"files": [
+		"src/**/*",
+		"generated/**/*",
+		"tsconfig.json"
+	],
+	"main": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./common": {
+			"types": "./src/common/index.ts",
+			"import": "./src/common/index.ts",
+			"default": "./src/common/index.ts"
+		},
+		"./devices": {
+			"types": "./src/modules/devices/index.ts",
+			"import": "./src/modules/devices/index.ts",
+			"default": "./src/modules/devices/index.ts"
+		},
+		"./environment": {
+			"types": "./src/modules/environment/index.ts",
+			"import": "./src/modules/environment/index.ts",
+			"default": "./src/modules/environment/index.ts"
+		},
+		"./identify": {
+			"types": "./src/modules/identify/index.ts",
+			"import": "./src/modules/identify/index.ts",
+			"default": "./src/modules/identify/index.ts"
+		},
+		"./me": {
+			"types": "./src/modules/me/index.ts",
+			"import": "./src/modules/me/index.ts",
+			"default": "./src/modules/me/index.ts"
+		},
+		"./orgs": {
+			"types": "./src/modules/orgs/index.ts",
+			"import": "./src/modules/orgs/index.ts",
+			"default": "./src/modules/orgs/index.ts"
+		},
+		"./project-users": {
+			"types": "./src/modules/project-users/index.ts",
+			"import": "./src/modules/project-users/index.ts",
+			"default": "./src/modules/project-users/index.ts"
+		},
+		"./projects": {
+			"types": "./src/modules/projects/index.ts",
+			"import": "./src/modules/projects/index.ts",
+			"default": "./src/modules/projects/index.ts"
+		},
+		"./sessions": {
+			"types": "./src/modules/sessions/index.ts",
+			"import": "./src/modules/sessions/index.ts",
+			"default": "./src/modules/sessions/index.ts"
+		},
+		"./versions": {
+			"types": "./src/modules/versions/index.ts",
+			"import": "./src/modules/versions/index.ts",
+			"default": "./src/modules/versions/index.ts"
+		},
+		"./builds": {
+			"types": "./src/modules/builds/index.ts",
+			"import": "./src/modules/builds/index.ts",
+			"default": "./src/modules/builds/index.ts"
+		},
+		"./analytics": {
+			"types": "./src/modules/analytics/index.ts",
+			"import": "./src/modules/analytics/index.ts",
+			"default": "./src/modules/analytics/index.ts"
+		},
+		"./events": {
+			"types": "./src/modules/events/index.ts",
+			"import": "./src/modules/events/index.ts",
+			"default": "./src/modules/events/index.ts"
+		},
+		"./headers": {
+			"types": "./src/modules/headers/index.ts",
+			"import": "./src/modules/headers/index.ts",
+			"default": "./src/modules/headers/index.ts"
+		}
+	},
+	"scripts": {
+		"dev": "bun run typecheck --watch",
+		"typecheck": "bun x tsgo --noEmit --project ./tsconfig.json",
+		"lint": "bun x biome lint .",
+		"fmt": "bun x biome format --write .",
+		"check": "bun x biome check ."
+	},
+	"dependencies": {
+		"@sinclair/typebox": "^0.34.41",
+		"@teardown/types": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.11",
+		"@teardown/tsconfig": "workspace:*",
+		"typescript": "5.9.3"
+	},
+	"peerDependencies": {
+		"typescript": "catalog:"
+	}
+}

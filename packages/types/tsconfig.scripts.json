@@ -1,0 +1,14 @@
+{
+  "extends": "@teardown/tsconfig/tsconfig.base.json",
+  "include": [
+    "src/**/*.script.ts"
+  ],
+  "compilerOptions": {
+    "module": "esnext",
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
+    "forceConsistentCasingInFileNames": true
+  },
+  "references": [],
+}

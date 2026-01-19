@@ -1,0 +1,11 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["ES2022", "DOM"],
+		"rootDir": "src",
+		"outDir": "dist",
+		"tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",
+		"module": "esnext",
+		"moduleResolution": "bundler"
+	}
+}

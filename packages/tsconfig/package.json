@@ -1,0 +1,14 @@
+{
+	"name": "@teardown/tsconfig",
+	"version": "2.0.40",
+	"description": "Shared TypeScript configurations for Teardown projects",
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"tsconfig.base.json",
+		"tsconfig.lib.json",
+		"tsconfig.bun.json",
+		"tsconfig.react.json"
+	]
+}

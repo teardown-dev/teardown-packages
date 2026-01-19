@@ -39,7 +39,7 @@ export interface UpdateInfo {
 export interface IdentityUser {
 	session_id: string;
 	device_id: string;
-	user_id: string;
+	user_id?: string;
 	token: string;
 	version_info: {
 		status: IdentifyVersionStatusEnum;
@@ -486,7 +486,7 @@ export class IdentityClient {
 						device: {
 							timestamp: deviceInfo.timestamp?.toISOString(),
 							os: {
-								platform: deviceInfo.os.platform.toLowerCase() as "ios" | "android" | "web",
+								platform: deviceInfo.os.platform as "IOS" | "ANDROID" | "WEB",
 								name: deviceInfo.os.name,
 								version: deviceInfo.os.version,
 							},
@@ -499,7 +499,7 @@ export class IdentityClient {
 											enabled: notificationsInfo.push.enabled,
 											granted: notificationsInfo.push.granted,
 											token: notificationsInfo.push.token,
-											platform: notificationsInfo.push.platform.toLowerCase() as "fcm" | "apns" | "expo",
+											platform: notificationsInfo.push.platform as "APNS" | "FCM" | "EXPO",
 										},
 									}
 								: undefined,

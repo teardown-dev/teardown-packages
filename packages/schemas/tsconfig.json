@@ -1,0 +1,12 @@
+{
+	"extends": "@teardown/tsconfig/tsconfig.lib.json",
+	"compilerOptions": {
+		"rootDir": "./src",
+		"paths": {
+			"@/*": ["./src/*"]
+		},
+		"noUnusedLocals": false
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules"]
+}

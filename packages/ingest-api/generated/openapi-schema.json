@@ -1,0 +1,457 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Teardown Ingest API",
+    "version": "1.0.0",
+    "description": "Ingest API for Teardown SDK"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4501",
+      "description": "Local"
+    },
+    {
+      "url": "https://ingest.teardown.dev",
+      "description": "Production"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "getRoot",
+        "summary": "Root endpoint",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "API info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "version": { "type": "string" }
+                  },
+                  "required": ["message", "version"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Health check",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "timestamp": { "type": "string" },
+                    "build_id": { "type": "string" },
+                    "service_id": { "type": "string" }
+                  },
+                  "required": ["status", "timestamp", "build_id"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/identify": {
+      "post": {
+        "operationId": "identify",
+        "summary": "Identify device and user",
+        "tags": ["Identify"],
+        "parameters": [
+          { "name": "td-org-id", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-project-id", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-environment-slug", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-api-key", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-device-id", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-session-id", "in": "header", "required": false, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Identify success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentifyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentifyError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events": {
+      "post": {
+        "operationId": "trackEvents",
+        "summary": "Track events",
+        "tags": ["Events"],
+        "parameters": [
+          { "name": "td-org-id", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-project-id", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-environment-slug", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-api-key", "in": "header", "required": true, "schema": { "type": "string" } },
+          { "name": "td-device-id", "in": "header", "required": false, "schema": { "type": "string" } },
+          { "name": "td-session-id", "in": "header", "required": false, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Events tracked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DevicePlatform": {
+        "type": "string",
+        "enum": ["IOS", "ANDROID", "WEB"]
+      },
+      "NotificationPlatform": {
+        "type": "string",
+        "enum": ["APNS", "FCM", "EXPO"]
+      },
+      "IdentifyVersionStatus": {
+        "type": "string",
+        "enum": ["UP_TO_DATE", "UPDATE_AVAILABLE", "UPDATE_RECOMMENDED", "UPDATE_REQUIRED", "DISABLED"]
+      },
+      "DeviceOS": {
+        "type": "object",
+        "properties": {
+          "platform": { "$ref": "#/components/schemas/DevicePlatform" },
+          "name": { "type": "string" },
+          "version": { "type": "string" }
+        },
+        "required": ["platform", "name", "version"]
+      },
+      "DeviceApplication": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "string" },
+          "build_number": { "type": "integer" }
+        },
+        "required": ["version", "build_number"]
+      },
+      "DeviceHardware": {
+        "type": "object",
+        "properties": {
+          "device_name": { "type": "string" },
+          "device_type": { "type": "string" },
+          "device_brand": { "type": "string" }
+        },
+        "required": ["device_name", "device_type", "device_brand"]
+      },
+      "DeviceUpdate": {
+        "type": "object",
+        "properties": {
+          "is_enabled": { "type": "boolean" },
+          "update_id": { "type": "string" },
+          "update_channel": { "type": "string" },
+          "runtime_version": { "type": "string" },
+          "emergency_launch": {
+            "type": "object",
+            "properties": {
+              "is_emergency_launch": { "type": "boolean" },
+              "reason": { "type": "string" }
+            },
+            "required": ["is_emergency_launch"]
+          },
+          "is_embedded_launch": { "type": "boolean" },
+          "created_at": { "type": "string" }
+        },
+        "required": ["is_enabled", "update_id", "update_channel", "runtime_version", "emergency_launch", "is_embedded_launch", "created_at"]
+      },
+      "DeviceNotifications": {
+        "type": "object",
+        "properties": {
+          "push": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "granted": { "type": "boolean" },
+              "token": { "type": "string", "nullable": true },
+              "platform": { "$ref": "#/components/schemas/NotificationPlatform" }
+            },
+            "required": ["enabled", "granted", "token", "platform"]
+          }
+        },
+        "required": ["push"]
+      },
+      "Device": {
+        "type": "object",
+        "properties": {
+          "timestamp": { "type": "string", "format": "date-time" },
+          "os": { "$ref": "#/components/schemas/DeviceOS" },
+          "application": { "$ref": "#/components/schemas/DeviceApplication" },
+          "hardware": { "$ref": "#/components/schemas/DeviceHardware" },
+          "update": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/DeviceUpdate" },
+              { "type": "null" }
+            ]
+          },
+          "notifications": { "$ref": "#/components/schemas/DeviceNotifications" }
+        },
+        "required": ["os", "application", "hardware"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "persona_id": { "type": "string" },
+          "user_id": { "type": "string" },
+          "email": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      },
+      "IdentifyRequest": {
+        "type": "object",
+        "properties": {
+          "device": { "$ref": "#/components/schemas/Device" },
+          "user": { "$ref": "#/components/schemas/User" }
+        },
+        "required": ["device"]
+      },
+      "VersionUpdate": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "string" },
+          "build": { "type": "string" },
+          "update_id": { "type": "string" },
+          "effective_date": { "type": "string", "format": "date-time" },
+          "release_notes": { "type": "string", "nullable": true }
+        },
+        "required": ["version", "build", "update_id", "effective_date"]
+      },
+      "VersionInfo": {
+        "type": "object",
+        "properties": {
+          "status": { "$ref": "#/components/schemas/IdentifyVersionStatus" },
+          "update": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/VersionUpdate" },
+              { "type": "null" }
+            ]
+          }
+        },
+        "required": ["status"]
+      },
+      "IdentifyResponseData": {
+        "type": "object",
+        "properties": {
+          "session_id": { "type": "string" },
+          "device_id": { "type": "string" },
+          "user_id": { "type": "string" },
+          "token": { "type": "string" },
+          "version_info": { "$ref": "#/components/schemas/VersionInfo" }
+        },
+        "required": ["session_id", "device_id", "user_id", "token", "version_info"]
+      },
+      "IdentifyResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/IdentifyResponseData" }
+        },
+        "required": ["success", "data"]
+      },
+      "IdentifyErrorCode": {
+        "type": "string",
+        "enum": [
+          "MISSING_ORG_ID",
+          "MISSING_PROJECT_ID",
+          "MISSING_ENVIRONMENT_SLUG",
+          "MISSING_DEVICE_ID",
+          "IDENTIFY_FAILED",
+          "NO_SESSION_ID_GENERATED",
+          "NO_DEVICE_ID_GENERATED",
+          "NO_USER_ID_GENERATED"
+        ]
+      },
+      "IdentifyError": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "enum": [false] },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "$ref": "#/components/schemas/IdentifyErrorCode" },
+              "message": { "type": "string" }
+            },
+            "required": ["code", "message"]
+          }
+        },
+        "required": ["success", "error"]
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "event_name": { "type": "string" },
+          "event_type": { "type": "string", "enum": ["action", "custom", "screen_view"] },
+          "properties": { "type": "object", "additionalProperties": true },
+          "timestamp": { "type": "string" },
+          "session_id": { "type": "string" },
+          "device_id": { "type": "string" }
+        },
+        "required": ["event_name", "event_type"]
+      },
+      "EventsRequest": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Event" }
+          },
+          "session_id": { "type": "string" },
+          "device_id": { "type": "string" }
+        },
+        "required": ["events"]
+      },
+      "EventsResponseData": {
+        "type": "object",
+        "properties": {
+          "event_ids": { "type": "array", "items": { "type": "string" } },
+          "processed_count": { "type": "integer" },
+          "failed_count": { "type": "integer" }
+        },
+        "required": ["event_ids", "processed_count", "failed_count"]
+      },
+      "EventsResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "enum": [true] },
+          "data": { "$ref": "#/components/schemas/EventsResponseData" }
+        },
+        "required": ["success", "data"]
+      },
+      "EventsErrorCode": {
+        "type": "string",
+        "enum": [
+          "MISSING_ORG_ID",
+          "MISSING_PROJECT_ID",
+          "MISSING_ENVIRONMENT_SLUG",
+          "MISSING_DEVICE_ID",
+          "EVENTS_PROCESSING_FAILED",
+          "INVALID_SESSION",
+          "INVALID_DEVICE",
+          "BATCH_SIZE_EXCEEDED",
+          "VALIDATION_ERROR"
+        ]
+      },
+      "EventsError": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "enum": [false] },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "$ref": "#/components/schemas/EventsErrorCode" },
+              "message": { "type": "string" }
+            },
+            "required": ["code", "message"]
+          }
+        },
+        "required": ["success", "error"]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["validation"] },
+          "on": { "type": "string" },
+          "summary": { "type": "string" },
+          "message": { "type": "string" },
+          "found": {},
+          "property": { "type": "string" },
+          "expected": { "type": "string" }
+        },
+        "required": ["type", "on"]
+      }
+    },
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "name": "td-api-key",
+        "in": "header"
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"sync:schemas": {
+			"dependsOn": ["@teardown/ingest#build"],
+			"cache": false,
+			"outputs": ["src/schemas/**"]
+		},
+		"generate:types": {
+			"dependsOn": ["@teardown/ingest#build"],
+			"cache": false,
+			"outputs": ["generated/**"]
+		},
+		"build": {
+			"dependsOn": ["^build", "@teardown/ingest#build", "generate:types"],
+			"cache": false,
+			"outputs": ["generated/**"]
+		},
+		"dev": {
+			"dependsOn": ["@teardown/ingest#build"],
+			"cache": false,
+			"persistent": true
+		}
+	}
+}

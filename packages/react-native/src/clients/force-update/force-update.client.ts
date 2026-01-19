@@ -206,7 +206,7 @@ export class ForceUpdateClient {
 
 	private updateFromVersionInfo(versionInfo: {
 		status: IdentifyVersionStatusEnum;
-		update: { release_notes: string | null } | null;
+		update?: { release_notes?: string | null } | null;
 	}) {
 		const status = versionInfo.status;
 		const releaseNotes = versionInfo.update?.release_notes ?? null;

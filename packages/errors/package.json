@@ -1,0 +1,53 @@
+{
+	"name": "@teardown/errors",
+	"version": "2.0.40",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"files": [
+		"src/**/*"
+	],
+	"main": "./src/index.ts",
+	"module": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./elysia": {
+			"types": "./src/elysia.ts",
+			"import": "./src/elysia.ts",
+			"default": "./src/elysia.ts"
+		},
+		"./package.json": "./package.json"
+	},
+	"scripts": {
+		"build": "bun x tsgo --project ./tsconfig.lib.json",
+		"dev": "bun x tsgo --watch --project ./tsconfig.lib.json",
+		"typecheck": "bun x tsgo --noEmit --project ./tsconfig.lib.json",
+		"fmt": "bun x biome format --write ./src",
+		"lint": "bun x biome lint --write ./src",
+		"check": "bun x biome check ./src",
+		"test": "bun test",
+		"prepublishOnly": "bun x turbo run build"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.11",
+		"@teardown/tsconfig": "workspace:*",
+		"@types/bun": "1.3.5"
+	},
+	"peerDependencies": {
+		"elysia": "catalog:elysiajs",
+		"typescript": "catalog:",
+		"zod": "catalog:"
+	},
+	"peerDependenciesMeta": {
+		"elysia": {
+			"optional": true
+		}
+	}
+}

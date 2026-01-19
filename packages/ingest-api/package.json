@@ -1,0 +1,56 @@
+{
+	"name": "@teardown/ingest-api",
+	"version": "2.0.40",
+	"private": false,
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"files": [
+		"src/**/*",
+		"generated/**/*",
+		"tsconfig.json",
+		"tsconfig.lib.json"
+	],
+	"main": "./src/index.ts",
+	"module": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts",
+			"default": "./src/index.ts"
+		},
+		"./types": {
+			"types": "./src/types/index.ts",
+			"import": "./src/types/index.ts",
+			"default": "./src/types/index.ts"
+		}
+	},
+	"scripts": {
+		"dev": "bun run typecheck --watch",
+		"typecheck": "bun x tsgo --noEmit --project ./tsconfig.lib.json",
+		"generate:types": "bun run scripts/generate-openapi-types.ts",
+		"generate:types:offline": "bun run scripts/generate-openapi-types.ts --from-file",
+		"build": "bun run generate:types:offline",
+		"prepublishOnly": "bun run generate:types:offline",
+		"lint": "bun x biome lint .",
+		"fmt": "bun x biome format --write .",
+		"check": "bun x biome check ."
+	},
+	"dependencies": {
+		"openapi-fetch": "^0.13.5",
+		"@teardown/errors": "workspace:*",
+		"@teardown/schemas": "workspace:*",
+		"@teardown/types": "workspace:*"
+	},
+	"peerDependencies": {
+		"typescript": "catalog:"
+	},
+	"devDependencies": {
+		"openapi-typescript": "^7.6.1",
+		"@biomejs/biome": "2.3.11",
+		"@types/bun": "1.3.5",
+		"@teardown/tsconfig": "workspace:*"
+	}
+}

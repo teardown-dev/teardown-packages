@@ -32,8 +32,6 @@ React Native SDK for device identity, force updates, logging, and analytics.
 4. Update `package.json` exports map
 5. Add peer dependencies (mark optional in `peerDependenciesMeta`)
 
-## PR instructions
-- Title format: [react-native] <description>
-- Run `bun run check` before committing (lint + format)
-- Run `bun test` to verify all tests pass
-- Update README if adding new adapters or platform support
+## PR Guidelines
+
+See [docs/pr-guidelines.md](../../docs/pr-guidelines.md)
